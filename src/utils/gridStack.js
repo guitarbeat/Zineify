@@ -1,5 +1,4 @@
-import { GridStack } from 'gridstack';
-import 'gridstack/dist/gridstack.min.css';
+import { GridStack } from '#gridStackImports';
 
 const STORAGE_KEY_DESKTOP = 'zine-grid-v9';
 const STORAGE_KEY_MOBILE = 'zine-grid-mobile-v9';

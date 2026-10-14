@@ -71,5 +71,11 @@
     "pwa"
   ],
   "author": "Octovo Zine Maker Team",
-  "license": "MIT"
+  "license": "MIT",
+  "imports": {
+    "#gridStackImports": {
+      "node": "./tests/unit/utils/mocks/gridStackImports.mock.js",
+      "default": "./src/utils/gridstack/gridStackImports.js"
+    }
+  }
 }

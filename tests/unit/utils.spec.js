@@ -12,6 +12,7 @@ import {
   validateUploadFile,
   partitionSupportedFiles
 } from '../../src/utils/fileValidation.js';
+import { JSDOM } from 'jsdom';
 
 test.describe('Utils', () => {
   test.beforeAll(() => {
@@ -93,6 +94,35 @@ test.describe('Utils', () => {
 
     await new Promise(resolve => setTimeout(resolve, 150));
     expect(count).toBe(1);
+  });
+
+  test('sanitizeHTML', () => {
+    // 1. Valid inputs with allowed tags
+    const doc1 = sanitizeHTML('<b>bold</b> and <i>italic</i>');
+    expect(doc1.childNodes.length).toBeGreaterThan(0);
+    expect(doc1.textContent).toBe('bold and italic');
+    expect(doc1.querySelector('b')).not.toBeNull();
+    expect(doc1.querySelector('i')).not.toBeNull();
+
+    // 2. Stripping disallowed tags
+    const doc2 = sanitizeHTML('<script>alert("xss")</script><p>text</p><span>span</span>');
+    expect(doc2.querySelector('script')).toBeNull();
+    expect(doc2.textContent).toBe('textspan');
+    expect(doc2.querySelector('span')).not.toBeNull();
+
+    // 3. Handling invalid inputs
+    const doc3 = sanitizeHTML(null);
+    expect(doc3).toBeTruthy();
+    expect(doc3.nodeType).toBe(11); // DocumentFragment
+    expect(doc3.childNodes.length).toBe(0);
+
+    const doc4 = sanitizeHTML('');
+    expect(doc4.nodeType).toBe(11);
+    expect(doc4.childNodes.length).toBe(0);
+
+    const doc5 = sanitizeHTML(123);
+    expect(doc5.nodeType).toBe(11);
+    expect(doc5.childNodes.length).toBe(0);
   });
 
   test('classifyFileKind', () => {

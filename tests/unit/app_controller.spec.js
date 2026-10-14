@@ -936,12 +936,11 @@ test.describe('AppController', () => {
     const { AppController } = await import("../../src/core/AppController.js");
     const { toast } = await import("../../src/components/Toast.js");
 
-    let toastErrorTitle = null;
-    let toastErrorMessage = null;
-    const originalToastError = toast.error;
-    toast.error = (title, message) => {
-      toastErrorTitle = title;
-      toastErrorMessage = message;
+      class DummyViewer {
+        constructor() {}
+        updateLayout() {}
+      }
+      return DummyViewer;
     };
 
     try {

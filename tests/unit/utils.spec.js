@@ -1,3 +1,5 @@
+import { JSDOM } from 'jsdom';
+import DOMPurify from 'dompurify';
 import { test, expect } from '@playwright/test';
 import { clampNumber, formatFileSize, isNumber, debounce, parseBoundedInteger, resizeAndFillArray, sanitizeHTML, runWithConcurrencyLimit } from '../../src/utils/helpers.js';
 import DOMPurify from 'dompurify';
@@ -204,6 +206,44 @@ test.describe('Utils', () => {
     expect(partitionSupportedFiles({})).toEqual({ acceptedFiles: [], rejectedFiles: [] });
     expect(partitionSupportedFiles({ 0: { name: "test.pdf", type: "application/pdf" }, length: 1 })).toEqual({ acceptedFiles: [], rejectedFiles: [] });
     expect(partitionSupportedFiles(42)).toEqual({ acceptedFiles: [], rejectedFiles: [] });
+  });
+
+
+  test('sanitizeHTML', () => {
+    // Non-string or empty input
+    let result = sanitizeHTML(null);
+    expect(result.nodeType).toBe(11); // DocumentFragment
+    expect(result.childNodes.length).toBe(0);
+
+    result = sanitizeHTML('');
+    expect(result.nodeType).toBe(11);
+    expect(result.childNodes.length).toBe(0);
+
+    result = sanitizeHTML(123);
+    expect(result.nodeType).toBe(11);
+    expect(result.childNodes.length).toBe(0);
+
+    // Sanitizes HTML and returns a DocumentFragment with allowed tags
+    const input = '<b>Bold</b> and <em>italic</em> with <script>alert(1)</script>';
+    result = sanitizeHTML(input);
+    expect(result.nodeType).toBe(11);
+    const div = document.createElement('div');
+    div.appendChild(result);
+    expect(div.innerHTML).toBe('<b>Bold</b> and <em>italic</em> with ');
+
+    // Removes disallowed tags but keeps text content
+    const input2 = '<div>Div content</div><span>Span content</span>';
+    result = sanitizeHTML(input2);
+    const div2 = document.createElement('div');
+    div2.appendChild(result);
+    expect(div2.innerHTML).toBe('Div content<span>Span content</span>');
+
+    // Handles complex nested allowed tags
+    const input3 = '<b><strong><i><em><u><br><code><span>text</span></code></u></em></i></strong></b>';
+    result = sanitizeHTML(input3);
+    const div3 = document.createElement('div');
+    div3.appendChild(result);
+    expect(div3.innerHTML).toBe('<b><strong><i><em><u><br><code><span>text</span></code></u></em></i></strong></b>');
   });
 
   test('resizeAndFillArray', () => {

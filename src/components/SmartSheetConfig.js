@@ -57,6 +57,7 @@ export class SmartSheetConfig {
     const isRecommended = orientation === recommendation?.best;
     const isCustom = paperSize === 'custom';
 
+    const currentPaper = resolvePaperSize(paperSize, this.state.customPaper);
     const fmt = (mm) => formatDimension(mm, unit);
     const paper = resolvePaperSize(paperSize, this.state.customPaper);
     const landscapeW = fmt(Math.max(paper.width, paper.height));

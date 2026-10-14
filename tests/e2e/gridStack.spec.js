@@ -216,4 +216,20 @@ test.describe('GridStack Layout', () => {
 
     expect(cleared).toBe(true);
   });
+
+  test("handles array with malformed item objects in localStorage safely", async ({ page }) => {
+    await page.goto("/");
+    await page.evaluate(() => {
+      localStorage.setItem("zine-grid-v8", JSON.stringify([
+        "not an object",
+        null,
+        { id: "brand", x: "invalid", y: -5, w: Infinity, h: NaN },
+        { id: "canvas", x: 0, y: 3, w: 9, h: 10 }
+      ]));
+    });
+    await page.reload();
+    const items = await page.locator(".grid-stack-item").count();
+    expect(items).toBeGreaterThan(0);
+  });
+
 });

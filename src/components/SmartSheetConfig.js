@@ -11,7 +11,7 @@ import {
   LAYOUT_PRESETS
 } from '../utils/config.js';
 
-const FIXED_ROWS = 3;
+const FIXED_ROWS = 2;
 const FIXED_COLS = 4;
 
 const PAPER_RECOMMENDATIONS = {

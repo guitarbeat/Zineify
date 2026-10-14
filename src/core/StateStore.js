@@ -4,7 +4,7 @@
  */
 export class StateStore {
   constructor() {
-    this.allPageImages = new Array(12).fill(null);
+    this.allPageImages = new Array(8).fill(null);
     this._blankPageUrl = null;
     this.pageFlips = {}; // { pageIndex: boolean }
     this.pageZooms = {}; // { pageIndex: boolean }

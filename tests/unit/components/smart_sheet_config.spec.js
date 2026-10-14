@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { test, expect } from '@playwright/test';
 import { SmartSheetConfig } from '../../../src/components/SmartSheetConfig.js';
 import { createRequire } from 'module';
@@ -22,6 +23,9 @@ test.describe('SmartSheetConfig Component', () => {
     global.window = dom.window;
     global.document = dom.window.document;
     const purify = DOMPurify(dom.window);
+    DOMPurify.sanitize = purify.sanitize;
+
+    const purify = DOMPurify(global.window);
     DOMPurify.sanitize = purify.sanitize;
 
     container = document.getElementById('container');

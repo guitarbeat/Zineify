@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { test, expect } from '@playwright/test';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);

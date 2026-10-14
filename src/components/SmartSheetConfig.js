@@ -272,6 +272,14 @@ export class SmartSheetConfig {
     this.emitChange();
   }
 
+
+  setOrientation(orientation) {
+    if (orientation === this.state.orientation) {return;}
+    this.state.orientation = orientation;
+    this.render();
+    this.emitChange();
+  }
+
   setPaperSize(paperSize) {
     // When switching to custom, seed dimensions from the currently shown paper.
     if (paperSize === 'custom') {

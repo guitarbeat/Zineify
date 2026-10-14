@@ -84,7 +84,7 @@ test.skip('opens the 3D preview modal with a sized canvas', async ({ page }) => 
     buffer: createPdfBuffer('3D')
   });
 
-  await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Imported 1 of 1 pages from 3d-preview.pdf' })).toBeVisible( { timeout: 30000 });
+  await expect(page.locator('#upload-status')).toHaveText('Imported 1 of 1 pages from 3d-preview.pdf', { timeout: 30000 });
 
   await expect(page.locator('#printBtn')).toHaveCount(0);
   await page.locator('#view3dBtn').click();
@@ -126,7 +126,7 @@ test.skip('booklet preview reflects flip adjustments from the sheet preview', as
 
   await setQuadrantInputFile(page);
 
-  await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Imported image: cover-map.png' })).toBeVisible( { timeout: 30000 });
+  await expect(page.locator('#upload-status')).toHaveText('Imported image: cover-map.png', { timeout: 30000 });
 
   await page.locator('.page-cell[data-page-index="0"]').hover();
   await page.getByRole('button', { name: 'Rotate Cover 180 degrees (R)' }).click();

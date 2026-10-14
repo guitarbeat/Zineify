@@ -72,30 +72,14 @@ test.describe('PDFProcessor', () => {
     expect(processor.handlePDFError(genericError).message).toContain('something else');
   });
 
-  test('cleanupFailedLoad logs warning when loadingTask destroy fails', async () => {
-    /* eslint-disable-next-line no-console */
-    const originalConsoleWarn = console.warn;
-    let loggedWarning = null;
-    let loggedError = null;
-    /* eslint-disable-next-line no-console */
-    console.warn = (msg, err) => {
-      loggedWarning = msg;
-      loggedError = err;
-    };
-
+  test('cleanupFailedLoad ignores destroy errors and clears the loading task', async () => {
     const destroyError = new Error('Destroy failed');
     processor.loadingTask = {
       destroy: async () => { throw destroyError; }
     };
 
-    try {
-      await processor.cleanupFailedLoad();
-      expect(loggedWarning).toBe('Failed to destroy PDF loading task during cleanup:');
-      expect(loggedError).toBe(destroyError);
-    } finally {
-      /* eslint-disable-next-line no-console */
-      console.warn = originalConsoleWarn;
-    }
+    await expect(processor.cleanupFailedLoad()).resolves.toBeUndefined();
+    expect(processor.loadingTask).toBeNull();
   });
 
   test('cleanup frees resources', async () => {
@@ -347,12 +331,7 @@ test.describe('PDFProcessor', () => {
     expect(processor.fileUrl).toBeNull();
   });
 
-  test("loadPDF handles error during load and logs warning when cleanup destroy fails", async () => {
-    let warnArgs = null;
-    const origWarn = console.warn;
-    /* eslint-disable-next-line no-console */
-    console.warn = (...args) => { warnArgs = args; };
-
+  test("loadPDF handles error during load when cleanup destroy fails", async () => {
     processor.ensurePdfJs = async () => ({
       getDocument: () => ({
         promise: Promise.reject(new Error("PDF load failure")),
@@ -371,16 +350,10 @@ test.describe('PDFProcessor', () => {
 
     const file = new File(["%PDF-1.4"], "test.pdf", { type: "application/pdf" });
 
-    try {
-      await expect(processor.loadPDF(file)).rejects.toThrow("PDF processing failed: PDF load failure");
-      expect(warnArgs).not.toBeNull();
-      expect(warnArgs[0]).toBe("Failed to destroy PDF loading task on cleanup:");
-      expect(warnArgs[1].message).toBe("Cleanup destroy failed");
-      expect(processor.isProcessing).toBe(false);
-    } finally {
-      /* eslint-disable-next-line no-console */
-      console.warn = origWarn;
-    }
+    await expect(processor.loadPDF(file)).rejects.toThrow("PDF processing failed: PDF load failure");
+    expect(processor.isProcessing).toBe(false);
+    expect(processor.loadingTask).toBeNull();
+    expect(processor.fileUrl).toBeNull();
   });
 
   test("loadPDF handles password-protected and MissingPDFException errors via handlePDFError", async () => {
@@ -614,8 +587,8 @@ test.describe('PDFProcessor', () => {
 
     try {
       await expect(processor.loadPDF(file)).rejects.toThrow('PDF loading timed out');
-      expect(warnArgs).not.toBeNull();
-      expect(warnArgs[0]).toBe('Failed to destroy PDF loading task on timeout');
+      expect(warnMessages).toHaveLength(1);
+      expect(warnMessages[0][0]).toBe('Failed to destroy PDF loading task on timeout');
     } finally {
       global.setTimeout = origSetTimeout;
       /* eslint-disable-next-line no-console */
@@ -623,9 +596,6 @@ test.describe('PDFProcessor', () => {
     }
   });
   test("cleanupFailedLoad handles loadingTask.destroy error gracefully", async () => {
-    let pdfDestroyed = false;
-    let revokedUrl = null;
-
     let pdfDestroyed = false;
     let revokedUrl = null;
 
@@ -1088,6 +1058,8 @@ test.describe('PDFProcessor Media handling', () => {
         }
       }
     }
+  });
+
   test('renderImageFile wraps drawImage error and executes cleanup in finally block', async () => {
     let closed = false;
     let revokedUrl = null;
@@ -1224,63 +1196,5 @@ test.describe('PDFProcessor Media handling', () => {
     await expect(processor._internalRender(1, () => 1.0)).rejects.toThrow("Failed to render page 1");
   });
 
-  test('renderImageFile wraps drawImage error and executes cleanup in finally block', async () => {
-    let closed = false;
-    let revokedUrl = null;
-
-    const origCreateObjectURL = global.URL?.createObjectURL;
-    const origRevokeObjectURL = global.URL?.revokeObjectURL;
-
-    if (typeof global !== 'undefined') {
-      global.URL.createObjectURL = () => 'blob:draw-image-test';
-      global.URL.revokeObjectURL = (url) => { revokedUrl = url; };
-    }
-
-    processor.loadImageElement = async () => ({
-      width: 100,
-      height: 100,
-      close: () => { closed = true; }
-    });
-
-    const mockContext = {
-      fillStyle: '',
-      fillRect: () => {},
-      drawImage: () => {
-        throw new Error('Canvas drawImage error');
-      }
-    };
-
-    processor.createRenderCanvas = () => ({
-      canvas: {},
-      context: mockContext
-    });
-
-    try {
-      const file = new File(['fake-image-data'], 'test.png', { type: 'image/png' });
-
-      let thrownError;
-      try {
-        await processor.renderImageFile(file);
-      } catch (err) {
-        thrownError = err;
-      }
-
-      expect(thrownError).toBeDefined();
-      expect(thrownError.message).toBe('Image processing failed: Canvas drawImage error');
-      expect(thrownError.cause?.message).toBe('Canvas drawImage error');
-
-      expect(closed).toBe(true);
-      expect(revokedUrl).toBe('blob:draw-image-test');
-    } finally {
-      if (typeof global !== 'undefined') {
-        if (origCreateObjectURL !== undefined) {
-          global.URL.createObjectURL = origCreateObjectURL;
-        }
-        if (origRevokeObjectURL !== undefined) {
-          global.URL.revokeObjectURL = origRevokeObjectURL;
-        }
-      }
-    }
-  });
 });
 

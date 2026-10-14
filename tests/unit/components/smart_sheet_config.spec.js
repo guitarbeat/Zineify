@@ -4,7 +4,6 @@ import { SmartSheetConfig } from '../../../src/components/SmartSheetConfig.js';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { JSDOM } = require('jsdom');
-import DOMPurify from 'dompurify';
 import { MARGIN_MAX, MARGIN_MIN, UNITS, PAPER_SIZES, toMm, LAYOUT_PRESETS } from '../../../src/utils/config.js';
 
 test.describe('SmartSheetConfig Component', () => {
@@ -23,9 +22,6 @@ test.describe('SmartSheetConfig Component', () => {
     global.window = dom.window;
     global.document = dom.window.document;
     const purify = DOMPurify(dom.window);
-    DOMPurify.sanitize = purify.sanitize;
-
-    const purify = DOMPurify(global.window);
     DOMPurify.sanitize = purify.sanitize;
 
     container = document.getElementById('container');
@@ -223,15 +219,16 @@ test.describe('SmartSheetConfig Component', () => {
     }
   });
 
-  test('ignores invalid layout preset', () => {
+  test('keeps the fixed mini-zine layout without a preset picker', () => {
     const config = new SmartSheetConfig(container);
-    const initialPreset = config.state.layoutPresetId;
 
-    config.setPreset('unknown-preset-id');
-    expect(config.state.layoutPresetId).toBe(initialPreset);
+    expect(config.state.layoutPresetId).toBe('mini-8');
+    expect(config.state.rows).toBe(2);
+    expect(config.state.cols).toBe(4);
+    expect(container.querySelector('[data-preset]')).toBeNull();
   });
 
-  test('handles custom row/col change in custom grid section', () => {
+  test('ignores legacy custom row/col inputs', () => {
     let emitted = null;
     const config = new SmartSheetConfig(container, {
       onChange: (state) => { emitted = state; }
@@ -243,9 +240,8 @@ test.describe('SmartSheetConfig Component', () => {
     container.appendChild(rowsInput);
     rowsInput.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
 
-    expect(config.state.rows).toBe(3);
-    expect(config.state.layoutPresetId).toBe('custom');
-    expect(emitted.rows).toBe(3);
+    expect(config.state.rows).toBe(2);
+    expect(config.state.layoutPresetId).toBe('mini-8');
 
     let colsInput = document.createElement('input');
     colsInput.dataset.field = 'cols';
@@ -253,11 +249,11 @@ test.describe('SmartSheetConfig Component', () => {
     container.appendChild(colsInput);
     colsInput.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
 
-    expect(config.state.cols).toBe(5);
-    expect(emitted.cols).toBe(5);
+    expect(config.state.cols).toBe(4);
+    expect(emitted).toBeNull();
   });
 
-  test('clamps custom row/col input values between 1 and 10', () => {
+  test('keeps fixed row/col values when legacy inputs contain invalid values', () => {
     const config = new SmartSheetConfig(container);
 
     // Max clamp test
@@ -266,7 +262,7 @@ test.describe('SmartSheetConfig Component', () => {
     rowsInput.value = '20';
     container.appendChild(rowsInput);
     rowsInput.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
-    expect(config.state.rows).toBe(10);
+    expect(config.state.rows).toBe(2);
 
     // Min clamp test
     rowsInput = document.createElement('input');
@@ -274,7 +270,7 @@ test.describe('SmartSheetConfig Component', () => {
     rowsInput.value = '-5';
     container.appendChild(rowsInput);
     rowsInput.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
-    expect(config.state.rows).toBe(1);
+    expect(config.state.rows).toBe(2);
 
     // NaN fallback test
     rowsInput = document.createElement('input');
@@ -282,7 +278,8 @@ test.describe('SmartSheetConfig Component', () => {
     rowsInput.value = 'not-a-number';
     container.appendChild(rowsInput);
     rowsInput.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
-    expect(config.state.rows).toBe(1);
+    expect(config.state.rows).toBe(2);
+    expect(config.state.cols).toBe(4);
   });
 
   test('handles margin slider input and clamps', () => {
@@ -359,7 +356,7 @@ test.describe('SmartSheetConfig Component', () => {
 
     const state = config.getState();
     expect(state.paperSize).toBe('letter');
-    expect(state.totalSlots).toBe(12);
+    expect(state.totalSlots).toBe(8);
 
     config.setState({ paperSize: 'a4', orientation: 'portrait' });
     expect(config.state.paperSize).toBe('a4');
@@ -479,17 +476,11 @@ test.describe('SmartSheetConfig Component', () => {
     expect(config.state.margin).toBe(15);
   });
 
-  test('handles setPreset with valid layout-12 preset', () => {
-    let emitted = null;
-    const config = new SmartSheetConfig(container, {
-      onChange: (state) => { emitted = state; }
-    });
+  test('does not expose the removed variable-layout preset API', () => {
+    const config = new SmartSheetConfig(container);
 
-    config.setPreset('layout-12');
-    expect(config.state.layoutPresetId).toBe('layout-12');
-    expect(config.state.rows).toBe(3);
-    expect(config.state.cols).toBe(4);
-    expect(emitted.layoutPresetId).toBe('layout-12');
+    expect(config.setPreset).toBeUndefined();
+    expect(config.getState().totalSlots).toBe(8);
   });
 
   test("handles margin stepper button clicks with unit conversions (in/cm)", () => {

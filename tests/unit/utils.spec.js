@@ -2,17 +2,12 @@ import { JSDOM } from 'jsdom';
 import DOMPurify from 'dompurify';
 import { test, expect } from '@playwright/test';
 import { clampNumber, formatFileSize, isNumber, debounce, parseBoundedInteger, resizeAndFillArray, sanitizeHTML, runWithConcurrencyLimit } from '../../src/utils/helpers.js';
-import DOMPurify from 'dompurify';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const { JSDOM } = require('jsdom');
 import {
   classifyFileKind,
   getFileTypeLabel,
   validateUploadFile,
   partitionSupportedFiles
 } from '../../src/utils/fileValidation.js';
-import { JSDOM } from 'jsdom';
 
 test.describe('Utils', () => {
   test.beforeAll(() => {
@@ -25,7 +20,7 @@ test.describe('Utils', () => {
     DOMPurify.sanitize = purify.sanitize;
   });
 
-  test('sanitizeHTML', () => {
+  test('sanitizeHTML preserves allowed tags and strips scripts', () => {
     // Edge cases: null, undefined, empty string, non-string
     expect(sanitizeHTML(null).nodeType).toBe(11); // 11 is Node.DOCUMENT_FRAGMENT_NODE
     expect(sanitizeHTML(undefined).nodeType).toBe(11);
@@ -96,7 +91,7 @@ test.describe('Utils', () => {
     expect(count).toBe(1);
   });
 
-  test('sanitizeHTML', () => {
+  test('sanitizeHTML handles empty and nested content', () => {
     // 1. Valid inputs with allowed tags
     const doc1 = sanitizeHTML('<b>bold</b> and <i>italic</i>');
     expect(doc1.childNodes.length).toBeGreaterThan(0);

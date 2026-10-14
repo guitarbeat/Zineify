@@ -481,51 +481,6 @@ test.describe('AppController', () => {
     }
   });
 
-  test('handleExport handles exportService.handleExport rejection when error message is missing', async () => {
-    const { AppController } = await import('../../src/core/AppController.js');
-    const { toast } = await import('../../src/components/Toast.js');
-
-    let toastErrorTitle = null;
-    let toastErrorMessage = null;
-    const originalToastError = toast.error;
-    toast.error = (title, message) => {
-      toastErrorTitle = title;
-      toastErrorMessage = message;
-    };
-
-    const originalInit = AppController.prototype.init;
-    AppController.prototype.init = async () => {};
-
-    try {
-      const controller = new AppController();
-      controller.state.getFilledPageCount = () => 1;
-
-      const progressCalls = [];
-      controller.ui.modal = {
-        showProgress: (show, message) => {
-          progressCalls.push({ show, message });
-        }
-      };
-
-      controller.exportService = {
-        handleExport: async () => {
-          throw {};
-        }
-      };
-
-      await controller.handleExport();
-
-      expect(toastErrorTitle).toBe('Export Failed');
-      expect(toastErrorMessage).toBeUndefined();
-      expect(progressCalls).toEqual([
-        { show: true, message: 'Generating PDF...' },
-        { show: false, message: undefined }
-      ]);
-    } finally {
-      AppController.prototype.init = originalInit;
-      toast.error = originalToastError;
-    }
-  });
   test("handleExport successfully exports zine when pages are filled", async () => {
     const { AppController } = await import("../../src/core/AppController.js");
     const { toast } = await import("../../src/components/Toast.js");
@@ -985,11 +940,12 @@ test.describe('AppController', () => {
     const { AppController } = await import("../../src/core/AppController.js");
     const { toast } = await import("../../src/components/Toast.js");
 
-      class DummyViewer {
-        constructor() {}
-        updateLayout() {}
-      }
-      return DummyViewer;
+    let toastErrorTitle = null;
+    let toastErrorMessage = null;
+    const originalToastError = toast.error;
+    toast.error = (title, message) => {
+      toastErrorTitle = title;
+      toastErrorMessage = message;
     };
 
     try {

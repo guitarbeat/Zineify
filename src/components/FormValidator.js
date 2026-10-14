@@ -13,8 +13,6 @@ import {
   createConstraintHint
 } from '../utils/formValidation.js';
 import { debounce } from '../utils/helpers.js';
-import DOMPurify from 'dompurify';
-
 /**
  * FormValidator - Manages inline validation for forms
  * Provides immediate feedback, error prevention, and helpful messages
@@ -124,8 +122,8 @@ export class FormValidator {
         this.stateManager.markTouched(fieldId);
         if (timing === VALIDATION_TIMING.BLUR) {
           this._validateField(fieldId);
-        }
-      });
+          }
+        });
     }
 
     // Validate on input (immediate or debounced)
@@ -454,9 +452,9 @@ export class FormValidator {
           if (typeof rule === 'object' && rule !== null) {
             rules.push({ ...rule });
           } else {
-            rules.push(rule);
+          rules.push(rule);
           }
-        }
+        });
       }
 
       // Auto-detect common validation attributes

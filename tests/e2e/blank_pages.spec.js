@@ -20,7 +20,7 @@ test.describe('Blank Page Optimization', () => {
     });
 
     // 4. Wait for processing to complete
-    await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Imported 1 of 1 pages from test-1page.pdf' })).toBeVisible( { timeout: 10000 });
+    await expect(page.locator('#upload-status')).toHaveText('Imported 1 of 1 pages from test-1page.pdf', { timeout: 10000 });
 
     // 5. Get the image sources for blank pages
     // The default layout is 8 pages. Since we uploaded 1 page, pages 2-8 should be blank.

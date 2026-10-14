@@ -116,8 +116,7 @@ export class PDFProcessor extends MediaProcessor {
           try {
             await this.loadingTask?.destroy();
           } catch {
-            /* eslint-disable-next-line no-console */
-            console.warn('Failed to destroy PDF loading task on timeout');
+            logger.warn('Failed to destroy PDF loading task on timeout');
           }
           this.loadingTask = null;
           reject(new Error('PDF loading timed out'));

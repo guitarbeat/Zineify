@@ -14,7 +14,7 @@ test.skip('imports a 16-page PDF into a 4 x 4 layout and exports it', async ({ p
   const pdfPath = path.resolve('tests/assets/test-16-pages.pdf');
   await page.locator('#pdf-upload').setInputFiles(pdfPath);
 
-  await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Imported 16 of 16 pages from test-16-pages.pdf' })).toBeVisible( {
+  await expect(page.locator('#upload-status')).toHaveText('Imported 16 of 16 pages from test-16-pages.pdf', {
     timeout: 45000
   });
 

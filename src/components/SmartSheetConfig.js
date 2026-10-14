@@ -60,12 +60,7 @@ export class SmartSheetConfig {
     const isRecommended = orientation === recommendation?.best;
     const isCustom = paperSize === 'custom';
 
-    const currentPaper = resolvePaperSize(paperSize, this.state.customPaper);
     const fmt = (mm) => formatDimension(mm, unit);
-    const paper = resolvePaperSize(paperSize, this.state.customPaper);
-    const landscapeW = fmt(Math.max(paper.width, paper.height));
-    const landscapeH = fmt(Math.min(paper.width, paper.height));
-
     const currentPaper = resolvePaperSize(paperSize, this.state.customPaper);
     const paperWidth = currentPaper.width;
     const paperHeight = currentPaper.height;
@@ -271,15 +266,6 @@ export class SmartSheetConfig {
     this.render();
     this.emitChange();
   }
-
-
-  setOrientation(orientation) {
-    if (orientation === this.state.orientation) {return;}
-    this.state.orientation = orientation;
-    this.render();
-    this.emitChange();
-  }
-
   setPaperSize(paperSize) {
     // When switching to custom, seed dimensions from the currently shown paper.
     if (paperSize === 'custom') {

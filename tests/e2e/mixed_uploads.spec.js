@@ -9,7 +9,7 @@ function createPdfBuffer(label) {
 }
 
 async function waitForFinalStatus(page, text) {
-  await expect(page.locator('#toast-container')).toContainText(text, { timeout: 30000 });
+  await expect(page.locator('#upload-status')).toHaveText(text, { timeout: 30000 });
   await page.waitForFunction(() => {
     const progress = document.querySelector('#progress-container');
     return !progress || progress.classList.contains('hidden');

@@ -914,6 +914,63 @@ test.describe('PDFProcessor Media handling', () => {
         }
       }
     }
+  test('renderImageFile wraps drawImage error and executes cleanup in finally block', async () => {
+    let closed = false;
+    let revokedUrl = null;
+
+    const origCreateObjectURL = global.URL?.createObjectURL;
+    const origRevokeObjectURL = global.URL?.revokeObjectURL;
+
+    if (typeof global !== 'undefined') {
+      global.URL.createObjectURL = () => 'blob:draw-image-test';
+      global.URL.revokeObjectURL = (url) => { revokedUrl = url; };
+    }
+
+    processor.loadImageElement = async () => ({
+      width: 100,
+      height: 100,
+      close: () => { closed = true; }
+    });
+
+    const mockContext = {
+      fillStyle: '',
+      fillRect: () => {},
+      drawImage: () => {
+        throw new Error('Canvas drawImage error');
+      }
+    };
+
+    processor.createRenderCanvas = () => ({
+      canvas: {},
+      context: mockContext
+    });
+
+    try {
+      const file = new File(['fake-image-data'], 'test.png', { type: 'image/png' });
+
+      let thrownError;
+      try {
+        await processor.renderImageFile(file);
+      } catch (err) {
+        thrownError = err;
+      }
+
+      expect(thrownError).toBeDefined();
+      expect(thrownError.message).toBe('Image processing failed: Canvas drawImage error');
+      expect(thrownError.cause?.message).toBe('Canvas drawImage error');
+
+      expect(closed).toBe(true);
+      expect(revokedUrl).toBe('blob:draw-image-test');
+    } finally {
+      if (typeof global !== 'undefined') {
+        if (origCreateObjectURL !== undefined) {
+          global.URL.createObjectURL = origCreateObjectURL;
+        }
+        if (origRevokeObjectURL !== undefined) {
+          global.URL.revokeObjectURL = origRevokeObjectURL;
+        }
+      }
+    }
   });
 
   test('renderImageFile wraps error and closes imageSource when drawing on canvas fails', async () => {

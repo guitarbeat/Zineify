@@ -151,6 +151,7 @@ export class AppController {
 
   handleLayoutPresetChanged({ layoutPresetId, rows, cols }) {
     this.state.setLayoutPreset(layoutPresetId, { rows, cols });
+    this.state.totalPages = this.state.getFilledPageCount();
     this.state.resetWorkflowStatus();
     this.renderCurrentLayout();
   }

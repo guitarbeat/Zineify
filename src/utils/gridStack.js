@@ -1,8 +1,8 @@
 import { GridStack } from 'gridstack';
 import 'gridstack/dist/gridstack.min.css';
 
-const STORAGE_KEY_DESKTOP = 'zine-grid-v8';
-const STORAGE_KEY_MOBILE = 'zine-grid-mobile-v8';
+const STORAGE_KEY_DESKTOP = 'zine-grid-v9';
+const STORAGE_KEY_MOBILE = 'zine-grid-mobile-v9';
 const MOBILE_BREAKPOINT = 768;
 const CELL_HEIGHT = 32;
 const MOBILE_CELL_HEIGHT = 24;
@@ -279,6 +279,8 @@ export function initGridStack() {
     localStorage.removeItem('zine-grid-mobile-v1');
     localStorage.removeItem('zine-grid-v2');
     localStorage.removeItem('zine-grid-mobile-v2');
+    localStorage.removeItem('zine-grid-v8');
+    localStorage.removeItem('zine-grid-mobile-v8');
     location.reload();
   };
 

@@ -121,6 +121,42 @@ test.describe('PDFProcessor', () => {
     expect(pdfDestroyed).toBe(true);
   });
 
+  test('loadPDF throws error if loading times out', async () => {
+    const originalSetTimeout = global.setTimeout;
+    const originalClearTimeout = global.clearTimeout;
+
+    try {
+      global.setTimeout = (cb, ms) => {
+        if (ms === 60000) {
+          cb();
+          return 123;
+        }
+        return originalSetTimeout(cb, ms);
+      };
+      global.clearTimeout = () => {};
+
+      processor.ensurePdfJs = async () => ({
+        getDocument: () => ({
+          promise: new Promise(() => {}), // never resolves
+          destroy: async () => {}
+        })
+      });
+      processor.validateFile = () => ({ valid: true, errors: [] });
+      processor.validateFileSignature = async () => true;
+
+      if (typeof global !== 'undefined') {
+        global.URL.createObjectURL = () => 'blob:test';
+      }
+
+      const file = new File(['%PDF-1.4'], 'test.pdf', { type: 'application/pdf' });
+
+      await expect(processor.loadPDF(file)).rejects.toThrow('PDF loading timed out. The file may be corrupted or too large.');
+    } finally {
+      global.setTimeout = originalSetTimeout;
+      global.clearTimeout = originalClearTimeout;
+    }
+  });
+
   test('loadPDF throws error if already processing', async () => {
     processor.isProcessing = true;
     const file = new File(['%PDF-1.4'], 'test.pdf', { type: 'application/pdf' });

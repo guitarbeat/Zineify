@@ -392,6 +392,49 @@ test.describe('PDFProcessor', () => {
     expect(processor.pdf).not.toBeNull();
   });
 
+  test("renderPage propagates error from _internalRender and invokes onProgress callback", async () => {
+    let cleanupCalled = false;
+    let progressMessage = "";
+    processor.pdf = {
+      getPage: async () => ({
+        getViewport: ({ scale }) => ({ width: 100 * scale, height: 200 * scale }),
+        render: () => ({ promise: Promise.reject(new Error("Render stream error")) }),
+        cleanup: () => { cleanupCalled = true; }
+      })
+    };
+    processor.ensurePdfJs = async () => true;
+
+    await expect(processor.renderPage(1, (msg) => { progressMessage = msg; })).rejects.toThrow("Failed to render page 1");
+    expect(progressMessage).toBe("Rendering page 1...");
+    expect(cleanupCalled).toBe(true);
+  });
+
+  test("renderPageThumbnail propagates error from _internalRender and cleans up page", async () => {
+    let cleanupCalled = false;
+    processor.pdf = {
+      getPage: async () => ({
+        getViewport: ({ scale }) => ({ width: 100 * scale, height: 200 * scale }),
+        render: () => ({ promise: Promise.reject(new Error("Thumbnail render failed")) }),
+        cleanup: () => { cleanupCalled = true; }
+      })
+    };
+    processor.ensurePdfJs = async () => true;
+
+    await expect(processor.renderPageThumbnail(2)).rejects.toThrow("Failed to render page 2");
+    expect(cleanupCalled).toBe(true);
+  });
+
+  test("_internalRender handles ensurePdfJs error and wraps it properly", async () => {
+    processor.pdf = {
+      getPage: async () => ({})
+    };
+    processor.ensurePdfJs = async () => {
+      throw new Error("Failed to load PDF.js module");
+    };
+
+    await expect(processor._internalRender(1, () => 1.0)).rejects.toThrow("Failed to render page 1");
+  });
+
   test("loadPDF throws error if file size exceeds MAX_UPLOAD_FILE_SIZE", async () => {
     processor.ensurePdfJs = async () => ({});
     processor.validateFile = () => ({ valid: true, errors: [] });

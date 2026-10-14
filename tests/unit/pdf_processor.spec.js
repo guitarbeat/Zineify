@@ -72,6 +72,32 @@ test.describe('PDFProcessor', () => {
     expect(processor.handlePDFError(genericError).message).toContain('something else');
   });
 
+  test('cleanupFailedLoad logs warning when loadingTask destroy fails', async () => {
+    /* eslint-disable-next-line no-console */
+    const originalConsoleWarn = console.warn;
+    let loggedWarning = null;
+    let loggedError = null;
+    /* eslint-disable-next-line no-console */
+    console.warn = (msg, err) => {
+      loggedWarning = msg;
+      loggedError = err;
+    };
+
+    const destroyError = new Error('Destroy failed');
+    processor.loadingTask = {
+      destroy: async () => { throw destroyError; }
+    };
+
+    try {
+      await processor.cleanupFailedLoad();
+      expect(loggedWarning).toBe('Failed to destroy PDF loading task during cleanup:');
+      expect(loggedError).toBe(destroyError);
+    } finally {
+      /* eslint-disable-next-line no-console */
+      console.warn = originalConsoleWarn;
+    }
+  });
+
   test('cleanup frees resources', async () => {
     // Setup some mock state
     processor.isProcessing = true;

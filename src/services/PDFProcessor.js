@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger.js';
 import { validateUploadFile, MAX_UPLOAD_FILE_SIZE } from '../utils/fileValidation.js';
 import { formatFileSize } from '../utils/helpers.js';
 import { MediaProcessor } from './MediaProcessor.js';

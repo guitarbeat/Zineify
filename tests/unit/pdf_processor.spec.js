@@ -524,6 +524,9 @@ test.describe('PDFProcessor', () => {
     let pdfDestroyed = false;
     let revokedUrl = null;
 
+    let pdfDestroyed = false;
+    let revokedUrl = null;
+
     processor.loadingTask = {
       destroy: async () => {
         throw new Error("Task destroy failed");

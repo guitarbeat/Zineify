@@ -6,24 +6,16 @@
 }
 
 .upload-box {
-  border: 2px dashed var(--primary-vibrant);
-  border-radius: var(--radius-panel);
-  background-color: var(--surface-muted);
   min-height: 9rem;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: inset 0 0 0 1px var(--border-faint);
+  border: 1px dashed var(--primary-vibrant);
+  border-radius: var(--radius-panel);
+  background: var(--surface-muted);
 }
 
-.upload-box:hover, .upload-box:focus {
-  border-color: var(--primary-vibrant);
-  background-color: var(--primary-glow);
-  box-shadow: inset 0 0 0 1px var(--border-faint), var(--shadow-sm);
-}
+.upload-box:hover,
+.upload-box:focus,
 .upload-box.dragover {
-  border-color: var(--primary-vibrant);
-  border-width: 2px;
-  background-color: var(--primary-glow);
-  box-shadow: inset 0 0 0 2px var(--primary-vibrant), var(--shadow-md);
+  background: var(--primary-glow);
 }
 
 .upload-icon {
@@ -141,22 +133,10 @@
   transform: rotate(90deg);
 }
 
-.workspace-config-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1.25rem;
-  padding-bottom: 0.75rem;
-  margin-bottom: 0.75rem;
-  border-bottom: 2px solid var(--primary-vibrant);
-  position: relative;
-}
-
 .workspace-config-summary {
-  font-size: 0.73rem;
   color: var(--muted-ink);
-  line-height: 1.45;
+  font-size: 0.72rem;
+  line-height: 1.4;
 }
 
 .workspace-config-grid {
@@ -491,9 +471,8 @@ select:focus, input:focus {
 
 .action-button {
   border: 1px solid var(--border-color) !important;
-  border-radius: var(--radius-button) !important;
-  box-shadow: var(--shadow-sm);
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  border-radius: 3px !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
   font-weight: 700;
   letter-spacing: 0.02em;
   font-size: 0.82rem;
@@ -1064,32 +1043,25 @@ select.is-valid:focus {
   gap: 0.35rem;
 }
 
-.smart-sheet-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted-ink);
-}
-
 .smart-sheet-section {
   display: grid;
   gap: 0.3rem;
 }
 
-.smart-sheet-header {
+.smart-sheet-header,
+.workspace-config-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
-.smart-sheet-label {
-  font-size: 0.55rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.smart-sheet-label,
+.workspace-config-label {
   color: var(--muted-ink);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 .smart-sheet-status {

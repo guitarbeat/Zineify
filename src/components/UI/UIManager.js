@@ -143,10 +143,6 @@ export class UIManager {
     this.elements.uploadedFilesList.classList.remove('hidden');
     const wrapper = document.createElement('div');
     wrapper.className = 'base-panel';
-    const header = document.createElement('h4');
-    header.className = 'rail-section-title';
-    header.textContent = `Uploaded Files (${files.length})`;
-    wrapper.appendChild(header);
     files.forEach((file, index) => {
       const item = createUploadedFileItem(file, () => this.emitter.emit('removeUploadedFile', index));
       wrapper.appendChild(item);

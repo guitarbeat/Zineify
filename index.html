@@ -34,6 +34,9 @@
     <style>
       html, body { background-color: #fafafa; }
       html[data-theme="dark"], html[data-theme="dark"] body { background-color: #080808; }
+      /* Keep the image at its designed size while the bundled stylesheet loads. */
+      .brand-panel { box-sizing: border-box; overflow: hidden; }
+      .brand-panel .logo-image { display: block; width: auto; max-width: 14rem; height: 5rem; object-fit: contain; }
     </style>
 </head>
 

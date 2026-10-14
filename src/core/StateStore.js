@@ -11,7 +11,7 @@ export class StateStore {
     this.pageTransforms = {}; // { pageIndex: { rotation, fit, crop, pan, zoom } }
     this.pageNumberVisibility = {};
     this.selectedPageIndex = null;
-    this.layoutPresetId = 'layout-12';
+    this.layoutPresetId = 'mini-8';
     this.guideToggles = { fold: true, cut: true, boundaries: true, numbers: true, arrows: false, safeArea: false, margins: true };
     this.printSettings = { duplex: true, scale: 'fit', bleed: 0, trim: 0 };
     this.projectMeta = { name: 'Untitled zine', createdAt: Date.now(), updatedAt: Date.now() };

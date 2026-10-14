@@ -35,8 +35,8 @@ export const LAYOUT_PRESETS = {
   }
 };
 
-export function getLayoutPreset(id = 'layout-12') {
-  return LAYOUT_PRESETS[id] || LAYOUT_PRESETS['layout-12'];
+export function getLayoutPreset(id = 'mini-8') {
+  return LAYOUT_PRESETS[id] || LAYOUT_PRESETS['mini-8'];
 }
 
 export function normalizeLayoutPreset(preset, { rows, cols } = {}) {

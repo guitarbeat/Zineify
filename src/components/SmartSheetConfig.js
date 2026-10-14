@@ -38,7 +38,7 @@ export class SmartSheetConfig {
     this.state = {
       rows: FIXED_ROWS,
       cols: FIXED_COLS,
-      layoutPresetId: 'layout-12',
+      layoutPresetId: 'mini-8',
       paperSize: this.options.initialPaper,
       orientation: this.options.initialOrientation,
       margin: 0,
@@ -71,7 +71,7 @@ export class SmartSheetConfig {
             <span class="smart-sheet-hint">Choose how the sheet folds</span>
           </div>
           <div class="smart-sheet-preset-list" role="group" aria-label="Layout presets">
-            ${Object.values(LAYOUT_PRESETS).filter((preset) => preset.id === 'layout-12').map((preset) => `
+            ${Object.values(LAYOUT_PRESETS).filter((preset) => preset.id !== 'custom').map((preset) => `
               <button type="button" class="smart-sheet-preset ${this.state.layoutPresetId === preset.id ? 'is-active' : ''}" data-preset="${preset.id}" aria-pressed="${this.state.layoutPresetId === preset.id}">
                 <span>${preset.name}</span><small>${preset.sheetGrid.rows} × ${preset.sheetGrid.cols}</small>
               </button>

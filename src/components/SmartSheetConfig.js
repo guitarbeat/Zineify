@@ -62,6 +62,12 @@ export class SmartSheetConfig {
     const landscapeW = fmt(Math.max(paper.width, paper.height));
     const landscapeH = fmt(Math.min(paper.width, paper.height));
 
+    const currentPaper = resolvePaperSize(paperSize, this.state.customPaper);
+    const paperWidth = currentPaper.width;
+    const paperHeight = currentPaper.height;
+    const landscapeW = fmt(Math.max(paperWidth, paperHeight));
+    const landscapeH = fmt(Math.min(paperWidth, paperHeight));
+
     const fragment = DOMPurify.sanitize(`
       <div class="smart-sheet-config">
         <div class="smart-sheet-section smart-sheet-fixed-layout" aria-label="Zine format">

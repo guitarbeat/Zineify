@@ -320,6 +320,53 @@
     <div id="card-actions" class="sr-only" aria-hidden="true"></div>
     <div id="sidebar"     class="sr-only" aria-hidden="true"></div>
 
+
+    <!-- ── Page Picker Modal ────────────────────────────── -->
+    <div id="page-picker-modal" class="page-picker-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="page-picker-title" aria-describedby="page-picker-subtitle">
+        <!-- Backdrop -->
+        <div id="page-picker-backdrop" class="page-picker-backdrop" aria-hidden="true"></div>
+
+        <!-- Modal Panel -->
+        <div class="page-picker-panel">
+            <!-- Header -->
+            <div class="page-picker-header">
+                <div>
+                    <h2 id="page-picker-title" class="page-picker-title">Select Pages</h2>
+                    <p id="page-picker-subtitle" class="page-picker-subtitle">Pick up to 8 pages.</p>
+                </div>
+                <button type="button" id="page-picker-close" class="page-picker-close" aria-label="Close">
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="page-picker-body">
+                <!-- Preset Filters -->
+                <div class="page-picker-presets">
+                    <button type="button" id="page-picker-select-first" class="page-picker-chip action-button">First</button>
+                    <button type="button" id="page-picker-select-last" class="page-picker-chip action-button">Last</button>
+                    <button type="button" id="page-picker-select-even" class="page-picker-chip action-button">Even</button>
+                    <button type="button" id="page-picker-select-odd" class="page-picker-chip action-button">Odd</button>
+                    <button type="button" id="page-picker-clear" class="page-picker-chip page-picker-chip--clear action-button">Clear</button>
+                </div>
+
+                <!-- Grid -->
+                <div id="page-picker-grid" class="page-picker-grid">
+                    <!-- Thumbs injected here -->
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="page-picker-footer">
+                <div id="page-picker-count" class="page-picker-count">0 selected</div>
+                <div class="page-picker-footer-actions">
+                    <button type="button" id="page-picker-cancel" class="action-button">Cancel</button>
+                    <button type="button" id="page-picker-confirm" class="action-button action-button--primary" disabled>Import Selected</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ── Progress Overlay ─────────────────────────────── -->
     <div id="progress-container"
         class="fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 hidden bg-black/30 backdrop-blur-sm"

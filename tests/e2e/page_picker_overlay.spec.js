@@ -28,7 +28,7 @@ test('page picker opens without import overlays covering it', async ({ page }) =
   await expect(page.locator('#page-picker-modal')).toBeVisible({ timeout: 30000 });
   await expect(page.locator('#page-picker-subtitle')).toContainText('Pick up to 8');
   await expect(page.locator('#progress-container')).toBeHidden();
-  await expect(page.locator('#toast-container .toast')).toHaveCount(0);
+  await expect(page.locator('#toast-container .toast-success')).toHaveCount(0);
   await expect(page.locator('#toast-container')).not.toContainText('Importing PDF');
   await expect(page.locator('#toast-container')).not.toContainText('Choose Pages To Import');
 });

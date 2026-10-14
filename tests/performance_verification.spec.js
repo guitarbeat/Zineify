@@ -30,7 +30,7 @@ test('Verify basic PDF processing and page visibility', async ({ page }) => {
   await fileInput.setInputFiles(pdfPath);
 
   // Wait for processing to complete
-  await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Imported 1 of 1 pages from test-1-page.pdf' })).toBeVisible( { timeout: 15000 });
+  await expect(page.locator(".toast-success").filter({ hasText: 'Imported 1 of 1 pages from test-1-page.pdf' })).toBeVisible( { timeout: 15000 });
 
   // Check that page 1 is attached
   const page1Img = page.locator('.page-cell[data-page-index="0"] .page-content-img');

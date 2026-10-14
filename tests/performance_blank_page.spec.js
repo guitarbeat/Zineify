@@ -31,7 +31,7 @@ test('verify blank page blob URLs', async ({ page }) => {
   await page.setInputFiles('#pdf-upload', TEST_PDF_PATH);
 
   // Wait for processing to finish
-  await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Imported 1 of 1 pages from test-blank-page-repro.pdf' })).toBeVisible( { timeout: 20000 });
+  await expect(page.locator(".toast-success").filter({ hasText: 'Imported 1 of 1 pages from test-blank-page-repro.pdf' })).toBeVisible( { timeout: 20000 });
 
   const page1Image = page.locator('.page-cell[data-page-index="0"] .page-content-img');
   await expect(page1Image).toHaveAttribute('src', /^blob:/);
@@ -50,6 +50,6 @@ test('verify blank page blob URLs', async ({ page }) => {
   expect(uniqueBlankSrcs.size).toBe(1);
 
   await page.setInputFiles('#pdf-upload', TEST_PDF_PATH);
-  await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Imported 1 of 1 pages from test-blank-page-repro.pdf' })).toBeVisible( { timeout: 20000 });
+  await expect(page.locator(".toast-success").filter({ hasText: 'Imported 1 of 1 pages from test-blank-page-repro.pdf' })).toBeVisible( { timeout: 20000 });
   await expect(page.locator('.zine-grid .page-content-img')).toHaveCount(8);
 });

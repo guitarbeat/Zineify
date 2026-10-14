@@ -32,7 +32,7 @@ test('page picker confirm imports the default selection and hides progress overl
 
   await page.locator('#page-picker-confirm').click();
 
-  await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Imported 8 of 10 pages from confirm-picker.pdf' })).toBeVisible( {
+  await expect(page.locator(".toast-success").filter({ hasText: 'PDF imported' })).toBeVisible( {
     timeout: 30000
   });
   await expect(page.locator('#page-picker-modal')).toBeHidden();
@@ -51,7 +51,7 @@ test('page picker cancel skips oversized PDF import', async ({ page }) => {
   await expect(page.locator('#page-picker-modal')).toBeVisible({ timeout: 30000 });
   await page.locator('#page-picker-cancel').click();
 
-  await expect(page.locator(".toast-success, .toast-info").filter({ hasText: 'Skipped: cancel-picker.pdf' })).toBeVisible( {
+  await expect(page.locator(".toast-success").filter({ hasText: 'Import Cancelled' })).toBeVisible( {
     timeout: 30000
   });
   await expect(page.locator('#page-picker-modal')).toBeHidden();

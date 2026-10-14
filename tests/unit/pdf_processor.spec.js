@@ -444,8 +444,7 @@ test.describe('PDFProcessor', () => {
     try {
       await expect(processor.loadPDF(file)).rejects.toThrow('PDF loading timed out');
       expect(warnArgs).not.toBeNull();
-      expect(warnArgs[0]).toBe('Failed to destroy PDF loading task on timeout:');
-      expect(warnArgs[1].message).toBe('Destroy failed');
+      expect(warnArgs[0]).toBe('Failed to destroy PDF loading task on timeout');
     } finally {
       global.setTimeout = origSetTimeout;
       /* eslint-disable-next-line no-console */

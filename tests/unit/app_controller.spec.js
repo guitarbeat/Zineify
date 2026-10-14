@@ -79,7 +79,6 @@ test.describe('AppController', () => {
   });
 
   test('init handles pdfProcessor.initialize error correctly', async () => {
-    // Import modules dynamically after jsdom is set
     const { AppController } = await import('../../src/core/AppController.js');
     const { toast } = await import('../../src/components/Toast.js');
     const { PDFProcessor } = await import('../../src/services/PDFProcessor.js');
@@ -94,20 +93,20 @@ test.describe('AppController', () => {
 
     const originalInitialize = PDFProcessor.prototype.initialize;
     PDFProcessor.prototype.initialize = async () => {
+      /* eslint-disable-next-line no-console */
+      console.error('Mock PDF initialization failure');
       throw new Error('Mock PDF initialization failure');
     };
 
     try {
       const controller = new AppController();
 
-      // wait for the catch block to execute.
       await new Promise(resolve => setTimeout(resolve, 50));
 
       expect(toastErrorTitle).toBe('Initialization Failed');
       expect(toastErrorMessage).toBe('Mock PDF initialization failure');
       expect(controller).toBeDefined();
     } finally {
-      // restore
       PDFProcessor.prototype.initialize = originalInitialize;
       toast.error = originalToastError;
     }

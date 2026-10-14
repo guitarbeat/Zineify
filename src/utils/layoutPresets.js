@@ -1,13 +1,4 @@
 export const LAYOUT_PRESETS = {
-  'layout-12': {
-    id: 'layout-12', name: '12-page layout', pageCount: 12,
-    sheetGrid: { rows: 3, cols: 4 },
-    readingToPrintOrder: Array.from({ length: 12 }, (_, index) => index + 1),
-    rotations: Array(12).fill(0),
-    cutLines: [],
-    foldLines: [{ type: 'vertical', at: 25 }, { type: 'vertical', at: 50 }, { type: 'vertical', at: 75 }, { type: 'horizontal', at: 33.333 }, { type: 'horizontal', at: 66.667 }],
-    foldSequence: ['Fold the sheet into three rows and four columns to create the 12-page layout.']
-  },
   'mini-8': {
     id: 'mini-8', name: '8-page mini zine', pageCount: 8,
     sheetGrid: { rows: 2, cols: 4 },
@@ -35,8 +26,8 @@ export const LAYOUT_PRESETS = {
   }
 };
 
-export function getLayoutPreset(id = 'layout-12') {
-  return LAYOUT_PRESETS[id] || LAYOUT_PRESETS['layout-12'];
+export function getLayoutPreset(id = 'mini-8') {
+  return LAYOUT_PRESETS[id] || LAYOUT_PRESETS['mini-8'];
 }
 
 export function normalizeLayoutPreset(preset, { rows, cols } = {}) {
@@ -65,7 +56,7 @@ export function mapReadingPageToPrint(pageNumber, preset) {
   return { readingPage: Number(pageNumber), sheetIndex: 0, slotIndex, rotation: normalized.rotations[slotIndex] || 0 };
 }
 
-export function buildPrintCheck({ preset = 'layout-12', paperSize = 'letter', orientation = 'landscape', pageCount = 0, printSettings = {}, margin = 0 } = {}) {
+export function buildPrintCheck({ preset = 'mini-8', paperSize = 'letter', orientation = 'landscape', pageCount = 0, printSettings = {}, margin = 0 } = {}) {
   const normalized = normalizeLayoutPreset(preset);
   const sheets = Math.max(1, Math.ceil(Math.max(pageCount, normalized.pageCount || normalized.capacity) / normalized.capacity));
   return {

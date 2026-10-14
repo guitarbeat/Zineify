@@ -467,15 +467,8 @@ export class AppController {
   getCurrentTemplate() {
     const { rows, cols } = this.state.gridSize;
 
-    if (rows === 3 && cols === 4) {
-      return {
-        label: '12-Page Layout',
-        grid: { rows: 3, cols: 4 },
-        layout: Array.from({ length: 12 }, (_, index) => ({
-          page: index + 1,
-          upsideDown: false
-        }))
-      };
+    if (rows === 2 && cols === 4) {
+      return 'mini-8';
     }
 
     return {

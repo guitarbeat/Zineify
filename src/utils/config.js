@@ -59,14 +59,6 @@ export function resolvePaperSize(paperSize, customPaper) {
  * layout: Array of [pageNumber, isUpsideDown] tuples in grid order (row by row)
  */
 export const ZINE_TEMPLATES = {
-    'layout-12': {
-        label: '12-Page Layout',
-        pages: 12,
-        grid: { rows: 3, cols: 4 },
-        layout: Array.from({ length: 12 }, (_, index) => ({ page: index + 1, upsideDown: false })),
-        upsideDownPages: [],
-        description: '1 sheet, 3×4 grid for 12 pages.'
-    },
     'mini-8': {
         label: '8-Page Mini-Zine',
         pages: 8,

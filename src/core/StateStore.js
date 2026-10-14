@@ -4,18 +4,18 @@
  */
 export class StateStore {
   constructor() {
-    this.allPageImages = new Array(12).fill(null);
+    this.allPageImages = new Array(8).fill(null);
     this._blankPageUrl = null;
     this.pageFlips = {}; // { pageIndex: boolean }
     this.pageZooms = {}; // { pageIndex: boolean }
     this.pageTransforms = {}; // { pageIndex: { rotation, fit, crop, pan, zoom } }
     this.pageNumberVisibility = {};
     this.selectedPageIndex = null;
-    this.layoutPresetId = 'layout-12';
+    this.layoutPresetId = 'mini-8';
     this.guideToggles = { fold: true, cut: true, boundaries: true, numbers: true, arrows: false, safeArea: false, margins: true };
     this.printSettings = { duplex: true, scale: 'fit', bleed: 0, trim: 0 };
     this.projectMeta = { name: 'Untitled zine', createdAt: Date.now(), updatedAt: Date.now() };
-    this.gridSize = { rows: 3, cols: 4 };
+    this.gridSize = { rows: 2, cols: 4 };
     this.uploadedFiles = [];
     this.totalPages = 0;
     this.fileQueue = [];

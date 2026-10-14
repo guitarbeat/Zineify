@@ -618,7 +618,13 @@ export class UIManager {
       ? ZINE_TEMPLATES[templateType || 'mini-8']
       : (templateType || ZINE_TEMPLATES['mini-8']);
 
+    const noop = () => {};
     const handlers = {
+      onDragStart: noop,
+      onDragOver: noop,
+      onDragLeave: noop,
+      onDrop: noop,
+      onDragEnd: noop,
       onClick: (_, index) => {
         const cell = this._getPageCell(index);
         const hasPage = cell?.classList.contains('has-page');

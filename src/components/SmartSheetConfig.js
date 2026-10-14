@@ -8,7 +8,6 @@ import {
 
   formatDimension,
   resolvePaperSize,
-  LAYOUT_PRESETS
 } from '../utils/config.js';
 
 const FIXED_ROWS = 2;
@@ -65,17 +64,10 @@ export class SmartSheetConfig {
 
     const fragment = DOMPurify.sanitize(`
       <div class="smart-sheet-config">
-        <div class="smart-sheet-section smart-sheet-presets">
+        <div class="smart-sheet-section smart-sheet-fixed-layout" aria-label="Zine format">
           <div class="smart-sheet-header">
-            <span class="smart-sheet-label">Layout</span>
-            <span class="smart-sheet-hint">Choose how the sheet folds</span>
-          </div>
-          <div class="smart-sheet-preset-list" role="group" aria-label="Layout presets">
-            ${Object.values(LAYOUT_PRESETS).filter((preset) => preset.id !== 'custom').map((preset) => `
-              <button type="button" class="smart-sheet-preset ${this.state.layoutPresetId === preset.id ? 'is-active' : ''}" data-preset="${preset.id}" aria-pressed="${this.state.layoutPresetId === preset.id}">
-                <span>${preset.name}</span><small>${preset.sheetGrid.rows} × ${preset.sheetGrid.cols}</small>
-              </button>
-            `).join('')}
+            <span class="smart-sheet-label">8-page mini zine</span>
+            <span class="smart-sheet-hint">Fixed 2 × 4 layout</span>
           </div>
         </div>
 
@@ -189,12 +181,6 @@ export class SmartSheetConfig {
   }
 
   handleClick(e) {
-    const presetBtn = e.target.closest('[data-preset]');
-    if (presetBtn) {
-      this.setPreset(presetBtn.dataset.preset);
-      return;
-    }
-
     const unitBtn = e.target.closest('.smart-sheet-unit-btn');
     if (unitBtn) {
       this.setUnit(unitBtn.dataset.unit);
@@ -217,16 +203,6 @@ export class SmartSheetConfig {
   }
 
   handleChange(e) {
-    if (e.target.matches('[data-field="rows"], [data-field="cols"]')) {
-      const field = e.target.dataset.field;
-      const value = Math.min(10, Math.max(1, Number.parseInt(e.target.value, 10) || 1));
-      this.state[field] = value;
-      this.state.layoutPresetId = 'custom';
-      this.render();
-      this.emitChange();
-      return;
-    }
-
     if (e.target.matches('.smart-sheet-select')) {
       this.setPaperSize(e.target.value);
       return;
@@ -251,16 +227,6 @@ export class SmartSheetConfig {
   clampMargin(value) {
     if (Number.isNaN(value)) {return MARGIN_MIN;}
     return Math.min(MARGIN_MAX, Math.max(MARGIN_MIN, value));
-  }
-
-  setPreset(layoutPresetId) {
-    const preset = LAYOUT_PRESETS[layoutPresetId];
-    if (!preset) {return;}
-    this.state.layoutPresetId = layoutPresetId;
-    this.state.rows = preset.sheetGrid.rows;
-    this.state.cols = preset.sheetGrid.cols;
-    this.render();
-    this.emitChange();
   }
 
   setMargin(margin) {

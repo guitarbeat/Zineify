@@ -143,14 +143,14 @@ test.describe('ExportService', () => {
       const cellH = 100; // 1:1 aspect
 
       // test contain
-      exportService._drawCell(mockCtx, img, 0, 0, cellW, cellH, 0, 1, 'contain');
+      exportService._drawCell({ ctx: mockCtx, img, cellX: 0, cellY: 0, cellW, cellH, rotateDeg: 0, scale: 1, objectFit: 'contain' });
       // Img aspect > cell aspect. Contains means width matches cell width. Width = 100.
       // Height = 100 / 2 = 50.
       expect(drawImageArgs[3]).toBeCloseTo(100);
       expect(drawImageArgs[4]).toBeCloseTo(50);
 
       // test cover
-      exportService._drawCell(mockCtx, img, 0, 0, cellW, cellH, 0, 1, 'cover');
+      exportService._drawCell({ ctx: mockCtx, img, cellX: 0, cellY: 0, cellW, cellH, rotateDeg: 0, scale: 1, objectFit: 'cover' });
       // Img aspect > cell aspect. Cover means height matches cell height. Height = 100.
       // Width = 100 * 2 = 200.
       expect(drawImageArgs[3]).toBeCloseTo(200);
@@ -173,12 +173,12 @@ test.describe('ExportService', () => {
       const cellH = 100; // 1:1 aspect
 
       // contain: height caps at cell height. Height = 100. Width = 100 / 2 = 50.
-      exportService._drawCell(mockCtx, img, 0, 0, cellW, cellH, 0, 1, 'contain');
+      exportService._drawCell({ ctx: mockCtx, img, cellX: 0, cellY: 0, cellW, cellH, rotateDeg: 0, scale: 1, objectFit: 'contain' });
       expect(drawImageArgs[3]).toBeCloseTo(50);
       expect(drawImageArgs[4]).toBeCloseTo(100);
 
       // cover: width caps at cell width. Width = 100. Height = 100 * 2 = 200.
-      exportService._drawCell(mockCtx, img, 0, 0, cellW, cellH, 0, 1, 'cover');
+      exportService._drawCell({ ctx: mockCtx, img, cellX: 0, cellY: 0, cellW, cellH, rotateDeg: 0, scale: 1, objectFit: 'cover' });
       expect(drawImageArgs[3]).toBeCloseTo(100);
       expect(drawImageArgs[4]).toBeCloseTo(200);
     });

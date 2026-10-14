@@ -153,7 +153,7 @@ export class ExportService {
     return imagePromise;
   }
 
-  _drawCell(ctx, img, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit) {
+  _drawCell({ ctx, img, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit }) {
     ctx.save();
     ctx.beginPath();
     ctx.rect(cellX, cellY, cellW, cellH);

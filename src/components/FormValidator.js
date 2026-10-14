@@ -456,7 +456,7 @@ export class FormValidator {
           } else {
             rules.push(rule);
           }
-        });
+        }
       }
 
       // Auto-detect common validation attributes

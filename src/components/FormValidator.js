@@ -13,6 +13,7 @@ import {
   createConstraintHint
 } from '../utils/formValidation.js';
 import { debounce } from '../utils/helpers.js';
+import DOMPurify from 'dompurify';
 
 /**
  * FormValidator - Manages inline validation for forms

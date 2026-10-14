@@ -586,10 +586,10 @@ test.describe('PDFProcessor', () => {
   });
 
   test('loadPDF logs console.warn when destroying loadingTask fails during timeout', async () => {
-    let warnArgs = null;
+    const warnMessages = [];
     const origWarn = console.warn;
     /* eslint-disable-next-line no-console */
-    console.warn = (...args) => { warnArgs = args; };
+    console.warn = (...args) => { warnMessages.push(args); };
 
     processor.ensurePdfJs = async () => ({
       getDocument: () => ({

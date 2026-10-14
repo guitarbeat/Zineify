@@ -65,7 +65,7 @@ export function mapReadingPageToPrint(pageNumber, preset) {
   return { readingPage: Number(pageNumber), sheetIndex: 0, slotIndex, rotation: normalized.rotations[slotIndex] || 0 };
 }
 
-export function buildPrintCheck({ preset = 'layout-12', paperSize = 'letter', orientation = 'landscape', pageCount = 0, printSettings = {}, margin = 0 } = {}) {
+export function buildPrintCheck({ preset = 'mini-8', paperSize = 'letter', orientation = 'landscape', pageCount = 0, printSettings = {}, margin = 0 } = {}) {
   const normalized = normalizeLayoutPreset(preset);
   const sheets = Math.max(1, Math.ceil(Math.max(pageCount, normalized.pageCount || normalized.capacity) / normalized.capacity));
   return {

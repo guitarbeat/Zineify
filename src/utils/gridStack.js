@@ -279,6 +279,8 @@ export function initGridStack() {
     localStorage.removeItem('zine-grid-mobile-v1');
     localStorage.removeItem('zine-grid-v2');
     localStorage.removeItem('zine-grid-mobile-v2');
+    localStorage.removeItem('zine-grid-v8');
+    localStorage.removeItem('zine-grid-mobile-v8');
     location.reload();
   };
 

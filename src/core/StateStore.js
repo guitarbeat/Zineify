@@ -15,7 +15,7 @@ export class StateStore {
     this.guideToggles = { fold: true, cut: true, boundaries: true, numbers: true, arrows: false, safeArea: false, margins: true };
     this.printSettings = { duplex: true, scale: 'fit', bleed: 0, trim: 0 };
     this.projectMeta = { name: 'Untitled zine', createdAt: Date.now(), updatedAt: Date.now() };
-    this.gridSize = { rows: 3, cols: 4 };
+    this.gridSize = { rows: 2, cols: 4 };
     this.uploadedFiles = [];
     this.totalPages = 0;
     this.fileQueue = [];

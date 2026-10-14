@@ -10,6 +10,9 @@ import {
   resolvePaperSize,
 } from '../utils/config.js';
 
+const PAPER_SIZES_ARRAY = Object.entries(PAPER_SIZES);
+const UNITS_ARRAY = Object.entries(UNITS);
+
 const FIXED_ROWS = 2;
 const FIXED_COLS = 4;
 
@@ -82,7 +85,7 @@ export class SmartSheetConfig {
           <div class="smart-sheet-header">
             <span class="smart-sheet-label">Paper Size</span>
             <div class="smart-sheet-unit-seg" role="group" aria-label="Measurement units">
-              ${Object.entries(UNITS).map(([key, u]) => `
+              ${UNITS_ARRAY.map(([key, u]) => `
                 <button type="button"
                   class="smart-sheet-unit-btn ${unit === key ? 'is-active' : ''}"
                   data-unit="${key}"
@@ -117,7 +120,7 @@ export class SmartSheetConfig {
           </span>
 
           <select class="smart-sheet-select" data-field="paperSize">
-            ${Object.entries(PAPER_SIZES).map(([key, p]) => `
+            ${PAPER_SIZES_ARRAY.map(([key, p]) => `
               <option value="${key}" ${paperSize === key ? 'selected' : ''}>
                 ${p.label} (${fmt(p.width)}×${fmt(p.height)}${unitDef.label})
               </option>

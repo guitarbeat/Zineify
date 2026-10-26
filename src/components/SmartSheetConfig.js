@@ -69,52 +69,20 @@ export class SmartSheetConfig {
 
     const fragment = DOMPurify.sanitize(`
       <div class="smart-sheet-config">
-        <div class="smart-sheet-section smart-sheet-fixed-layout" aria-label="Zine format">
-          <div class="smart-sheet-header">
-            <span class="smart-sheet-label">8-page mini zine</span>
-            <span class="smart-sheet-hint">Fixed 2 × 4 layout</span>
+        <div class="card-header-inline">
+          <h3 class="card-section-title">Layout &amp; paper</h3>
+          <div class="smart-sheet-unit-seg" role="group" aria-label="Measurement units">
+            ${UNITS_ARRAY.map(([key, u]) => `
+              <button type="button"
+                class="smart-sheet-unit-btn ${unit === key ? 'is-active' : ''}"
+                data-unit="${key}"
+                aria-pressed="${unit === key}">${u.label}</button>
+            `).join('')}
           </div>
         </div>
 
-        <div class="smart-sheet-section">
-          <div class="smart-sheet-header">
-            <span class="smart-sheet-label">Paper size</span>
-            <div class="smart-sheet-unit-seg" role="group" aria-label="Measurement units">
-              ${UNITS_ARRAY.map(([key, u]) => `
-                <button type="button"
-                  class="smart-sheet-unit-btn ${unit === key ? 'is-active' : ''}"
-                  data-unit="${key}"
-                  aria-pressed="${unit === key}">${u.label}</button>
-              `).join('')}
-            </div>
-          </div>
-
-          <div class="smart-sheet-header">
-            <span class="smart-sheet-label">Orientation</span>
-            <div class="smart-sheet-orientation-seg" role="group" aria-label="Page orientation">
-              <button type="button"
-                class="smart-sheet-orientation-btn ${orientation === 'portrait' ? 'is-active' : ''}"
-                data-value="portrait"
-                aria-pressed="${orientation === 'portrait'}">
-                <span class="material-symbols-outlined">portrait</span>
-                Portrait <span class="smart-sheet-dim">(${landscapeH}×${landscapeW})</span>
-              </button>
-              <button type="button"
-                class="smart-sheet-orientation-btn ${orientation === 'landscape' ? 'is-active' : ''}"
-                data-value="landscape"
-                aria-pressed="${orientation === 'landscape'}">
-                <span class="material-symbols-outlined">landscape</span>
-                Landscape <span class="smart-sheet-dim">(${landscapeW}×${landscapeH})</span>
-              </button>
-            </div>
-          </div>
-
-          <span class="smart-sheet-paper-recommend ${isRecommended && !isCustom ? 'is-visible' : ''}">
-            <span class="material-symbols-outlined">check_circle</span>
-            ${recommendation?.reason || ''}
-          </span>
-
-          <select class="smart-sheet-select" data-field="paperSize">
+        <div class="smart-sheet-inline-row">
+          <select class="smart-sheet-select" data-field="paperSize" aria-label="Paper size">
             ${PAPER_SIZES_ARRAY.map(([key, p]) => `
               <option value="${key}" ${paperSize === key ? 'selected' : ''}>
                 ${p.label} (${fmt(p.width)}×${fmt(p.height)}${unitDef.label})
@@ -122,56 +90,73 @@ export class SmartSheetConfig {
             `).join('')}
             <option value="custom" ${isCustom ? 'selected' : ''}>Custom size…</option>
           </select>
-
-          ${isCustom ? `
-          <div class="smart-sheet-custom-size">
-            <label class="smart-sheet-custom-field">
-              <span class="smart-sheet-custom-caption">Width</span>
-              <input type="number" class="smart-sheet-custom-input" data-field="customWidth"
-                min="1" step="${unitDef.inputStep}"
-                value="${formatDimension(this.state.customPaper.width, unit)}"
-                aria-label="Custom width in ${unitDef.label}" />
-            </label>
-            <span class="smart-sheet-custom-x">×</span>
-            <label class="smart-sheet-custom-field">
-              <span class="smart-sheet-custom-caption">Height</span>
-              <input type="number" class="smart-sheet-custom-input" data-field="customHeight"
-                min="1" step="${unitDef.inputStep}"
-                value="${formatDimension(this.state.customPaper.height, unit)}"
-                aria-label="Custom height in ${unitDef.label}" />
-            </label>
-            <span class="smart-sheet-custom-unit">${unitDef.label}</span>
-          </div>
-          ` : ''}
         </div>
 
-        <div class="smart-sheet-section">
-          <div class="smart-sheet-header">
-            <span class="smart-sheet-label">Margin</span>
-            <div class="smart-sheet-margin-stepper">
-              <button type="button" class="smart-sheet-stepper-btn" data-margin-delta="-1" aria-label="Decrease margin" ${margin <= MARGIN_MIN ? 'disabled' : ''}>
-                <span class="material-symbols-outlined">remove</span>
-              </button>
-              <span class="smart-sheet-margin-value">
-                <span data-margin-display>${formatDimension(margin, unit)}</span>
-                <span class="smart-sheet-times">${unitDef.label}</span>
-              </span>
-              <button type="button" class="smart-sheet-stepper-btn" data-margin-delta="1" aria-label="Increase margin" ${margin >= MARGIN_MAX ? 'disabled' : ''}>
-                <span class="material-symbols-outlined">add</span>
-              </button>
-            </div>
-          </div>
+        ${isCustom ? `
+        <div class="smart-sheet-custom-size">
+          <label class="smart-sheet-custom-field">
+            <span class="smart-sheet-custom-caption">W</span>
+            <input type="number" class="smart-sheet-custom-input" data-field="customWidth"
+              min="1" step="${unitDef.inputStep}"
+              value="${formatDimension(this.state.customPaper.width, unit)}"
+              aria-label="Custom width in ${unitDef.label}" />
+          </label>
+          <span class="smart-sheet-custom-x">×</span>
+          <label class="smart-sheet-custom-field">
+            <span class="smart-sheet-custom-caption">H</span>
+            <input type="number" class="smart-sheet-custom-input" data-field="customHeight"
+              min="1" step="${unitDef.inputStep}"
+              value="${formatDimension(this.state.customPaper.height, unit)}"
+              aria-label="Custom height in ${unitDef.label}" />
+          </label>
+          <span class="smart-sheet-custom-unit">${unitDef.label}</span>
+        </div>
+        ` : ''}
 
-          <div class="smart-sheet-margin-control">
-            <input
-              type="range"
-              class="smart-sheet-margin-slider"
-              data-field="margin"
-              min="${MARGIN_MIN}"
-              max="${MARGIN_MAX}"
-              step="0.5"
-              value="${margin}"
-              aria-label="Sheet margin in ${unitDef.label}" />
+        <div class="smart-sheet-orientation-seg" role="group" aria-label="Page orientation">
+          <button type="button"
+            class="smart-sheet-orientation-btn ${orientation === 'portrait' ? 'is-active' : ''}"
+            data-value="portrait"
+            aria-pressed="${orientation === 'portrait'}"
+            title="Portrait (${landscapeH}×${landscapeW}${unitDef.label})">
+            <span class="material-symbols-outlined">portrait</span>
+            <span>Portrait</span>
+          </button>
+          <button type="button"
+            class="smart-sheet-orientation-btn ${orientation === 'landscape' ? 'is-active' : ''}"
+            data-value="landscape"
+            aria-pressed="${orientation === 'landscape'}"
+            title="Landscape (${landscapeW}×${landscapeH}${unitDef.label})">
+            <span class="material-symbols-outlined">landscape</span>
+            <span>Landscape</span>
+          </button>
+        </div>
+
+        <span class="smart-sheet-paper-recommend sr-only ${isRecommended && !isCustom ? 'is-visible' : ''}">
+          ${recommendation?.reason || ''}
+        </span>
+
+        <div class="smart-sheet-margin-inline-row">
+          <span class="smart-sheet-label">Margin</span>
+          <input
+            type="range"
+            class="smart-sheet-margin-slider"
+            data-field="margin"
+            min="${MARGIN_MIN}"
+            max="${MARGIN_MAX}"
+            step="0.5"
+            value="${margin}"
+            aria-label="Sheet margin in ${unitDef.label}" />
+          <div class="smart-sheet-margin-stepper">
+            <button type="button" class="smart-sheet-stepper-btn" data-margin-delta="-1" aria-label="Decrease margin" ${margin <= MARGIN_MIN ? 'disabled' : ''}>
+              <span class="material-symbols-outlined">remove</span>
+            </button>
+            <span class="smart-sheet-margin-value">
+              <span data-margin-display>${formatDimension(margin, unit)}</span><span class="smart-sheet-times">${unitDef.label}</span>
+            </span>
+            <button type="button" class="smart-sheet-stepper-btn" data-margin-delta="1" aria-label="Increase margin" ${margin >= MARGIN_MAX ? 'disabled' : ''}>
+              <span class="material-symbols-outlined">add</span>
+            </button>
           </div>
         </div>
       </div>

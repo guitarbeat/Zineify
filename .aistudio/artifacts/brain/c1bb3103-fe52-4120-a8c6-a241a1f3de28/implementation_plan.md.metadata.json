@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan to remove the separate top bar headers from sidebar cards, make card bodies directly draggable with proper input exclusions, integrate clean section headers inside each card body, and optimize vertical space so all controls fit the viewport without overlapping.",
-  "updatedAt":  "2026-10-26T02:37:40.771660232Z",
+  "summary":  "Implementation plan to eliminate all internal scrollbars from draggable sidebar panels by redesigning panel controls into compact single-row inline layouts, fixing the Orientation button text collision, and allocating balanced GridStack row proportions.",
+  "updatedAt":  "2026-10-26T02:48:03.600596553Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

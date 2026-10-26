@@ -258,15 +258,25 @@ html, body {
   user-select: auto;
 }
 
+.card-header-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  min-height: 1.45rem;
+  flex-shrink: 0;
+}
+
 .card-section-title {
   font-family: var(--font-display);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: -0.015em;
   text-transform: none;
   color: var(--accent-dark);
-  line-height: 1.2;
-  margin: 0 0 0.15rem 0;
+  line-height: 1.15;
+  margin: 0;
+  white-space: nowrap;
 }
 
 .snap-card-handle {
@@ -451,14 +461,37 @@ html, body {
 .snap-card-body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0.45rem 0.6rem;
-  overflow-y: auto;
-  overflow-x: hidden;
+  height: 100%;
+  padding: 0.4rem 0.6rem;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--muted-ink) 35%, transparent) transparent;
+  justify-content: space-between;
+  gap: 0.25rem;
+  box-sizing: border-box;
+}
+
+.upload-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.25rem;
+  height: 100%;
+}
+
+#settings-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+#smart-sheet-config-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Zine Canvas Card Body */
@@ -510,31 +543,36 @@ html, body {
 .display-card-body {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.35rem 0.55rem;
+  justify-content: space-between;
+  gap: 0.2rem;
+  padding: 0.4rem 0.6rem;
+  height: 100%;
 }
 
-.display-card-actions,
-.display-reset-row {
-  margin-top: 0.15rem;
-  padding-top: 0.35rem;
-  border-top: 1px solid var(--border-faint);
+.display-toggles-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0.1rem;
 }
 
 .display-reset-btn {
-  width: 100%;
-  min-height: 1.75rem;
-  padding: 0.25rem 0.5rem;
+  width: auto;
+  min-height: 1.45rem;
+  padding: 0.15rem 0.45rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
+  gap: 0.2rem;
   font-family: var(--font-sans);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-transform: none;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 

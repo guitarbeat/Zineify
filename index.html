@@ -58,16 +58,6 @@
                                     <button id="theme-toggle" type="button" class="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
                                         <span class="material-symbols-outlined icon-compact" id="theme-icon" aria-hidden="true">dark_mode</span>
                                     </button>
-                                    <span class="snap-card-grip brand-grip" aria-hidden="true" title="Drag to move panel">
-                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
-                                            <circle cx="2" cy="2" r="1.1" />
-                                            <circle cx="6" cy="2" r="1.1" />
-                                            <circle cx="2" cy="6" r="1.1" />
-                                            <circle cx="6" cy="6" r="1.1" />
-                                            <circle cx="2" cy="10" r="1.1" />
-                                            <circle cx="6" cy="10" r="1.1" />
-                                        </svg>
-                                    </span>
                                 </div>
                             </div>
                             <div class="app-header-actions">
@@ -122,23 +112,22 @@
                 </div>
 
                 <!-- ── Add Pages Card ────────────────────────────────── -->
-                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="2" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="3">
+                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="2" gs-w="4" gs-h="2" gs-min-w="3" gs-min-h="2">
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-upload">
-                            <div class="snap-card-body">
-                                <h3 class="card-section-title">Add pages</h3>
-                                <div class="upload-flow">
-                                    <div id="upload-zone" class="upload-box flex flex-col items-center justify-center gap-1 text-center p-3 cursor-pointer"
-                                        role="button" tabindex="0"
-                                        aria-label="Drop PDF or image files here, or press Enter to browse">
-                                        <i data-lucide="upload" class="upload-icon" aria-hidden="true"></i>
-                                        <span class="upload-title">Drop PDF or images</span>
-                                        <span class="upload-copy">Up to 8 pages per sheet</span>
-                                    </div>
+                            <div class="snap-card-body upload-card-body">
+                                <div class="card-header-inline">
+                                    <h3 class="card-section-title">Add pages</h3>
                                     <button id="browse-files-btn" type="button" class="browse-files-btn">
                                         <i data-lucide="folder-open" aria-hidden="true"></i>
-                                        Choose files
+                                        <span>Choose files</span>
                                     </button>
+                                </div>
+                                <div id="upload-zone" class="upload-box cursor-pointer"
+                                    role="button" tabindex="0"
+                                    aria-label="Drop PDF or image files here, or press Enter to browse">
+                                    <i data-lucide="upload" class="upload-icon" aria-hidden="true"></i>
+                                    <span class="upload-title">Drop PDF or images</span>
                                 </div>
                                 <input type="file" id="pdf-upload" class="sr-only"
                                     accept="application/pdf,image/png,image/jpeg,image/webp"
@@ -151,11 +140,10 @@
                 </div>
 
                 <!-- ── Layout & Paper Card ───────────────────────────── -->
-                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="5" gs-w="4" gs-h="4" gs-min-w="3" gs-min-h="3">
+                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="4" gs-w="4" gs-h="5" gs-min-w="3" gs-min-h="3">
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-settings">
                             <div class="snap-card-body" id="settings-group">
-                                <h3 class="card-section-title">Layout &amp; paper</h3>
                                 <div id="smart-sheet-config-container"></div>
                                 <input type="hidden" id="paper-size-select" value="letter" />
                                 <input type="hidden" id="orientation-toggle" value="landscape" />
@@ -171,27 +159,29 @@
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-display">
                             <div class="snap-card-body display-card-body">
-                                <h3 class="card-section-title">Display</h3>
-                                <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-numbers">
-                                    <span class="workspace-config-toggle-copy">Page numbers</span>
-                                    <input type="checkbox" id="show-page-numbers" checked class="workspace-config-toggle-input" />
-                                    <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
-                                </label>
-                                <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-controls">
-                                    <span class="workspace-config-toggle-copy">Page controls</span>
-                                    <input type="checkbox" id="show-page-controls" checked class="workspace-config-toggle-input" />
-                                    <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
-                                </label>
-                                <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="toggle-cut-marks">
-                                    <span class="workspace-config-toggle-copy">Cut &amp; fold guides</span>
-                                    <input type="checkbox" id="toggle-cut-marks" checked class="workspace-config-toggle-input" />
-                                    <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
-                                </label>
-                                <div class="display-card-actions">
+                                <div class="card-header-inline">
+                                    <h3 class="card-section-title">Display</h3>
                                     <button id="reset-layout-btn" type="button" class="action-button display-reset-btn" aria-label="Reset panel layout" title="Snap all panels back to default layout">
                                         <span class="material-symbols-outlined icon-compact" aria-hidden="true">grid_view</span>
-                                        <span>Reset panel layout</span>
+                                        <span>Reset</span>
                                     </button>
+                                </div>
+                                <div class="display-toggles-list">
+                                    <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-numbers">
+                                        <span class="workspace-config-toggle-copy">Page numbers</span>
+                                        <input type="checkbox" id="show-page-numbers" checked class="workspace-config-toggle-input" />
+                                        <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
+                                    </label>
+                                    <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-controls">
+                                        <span class="workspace-config-toggle-copy">Page controls</span>
+                                        <input type="checkbox" id="show-page-controls" checked class="workspace-config-toggle-input" />
+                                        <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
+                                    </label>
+                                    <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="toggle-cut-marks">
+                                        <span class="workspace-config-toggle-copy">Cut &amp; fold guides</span>
+                                        <input type="checkbox" id="toggle-cut-marks" checked class="workspace-config-toggle-input" />
+                                        <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
+                                    </label>
                                 </div>
                             </div>
                         </div>

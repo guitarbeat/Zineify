@@ -41,38 +41,10 @@
 
     <div class="app-shell">
         <main class="gs-wrapper" id="workspace-main" tabindex="-1">
+            <div class="workspace-back-logo" aria-hidden="true">
+                <img src="/icons/zine-ify-logo.jpg" alt="" class="workspace-back-logo-img" />
+            </div>
             <div class="grid-stack">
-
-                <!-- ── Brand & Primary Actions Card ───────────────────── -->
-                <div class="grid-stack-item" gs-id="brand" gs-x="0" gs-y="0" gs-w="4" gs-h="2" gs-min-w="3" gs-min-h="2">
-                    <div class="grid-stack-item-content">
-                        <div class="snap-card brand-panel">
-                            <div class="brand-top-row">
-                                <div class="brand-logo-wrap">
-                                    <img src="/icons/zine-ify-logo.jpg" alt="Zine-ify" class="brand-logo-img" width="120" height="40" />
-                                </div>
-                                <div class="brand-icon-actions">
-                                    <button id="pwa-install-trigger" type="button" class="theme-toggle-btn" aria-label="Install app" title="Install app" hidden>
-                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">install_mobile</span>
-                                    </button>
-                                    <button id="theme-toggle" type="button" class="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
-                                        <span class="material-symbols-outlined icon-compact" id="theme-icon" aria-hidden="true">dark_mode</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="app-header-actions">
-                                <button id="view3dBtn" type="button" class="action-button brand-preview-btn" disabled aria-label="Preview Fold" title="Toggle 3D fold and booklet preview">
-                                    <span class="material-symbols-outlined icon-compact" aria-hidden="true">deployed_code</span>
-                                    <span>Preview Fold</span>
-                                </button>
-                                <button id="exportPdfBtn" type="button" class="action-button brand-export-btn" disabled aria-label="Export PDF" title="Download printable PDF">
-                                    <span class="material-symbols-outlined icon-compact" aria-hidden="true">download</span>
-                                    <span>Export PDF</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- ── Zine Layout Card (Hero Canvas) ────────────────── -->
                 <div class="grid-stack-item" gs-id="canvas" gs-x="4" gs-y="0" gs-w="8" gs-h="12" gs-min-w="5" gs-min-h="6">
@@ -95,6 +67,21 @@
                                     <button id="clear-all-btn" type="button" class="clear-inline-btn" style="display:none" aria-label="Clear all pages">
                                         Start over
                                     </button>
+                                    <span class="header-actions-divider" aria-hidden="true"></span>
+                                    <button id="view3dBtn" type="button" class="action-button brand-preview-btn header-action-btn" disabled aria-label="Preview Fold" title="Toggle 3D fold and booklet preview">
+                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">deployed_code</span>
+                                        <span class="header-action-label">Preview Fold</span>
+                                    </button>
+                                    <button id="exportPdfBtn" type="button" class="action-button brand-export-btn header-action-btn" disabled aria-label="Export PDF" title="Download printable PDF">
+                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">download</span>
+                                        <span class="header-action-label">Export PDF</span>
+                                    </button>
+                                    <button id="pwa-install-trigger" type="button" class="theme-toggle-btn" aria-label="Install app" title="Install app" hidden>
+                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">install_mobile</span>
+                                    </button>
+                                    <button id="theme-toggle" type="button" class="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
+                                        <span class="material-symbols-outlined icon-compact" id="theme-icon" aria-hidden="true">dark_mode</span>
+                                    </button>
                                 </div>
                             </div>
                             <div class="snap-card-body snap-card-body--canvas">
@@ -112,7 +99,7 @@
                 </div>
 
                 <!-- ── Add Pages Card ────────────────────────────────── -->
-                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="2" gs-w="4" gs-h="2" gs-min-w="3" gs-min-h="2">
+                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="0" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="2">
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-upload">
                             <div class="snap-card-body upload-card-body">
@@ -140,7 +127,7 @@
                 </div>
 
                 <!-- ── Layout & Paper Card ───────────────────────────── -->
-                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="4" gs-w="4" gs-h="5" gs-min-w="3" gs-min-h="3">
+                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="3" gs-w="4" gs-h="5" gs-min-w="3" gs-min-h="3">
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-settings">
                             <div class="snap-card-body" id="settings-group">
@@ -155,7 +142,7 @@
                 </div>
 
                 <!-- ── Display Card ──────────────────────────────────── -->
-                <div class="grid-stack-item" gs-id="display" gs-x="0" gs-y="9" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="2">
+                <div class="grid-stack-item" gs-id="display" gs-x="0" gs-y="8" gs-w="4" gs-h="4" gs-min-w="3" gs-min-h="2">
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-display">
                             <div class="snap-card-body display-card-body">

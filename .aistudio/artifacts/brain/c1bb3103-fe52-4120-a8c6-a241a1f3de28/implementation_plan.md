@@ -1,98 +1,86 @@
-# Fitted No-Scroll Draggable Sidebar Panels
+# Workspace Backdrop Logo & Consolidated Toolbar Layout
 
-Redesign the four sidebar panels (`Brand`, `Add pages`, `Layout & paper`, and `Display`) into streamlined single-row inline layouts so every panel fits its content natively with zero internal scrollbars and zero text collisions.
+Eliminate the standalone Brand card by placing the **Zine-ify** punk-collage logo directly on the workspace back panel behind the draggable cards, and relocate **Preview Fold**, **Export PDF**, and the **Theme Toggle** into the **Zine layout** header bar to free up vertical sidebar space.
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following design decisions incorporate your confirmed preferences from the clarification step:
+> The following layout and positioning choices incorporate your confirmed answers:
 
-- **Confirmed Decision 1 (Inline Control Consolidation)**: Streamline multi-row controls inside each panel into compact single-row inline layouts so all controls remain immediately visible without scrolling.
-- **Confirmed Decision 2 (Fitted Panel Redesign)**: Remove `overflow-y: auto` scrollbars from inner draggable panels and redesign vertical density so all four sidebar cards fit comfortably within the 12-row desktop viewport budget.
+- **Confirmed Decision 1 (Action & Theme Button Placement)**: Move **Preview Fold**, **Export PDF**, and the **Theme** toggle button (plus the conditional **Install App** trigger) into the **Zine layout** top header bar right beside **Undo** and **Redo**.
+- **Confirmed Decision 2 (Logo Back Panel Placement)**: Render the **Zine-ify** logo as a centered watermark in the workspace background behind all draggable panels so cards glide over the logo when rearranged.
+- **Confirmed Decision 3 (Sidebar Row Reallocation)**: Removing the standalone Brand card frees up 3 full GridStack rows in the left column, allowing **Add pages** (`3 rows`), **Layout & paper** (`5 rows`), and **Display** (`4 rows`) to breathe comfortably across the 12-row height with zero internal scrollbars.
 
 ---
 
 ## 1. Overview & Core Concept
 
-- **What It Does**: Transforms the left-hand draggable control cards from tall, vertically stacked forms (which previously clipped or triggered internal scrollbars) into crisp, fitted instrument panels where every control fits natively inside its card boundaries.
-- **Target Audience / Persona**: Zine creators and desktop publishers working across laptop and desktop screens who want immediate, one-click access to upload, paper setup, margin, and display controls without scrolling inside miniature cards.
-- **Key Value**: Eliminates visual clipping, fixes the horizontal text collision in the Orientation buttons, removes inner scrollbars, and ensures all controls are visible at a glance.
+- **What It Does**: Converts the workspace container itself into a branded cutting-mat surface with a centered Zine-ify logo backdrop while consolidating primary actions into the main canvas toolbar.
+- **Target Audience / Persona**: Zine creators arranging pages and previewing folds who want maximum room for sidebar controls without sacrificing brand identity or quick access to export and preview actions.
+- **Key Value**: Removes an entire card from the left sidebar column (25% vertical savings), giving the remaining three control cards generous breathing room while making the Zine-ify logo large and visible on the underlying workspace surface whenever panels are dragged or resized.
 
 ---
 
 ## 2. User Experience & Visual Design
 
 - **Key User Flows**:
-  1. **Brand & Export Panel (2 Grid Rows)**: Displays the Zine-ify logo sticker and dark-mode toggle on the top row, with single-line `Preview Fold` and `Export PDF` action buttons below.
-  2. **Add Pages Panel (2 Grid Rows)**: Places the `Add pages` heading and a compact `Choose files` button inline on the header row, paired with a fitted dashed drop target (`Drop PDF or images`) directly beneath.
-  3. **Layout & Paper Panel (5 Grid Rows)**:
-     - *Header Row*: `Layout & paper` title on the left, `in / mm` unit switcher inline on the right.
-     - *Paper Row*: Inline `Paper` label paired with the paper size `<select>` dropdown (`US Letter (8.5×11 in)`).
-     - *Orientation Row*: Full-width 2-button segmented control (`Portrait` | `Landscape`) with clean icons and no duplicate dimension text (preventing the horizontal text overlap seen previously).
-     - *Margin Row*: Single inline row combining the `Margin` label, range slider, and `− / +` numeric stepper.
-  4. **Display Panel (3 Grid Rows)**: Places `Display` title and a compact inline `Reset layout` button on the top row, followed by three compact single-line toggle switches (`Page numbers`, `Page controls`, `Cut & fold guides`).
+  1. **Workspace Backdrop Logo**: The Zine-ify logo sits centered on the back panel of the workspace shell (`pointer-events: none`, behind the GridStack layer). As the user drags or resizes any panel, the cards move smoothly over the logo on the back panel.
+  2. **Unified Zine Layout Header Bar**: The top bar of the **Zine layout** card displays `Zine layout 0/8` on the left and a single-line action cluster on the right: `Undo`, `Redo`, `Start over` (when pages exist), a subtle vertical divider, `Preview Fold`, `Export PDF` (primary coral-red CTA), and the `Theme` toggle icon button.
+  3. **Spacious 3-Card Sidebar**: With the Brand card removed, the left column stacks only three draggable cards across the 12 rows:
+     - **Add pages** (`y: 0, h: 3`)
+     - **Layout & paper** (`y: 3, h: 5`)
+     - **Display** (`y: 8, h: 4`)
 - **Visual Identity & Theme**:
-  - *Aesthetic Direction*: Tactile editorial print-shop workspace with crisp 1px structural borders (`var(--border-color)`), warm paper surfaces (`var(--surface-bg)`), and high-contrast ink typography (`var(--accent-dark)`).
-  - *Typography & Hierarchy*: `Fraunces` display serif (`0.8rem`, `600` weight) for panel titles paired with `Plus Jakarta Sans` (`0.72rem`–`0.75rem`) and `tabular-nums` for numeric steppers and dimensions.
-  - *Component Styling & Layout*: Single-elevation cards (`overflow: hidden`) with proportional internal flex distribution (`justify-content: space-between`) so controls distribute evenly across each panel's height.
+  - *Aesthetic Direction*: Tactile print-studio desk where the workspace back panel acts as a branded mat beneath floating modular tool cards.
+  - *Color Palette & Mood*: Preserves the 60-30-10 balance with warm paper/ink surfaces, reserving the high-intent coral-red accent (`--primary-vibrant`) for the **Export PDF** button in the canvas header.
+  - *Typography & Hierarchy*: `Fraunces` display serif for card titles, `Plus Jakarta Sans` with `tabular-nums` for page counters and single-line toolbar buttons.
+  - *Component Styling & Layout*: Single-elevation cards (`overflow: hidden`) with subtle `1px` borders floating above the centered workspace backdrop logo.
+- **Interactive Feedback & Motion**: Cards remain directly draggable by their bodies (`cursor: grab`), gliding smoothly over the fixed centered logo on the back panel while toolbar buttons provide crisp hover and disabled states.
 
 ---
 
 ## 3. Key Product Decisions & Trade-Offs
 
-- **Decision 1: Removing Redundant Dimension Text from Orientation Buttons**
-  - *Chosen Approach*: Display clean `Portrait` and `Landscape` labels with icons inside the 2-column orientation switcher, while keeping exact sheet dimensions in the Paper Size dropdown directly above.
-  - *Why*: Placing both the `Orientation` label and two buttons containing `(8.5×11)` strings on a single narrow sidebar row caused the buttons to overflow and overlap text. Full-width 2-column buttons with concise labels guarantee single-line legibility at any sidebar width.
-  - *Alternatives Considered*: Stacking Portrait and Landscape vertically (rejected because it wastes vertical space needed to avoid scrollbars).
-- **Decision 2: Inline Header Actions for Upload, Units, and Reset Layout**
-  - *Chosen Approach*: Move secondary actions (`Choose files` in Add Pages, `in / mm` unit toggle in Layout & Paper, and `Reset layout` in Display) inline with their respective panel titles.
-  - *Why*: Saves 3 full horizontal rows (~105px of vertical height) across the sidebar without hiding any functionality inside menus.
+- **Decision 1: Workspace Back-Panel Watermark Layering**
+  - *Chosen Approach*: Render a dedicated `.workspace-back-logo` layer inside the workspace shell with `position: absolute; inset: 0; pointer-events: none; z-index: 0;` while `.grid-stack` sits at `z-index: 1`.
+  - *Why*: Ensures the logo is centered in the workspace back panel and never intercepts mouse or touch events, allowing panels to be freely dragged over and around it.
+  - *Alternatives Considered*: CSS `background-image` on `.app-shell`—passed over because an explicit `<img>` element inside a non-interactive backdrop container allows precise `object-fit: cover` cropping of the logo's black border and smooth opacity adjustments across light and dark themes.
+- **Decision 2: Consolidated Canvas Header Toolbar**
+  - *Chosen Approach*: Group history actions (`Undo`, `Redo`, `Start over`) and primary workflow actions (`Preview Fold`, `Export PDF`, `Theme`) in the **Zine layout** header bar separated by a subtle hairline divider.
+  - *Why*: Keeps every global action in a predictable, always-visible top-right toolbar while reclaiming 25% of the sidebar's vertical height.
 
 ---
 
 ## 4. Technical Architecture & Data Strategy *(Technical Reference)*
 
-### Architecture & Component Diagram
-
+- **Architecture & Component Diagram**:
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        App Shell (100dvh, No Scroll)                    │
-│  ┌───────────────────────────────┬───────────────────────────────────┐  │
-│  │   Left Column (4 Cols, 12H)   │     Hero Canvas (8 Cols, 12H)     │  │
-│  │                               │                                   │  │
-│  │  ┌─────────────────────────┐  │  ┌─────────────────────────────┐  │  │
-│  │  │ Brand Panel (2H)        │  │  │ Zine Layout Header          │  │  │
-│  │  │ Logo + Theme | Actions  │  │  │ 0/8 · Undo · Redo · Clear   │  │  │
-│  │  └─────────────────────────┘  │  ├─────────────────────────────┤  │  │
-│  │  ┌─────────────────────────┐  │  │                             │  │  │
-│  │  │ Add Pages (2H)          │  │  │   Auto-Fitted Print Sheet   │  │  │
-│  │  │ Title + Browse | Drop   │  │  │   (4 × 2 Imposition Grid)   │  │  │
-│  │  └─────────────────────────┘  │  │                             │  │  │
-│  │  ┌─────────────────────────┐  │  │                             │  │  │
-│  │  │ Layout & Paper (5H)     │  │  │                             │  │  │
-│  │  │ Title + Units (in|mm)   │  │  │                             │  │  │
-│  │  │ Paper Select Dropdown   │  │  │                             │  │  │
-│  │  │ [Portrait] [Landscape]  │  │  │                             │  │  │
-│  │  │ Margin Slider + Stepper │  │  │                             │  │  │
-│  │  └─────────────────────────┘  │  │                             │  │  │
-│  │  ┌─────────────────────────┐  │  │                             │  │  │
-│  │  │ Display (3H)            │  │  │                             │  │  │
-│  │  │ Title + Reset Layout    │  │  │                             │  │  │
-│  │  │ 3 × Compact Toggles     │  │  │                             │  │  │
-│  │  └─────────────────────────┘  │  └─────────────────────────────┘  │  │
-│  └───────────────────────────────┴───────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Workspace Shell (.app-shell / .gs-wrapper)                                   │
+│                                                                              │
+│   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐    │
+│     Back Panel Layer (z-index: 0, pointer-events: none)                      │
+│   │                  [ Centered Zine-ify Logo Watermark ]               │    │
+│   └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘    │
+│                                                                              │
+│   ┌──────────────────────┐  ┌────────────────────────────────────────────┐   │
+│   │ Add pages (h: 3)     │  │ Zine layout 0/8   [Undo][Redo] | [3D][PDF][☼]│ │
+│   │ [Choose files]       │  ├────────────────────────────────────────────┤   │
+│   │ [Drop PDF or images] │  │                                            │   │
+│   ├──────────────────────┤  │                                            │   │
+│   │ Layout & paper (h: 5)│  │                                            │   │
+│   │ [in | mm]            │  │            Main Sheet Canvas               │   │
+│   │ [Letter (8.5×11in)]  │  │                 (h: 12)                    │   │
+│   │ [Portrait|Landscape] │  │                                            │   │
+│   │ [Margin ─────── - +] │  │                                            │   │
+│   ├──────────────────────┤  │                                            │   │
+│   │ Display (h: 4)       │  │                                            │   │
+│   │ [Reset] + 3 Toggles  │  │                                            │   │
+│   └──────────────────────┘  └────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Interactive Component & State Mapping
-
-- **SmartSheetConfig Component**:
-  - Renders the inline header containing the `Layout & paper` title and `[in | mm]` unit buttons (`data-unit`).
-  - Renders the single-row paper `<select class="smart-sheet-select" data-field="paperSize">` (plus compact inline `W × H` numeric inputs when `custom` is active).
-  - Renders the 2-column `.smart-sheet-orientation-seg` (`data-value="portrait"` and `data-value="landscape"`).
-  - Renders the single-row margin bar combining `<input type="range" data-field="margin">` and `.smart-sheet-margin-stepper` (`data-margin-delta="-1"` / `"+1"`).
-- **Add Pages & Display Panels**:
-  - `Add pages` header houses `#browse-files-btn` inline; `#upload-zone` fills the remaining card space as a flex child.
-  - `Display` header houses `#reset-layout-btn` inline; the three `.workspace-config-toggle` rows distribute evenly below.
-- **GridStack Row Allocation**:
-  - Update default row heights to `brand: 2`, `upload: 2` (at `y: 2`), `settings: 5` (at `y: 4`), `display: 3` (at `y: 9`), totaling 12 rows (`2 + 2 + 5 + 3 = 12`), and bump the layout storage key so cached row heights refresh automatically.
+- **Data Model & State**:
+  - Updates `DEFAULT_LAYOUT` in the GridStack layout manager to remove the `brand` node and allocate the 12 sidebar rows across `upload` (`y: 0, h: 3`), `settings` (`y: 3, h: 5`), and `display` (`y: 8, h: 4`), bumping the layout storage key to `v5` so cached layouts automatically refresh.
+- **Interactive Component & State Mapping**:
+  - All existing DOM IDs (`#view3dBtn`, `#exportPdfBtn`, `#theme-toggle`, `#theme-icon`, `#pwa-install-trigger`, `#undo-btn`, `#redo-btn`, `#clear-all-btn`) remain unchanged so every event listener, keyboard shortcut, and state update continues working seamlessly.

@@ -236,10 +236,37 @@ html, body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-panel);
   background: var(--surface-bg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
   box-sizing: border-box;
+  cursor: grab;
+  user-select: none;
   transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.snap-card:active {
+  cursor: grabbing;
+}
+
+.snap-card button,
+.snap-card input,
+.snap-card select,
+.snap-card label,
+.snap-card [role="button"],
+.snap-card .upload-box {
+  cursor: pointer;
+  user-select: auto;
+}
+
+.card-section-title {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-transform: none;
+  color: var(--accent-dark);
+  line-height: 1.2;
+  margin: 0 0 0.15rem 0;
 }
 
 .snap-card-handle {

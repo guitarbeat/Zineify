@@ -266,7 +266,8 @@ export function initGridStack() {
     float: !isMobile(),
     animate: true,
     sizeToContent: false,
-    handle: '.snap-card-handle, .brand-panel',
+    handle: '.snap-card, .brand-panel',
+    cancel: 'button, input, select, textarea, label, a, .upload-box, [role="button"], .smart-sheet-unit-btn, .smart-sheet-orientation-btn, .smart-sheet-stepper-btn, .smart-sheet-margin-slider, .workspace-config-toggle',
     resizable: { handles: 'se', autoHide: false },
     columnOpts: {
       breakpointForWindow: true,

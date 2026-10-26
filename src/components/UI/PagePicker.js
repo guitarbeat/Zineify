@@ -96,6 +96,15 @@ export class PagePicker {
     const grid = this.elements.pagePickerGrid;
     if (!grid) {return;}
     grid.replaceChildren();
+
+    if (!thumbnails || thumbnails.length === 0) {
+      const emptyNotice = document.createElement('p');
+      emptyNotice.className = 'page-picker-empty-notice';
+      emptyNotice.textContent = 'No page thumbnails available to display.';
+      grid.appendChild(emptyNotice);
+      return;
+    }
+
     const selectionSet = new Set(initialSelection);
     thumbnails.forEach(({ pageNumber, thumbnailUrl }) => {
       const btn = document.createElement('button');

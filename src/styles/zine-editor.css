@@ -2,10 +2,10 @@
   --sheet-width: 210;
   --sheet-height: 297;
   --sheet-scale: 1;
-  background: #ffffff;
-  box-shadow: 6px 6px 0px rgba(15, 15, 15, 0.9);
-  border: 2px solid #0f0f0f;
-  border-radius: 2px;
+  background: var(--surface-bg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-panel);
   position: relative;
   flex-shrink: 0;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
@@ -17,9 +17,9 @@
 }
 
 [data-theme="dark"] .print-sheet {
-  background: #1c1c21;
-  border-color: #e4e4e7;
-  box-shadow: 6px 6px 0px #000000;
+  background: var(--surface-bg);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-md);
 }
 
 @media print {

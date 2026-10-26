@@ -47,8 +47,18 @@
                 <div class="grid-stack-item" gs-id="brand" gs-x="0" gs-y="0" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="2">
                     <div class="grid-stack-item-content">
                         <div class="snap-card brand-panel">
-                            <div class="brand-logo-wrap">
-                                <img src="/icons/zine-ify-logo.jpg" alt="Zine-ify" class="brand-logo-img" width="120" height="40" />
+                            <div class="brand-top-row">
+                                <div class="brand-logo-wrap">
+                                    <img src="/icons/zine-ify-logo.jpg" alt="Zine-ify" class="brand-logo-img" width="120" height="40" />
+                                </div>
+                                <div class="brand-icon-actions">
+                                    <button id="pwa-install-trigger" type="button" class="theme-toggle-btn" aria-label="Install app" title="Install app" hidden>
+                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">install_mobile</span>
+                                    </button>
+                                    <button id="theme-toggle" type="button" class="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
+                                        <span class="material-symbols-outlined icon-compact" id="theme-icon" aria-hidden="true">dark_mode</span>
+                                    </button>
+                                </div>
                             </div>
                             <div class="app-header-actions">
                                 <button id="view3dBtn" type="button" class="action-button brand-preview-btn" disabled aria-label="Preview Fold" title="Toggle 3D fold and booklet preview">
@@ -58,12 +68,6 @@
                                 <button id="exportPdfBtn" type="button" class="action-button brand-export-btn" disabled aria-label="Export PDF" title="Download printable PDF">
                                     <span class="material-symbols-outlined icon-compact" aria-hidden="true">download</span>
                                     <span>Export PDF</span>
-                                </button>
-                                <button id="pwa-install-trigger" type="button" class="theme-toggle-btn" aria-label="Install app" title="Install app" hidden>
-                                    <span class="material-symbols-outlined icon-compact" aria-hidden="true">install_mobile</span>
-                                </button>
-                                <button id="theme-toggle" type="button" class="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
-                                    <span class="material-symbols-outlined icon-compact" id="theme-icon" aria-hidden="true">dark_mode</span>
                                 </button>
                             </div>
                         </div>

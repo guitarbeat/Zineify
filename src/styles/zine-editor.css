@@ -12,8 +12,12 @@
   scroll-margin-top: 1rem;
   padding: 0.35rem;
   overflow: hidden;
-  width: min(100%, 58rem);
+  max-width: 100%;
+  max-height: 100%;
   aspect-ratio: var(--sheet-width, 210) / var(--sheet-height, 297);
+  width: min(100%, calc((100cqh - 0.5rem) * (var(--sheet-width, 210) / var(--sheet-height, 297))));
+  height: auto;
+  margin: auto;
 }
 
 [data-theme="dark"] .print-sheet {
@@ -66,7 +70,9 @@
   justify-content: center;
   overflow: hidden;
   cursor: pointer;
-  min-height: 7.5rem;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
   transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   background: #faf8f3;
 }

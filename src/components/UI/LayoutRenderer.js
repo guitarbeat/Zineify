@@ -204,7 +204,7 @@ export class LayoutRenderer {
   createSheetGrid(config) {
     const { sheetNumber, template, columns, rows, id, paper, guideToggles = {} } = config;
     const sheetWrapper = document.createElement('div');
-    sheetWrapper.className = 'print-sheet w-full p-0 relative overflow-hidden rounded-sm';
+    sheetWrapper.className = 'print-sheet p-0 relative overflow-hidden rounded-sm';
     sheetWrapper.setAttribute('data-sheet', sheetNumber);
     sheetWrapper.setAttribute('data-template', template);
     sheetWrapper.setAttribute('data-guide-cut', String(guideToggles.cut !== false));
@@ -223,6 +223,8 @@ export class LayoutRenderer {
     if (paper?.width && paper?.height) {
       const aspectRatio = `${paper.width} / ${paper.height}`;
       sheetWrapper.style.aspectRatio = aspectRatio;
+      sheetWrapper.style.setProperty('--sheet-width', String(paper.width));
+      sheetWrapper.style.setProperty('--sheet-height', String(paper.height));
       const scale = this.getResponsiveSheetScale(paper.width, paper.height);
       sheetWrapper.style.setProperty('--sheet-scale', String(scale));
     }

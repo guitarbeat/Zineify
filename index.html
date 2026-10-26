@@ -44,7 +44,7 @@
             <div class="grid-stack">
 
                 <!-- ── Brand & Primary Actions Card ───────────────────── -->
-                <div class="grid-stack-item" gs-id="brand" gs-x="0" gs-y="0" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="2">
+                <div class="grid-stack-item" gs-id="brand" gs-x="0" gs-y="0" gs-w="4" gs-h="2" gs-min-w="3" gs-min-h="2">
                     <div class="grid-stack-item-content">
                         <div class="snap-card brand-panel">
                             <div class="brand-top-row">
@@ -58,6 +58,16 @@
                                     <button id="theme-toggle" type="button" class="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
                                         <span class="material-symbols-outlined icon-compact" id="theme-icon" aria-hidden="true">dark_mode</span>
                                     </button>
+                                    <span class="snap-card-grip brand-grip" aria-hidden="true" title="Drag to move panel">
+                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+                                            <circle cx="2" cy="2" r="1.1" />
+                                            <circle cx="6" cy="2" r="1.1" />
+                                            <circle cx="2" cy="6" r="1.1" />
+                                            <circle cx="6" cy="6" r="1.1" />
+                                            <circle cx="2" cy="10" r="1.1" />
+                                            <circle cx="6" cy="10" r="1.1" />
+                                        </svg>
+                                    </span>
                                 </div>
                             </div>
                             <div class="app-header-actions">
@@ -95,7 +105,16 @@
                                     <button id="clear-all-btn" type="button" class="clear-inline-btn" style="display:none" aria-label="Clear all pages">
                                         Start over
                                     </button>
-                                    <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">⋮⋮</span>
+                                    <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
+                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+                                            <circle cx="2" cy="2" r="1.1" />
+                                            <circle cx="6" cy="2" r="1.1" />
+                                            <circle cx="2" cy="6" r="1.1" />
+                                            <circle cx="6" cy="6" r="1.1" />
+                                            <circle cx="2" cy="10" r="1.1" />
+                                            <circle cx="6" cy="10" r="1.1" />
+                                        </svg>
+                                    </span>
                                 </div>
                             </div>
                             <div class="snap-card-body snap-card-body--canvas">
@@ -113,16 +132,25 @@
                 </div>
 
                 <!-- ── Add Pages Card ────────────────────────────────── -->
-                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="3" gs-w="4" gs-h="5" gs-min-w="3" gs-min-h="4">
+                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="2" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="3">
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-upload">
                             <div class="snap-card-handle">
                                 <span class="snap-card-label">Add pages</span>
-                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">⋮⋮</span>
+                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
+                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+                                            <circle cx="2" cy="2" r="1.1" />
+                                            <circle cx="6" cy="2" r="1.1" />
+                                            <circle cx="2" cy="6" r="1.1" />
+                                            <circle cx="6" cy="6" r="1.1" />
+                                            <circle cx="2" cy="10" r="1.1" />
+                                            <circle cx="6" cy="10" r="1.1" />
+                                        </svg>
+                                    </span>
                             </div>
                             <div class="snap-card-body">
                                 <div class="upload-flow">
-                                    <div id="upload-zone" class="upload-box flex flex-col items-center justify-center gap-1.5 text-center p-4 cursor-pointer"
+                                    <div id="upload-zone" class="upload-box flex flex-col items-center justify-center gap-1 text-center p-3 cursor-pointer"
                                         role="button" tabindex="0"
                                         aria-label="Drop PDF or image files here, or press Enter to browse">
                                         <i data-lucide="upload" class="upload-icon" aria-hidden="true"></i>
@@ -145,12 +173,21 @@
                 </div>
 
                 <!-- ── Layout & Paper Card ───────────────────────────── -->
-                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="8" gs-w="4" gs-h="8" gs-min-w="3" gs-min-h="5">
+                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="5" gs-w="4" gs-h="4" gs-min-w="3" gs-min-h="3">
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-settings">
                             <div class="snap-card-handle">
                                 <span class="snap-card-label">Layout &amp; paper</span>
-                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">⋮⋮</span>
+                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
+                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+                                            <circle cx="2" cy="2" r="1.1" />
+                                            <circle cx="6" cy="2" r="1.1" />
+                                            <circle cx="2" cy="6" r="1.1" />
+                                            <circle cx="6" cy="6" r="1.1" />
+                                            <circle cx="2" cy="10" r="1.1" />
+                                            <circle cx="6" cy="10" r="1.1" />
+                                        </svg>
+                                    </span>
                             </div>
                             <div class="snap-card-body" id="settings-group">
                                 <div id="smart-sheet-config-container"></div>
@@ -164,12 +201,21 @@
                 </div>
 
                 <!-- ── Display Card ──────────────────────────────────── -->
-                <div class="grid-stack-item" gs-id="display" gs-x="0" gs-y="16" gs-w="4" gs-h="4" gs-min-w="3" gs-min-h="3">
+                <div class="grid-stack-item" gs-id="display" gs-x="0" gs-y="9" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="2">
                     <div class="grid-stack-item-content">
                         <div class="snap-card" id="card-display">
                             <div class="snap-card-handle">
                                 <span class="snap-card-label">Display</span>
-                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">⋮⋮</span>
+                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
+                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+                                            <circle cx="2" cy="2" r="1.1" />
+                                            <circle cx="6" cy="2" r="1.1" />
+                                            <circle cx="2" cy="6" r="1.1" />
+                                            <circle cx="6" cy="6" r="1.1" />
+                                            <circle cx="2" cy="10" r="1.1" />
+                                            <circle cx="6" cy="10" r="1.1" />
+                                        </svg>
+                                    </span>
                             </div>
                             <div class="snap-card-body display-card-body">
                                 <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-numbers">
@@ -209,6 +255,16 @@
                                     <button id="close-3d-btn" type="button" class="header-tool-btn" aria-label="Close fold preview" title="Hide fold preview cards">
                                         <span class="material-symbols-outlined icon-compact" aria-hidden="true">close</span>
                                     </button>
+                                    <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
+                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+                                            <circle cx="2" cy="2" r="1.1" />
+                                            <circle cx="6" cy="2" r="1.1" />
+                                            <circle cx="2" cy="6" r="1.1" />
+                                            <circle cx="6" cy="6" r="1.1" />
+                                            <circle cx="2" cy="10" r="1.1" />
+                                            <circle cx="6" cy="10" r="1.1" />
+                                        </svg>
+                                    </span>
                                 </div>
                             </div>
                             <div class="snap-card-body snap-card-body--fold-viewer">
@@ -239,7 +295,19 @@
                         <div class="snap-card">
                             <div class="snap-card-handle">
                                 <span class="snap-card-label">Booklet preview</span>
-                                <span id="booklet-status" class="simulation-status-chip">Cover</span>
+                                <div class="snap-card-header-actions">
+                                    <span id="booklet-status" class="simulation-status-chip">Cover</span>
+                                    <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
+                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+                                            <circle cx="2" cy="2" r="1.1" />
+                                            <circle cx="6" cy="2" r="1.1" />
+                                            <circle cx="2" cy="6" r="1.1" />
+                                            <circle cx="6" cy="6" r="1.1" />
+                                            <circle cx="2" cy="10" r="1.1" />
+                                            <circle cx="6" cy="10" r="1.1" />
+                                        </svg>
+                                    </span>
+                                </div>
                             </div>
                             <div class="snap-card-body snap-card-body--fold-booklet">
                                 <p class="simulation-helper">Flip through spreads to check page order and orientation.</p>
@@ -263,7 +331,16 @@
                         <div class="snap-card">
                             <div class="snap-card-handle">
                                 <span class="snap-card-label">How to fold</span>
-                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">⋮⋮</span>
+                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
+                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+                                            <circle cx="2" cy="2" r="1.1" />
+                                            <circle cx="6" cy="2" r="1.1" />
+                                            <circle cx="2" cy="6" r="1.1" />
+                                            <circle cx="6" cy="6" r="1.1" />
+                                            <circle cx="2" cy="10" r="1.1" />
+                                            <circle cx="6" cy="10" r="1.1" />
+                                        </svg>
+                                    </span>
                             </div>
                             <div class="snap-card-body snap-card-body--fold-guide panel-scroll-body">
                                 <ol class="fold-guide-list" aria-label="Folding steps">

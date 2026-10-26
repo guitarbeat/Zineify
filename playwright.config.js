@@ -20,7 +20,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm run serve --host 127.0.0.1',
+    command: 'npm run serve:test',
     url: 'http://127.0.0.1:8001',
     reuseExistingServer: !process.env.CI,
   },

@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan for fixing the unstyled HTML preview bug (CSP, stylesheet link, and Service Worker cache invalidation) and applying the confirmed Leonxlnx/taste-skill App Screen house rules to the Zine-ify GridStack workspace.",
-  "updatedAt":  "2026-10-25T23:00:24.091191325Z",
+  "summary":  "Implementation plan to remove the separate top bar headers from sidebar cards, make card bodies directly draggable with proper input exclusions, integrate clean section headers inside each card body, and optimize vertical space so all controls fit the viewport without overlapping.",
+  "updatedAt":  "2026-10-26T02:37:40.771660232Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

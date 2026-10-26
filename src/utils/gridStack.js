@@ -1,17 +1,17 @@
 import { GridStack } from '#gridStackImports';
 
-const STORAGE_KEY_DESKTOP = 'zine-grid-v8';
-const STORAGE_KEY_MOBILE = 'zine-grid-mobile-v8';
+const STORAGE_KEY_DESKTOP = 'zine-grid-fit-v2';
+const STORAGE_KEY_MOBILE = 'zine-grid-mobile-fit-v2';
 const MOBILE_BREAKPOINT = 768;
 const CELL_HEIGHT = 32;
 const MOBILE_CELL_HEIGHT = 24;
 
 const DEFAULT_LAYOUT = [
-  { id: 'brand', x: 0, y: 0, w: 4, h: 3 },
+  { id: 'brand', x: 0, y: 0, w: 4, h: 2 },
   { id: 'canvas', x: 4, y: 0, w: 8, h: 12 },
-  { id: 'upload', x: 0, y: 3, w: 4, h: 5 },
-  { id: 'settings', x: 0, y: 8, w: 4, h: 8 },
-  { id: 'display', x: 0, y: 16, w: 4, h: 4 },
+  { id: 'upload', x: 0, y: 2, w: 4, h: 3 },
+  { id: 'settings', x: 0, y: 5, w: 4, h: 4 },
+  { id: 'display', x: 0, y: 9, w: 4, h: 3 },
   { id: 'fold-viewer', x: 4, y: 12, w: 8, h: 6 },
   { id: 'fold-booklet', x: 4, y: 18, w: 4, h: 5 },
   { id: 'fold-guide', x: 8, y: 18, w: 4, h: 5 }
@@ -128,7 +128,7 @@ function relayoutPanels({ fitContent = false } = {}) {
   if (!grid) { return; }
   isRelayouting = true;
 
-  if (fitContent) {
+  if (fitContent && isMobile()) {
     const items = grid.getGridItems();
     for (let i = 0; i < items.length; i++) {
       const el = items[i];
@@ -228,11 +228,21 @@ function loadLayout() {
 }
 
 function syncGridMetrics() {
-  if (!grid) { return; }
+  if (!grid || !gridEl) { return; }
   const mobile = isMobile();
-  grid.cellHeight(mobile ? MOBILE_CELL_HEIGHT : CELL_HEIGHT);
-  grid.margin(mobile ? 4 : 8);
-  grid.float(!mobile);
+  if (mobile) {
+    grid.cellHeight(MOBILE_CELL_HEIGHT);
+    grid.margin(4);
+    grid.float(false);
+  } else {
+    const availableH = gridEl.clientHeight || (window.innerHeight - 70);
+    const targetRows = 12;
+    const margin = 8;
+    const computedH = Math.max(24, Math.floor((availableH - (targetRows - 1) * margin) / targetRows));
+    grid.cellHeight(computedH);
+    grid.margin(margin);
+    grid.float(true);
+  }
 }
 
 function setInteractionMode() {
@@ -255,7 +265,7 @@ export function initGridStack() {
     margin: isMobile() ? 6 : 8,
     float: !isMobile(),
     animate: true,
-    sizeToContent: true,
+    sizeToContent: false,
     handle: '.snap-card-handle, .brand-panel',
     resizable: { handles: 'se', autoHide: false },
     columnOpts: {
@@ -273,6 +283,14 @@ export function initGridStack() {
   setInteractionMode();
 
   window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).addEventListener('change', setInteractionMode);
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      syncGridMetrics();
+    }, 100);
+  });
 
   window.__resetPanelLayout = () => {
     localStorage.removeItem(STORAGE_KEY_DESKTOP);

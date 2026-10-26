@@ -2,11 +2,12 @@
 
 .upload-flow {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.35rem;
 }
 
 .upload-box {
-  min-height: 8.5rem;
+  min-height: 3.4rem;
+  padding: 0.35rem 0.5rem;
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-panel);
   background: var(--surface-muted);
@@ -21,19 +22,19 @@
 }
 
 .upload-icon {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 1.35rem;
+  height: 1.35rem;
   stroke-width: 1.75;
 }
 
 .browse-files-btn svg {
-  width: 1rem;
-  height: 1rem;
+  width: 0.85rem;
+  height: 0.85rem;
   stroke-width: 2;
 }
 
 .upload-title {
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--accent-dark);
@@ -42,7 +43,7 @@
 .upload-copy,
 .upload-limit {
   color: var(--muted-ink);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -50,16 +51,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  min-height: 2.4rem;
+  gap: 0.35rem;
+  min-height: 1.85rem;
   width: 100%;
-  padding: 0.55rem 0.8rem;
+  padding: 0.28rem 0.55rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-button);
   background: var(--surface-muted);
   color: var(--accent-dark);
   font-family: var(--font-sans);
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-transform: none;
@@ -381,14 +382,15 @@ input[type="number"].workspace-config-input::-webkit-outer-spin-button {
 .workspace-config-toggle {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 0.85rem;
+  column-gap: 0.5rem;
+  padding: 0.15rem 0.25rem;
   cursor: pointer;
 }
 
-.workspace-config-toggle-copy-wrap { display: grid; gap: 0.22rem; }
+.workspace-config-toggle-copy-wrap { display: grid; gap: 0.15rem; }
 
 .workspace-config-toggle-copy {
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   font-weight: 500;
 }
 
@@ -401,23 +403,23 @@ input[type="number"].workspace-config-input::-webkit-outer-spin-button {
 }
 
 .workspace-config-toggle-switch {
-  width: 2.4rem;
-  height: 1.4rem;
+  width: 2.1rem;
+  height: 1.2rem;
   border-radius: 999px;
   border: 1px solid var(--border-color);
   background: var(--surface-muted);
   display: inline-flex;
   align-items: center;
-  padding: 0.13rem;
+  padding: 0.1rem;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .workspace-config-toggle-knob {
-  width: 1rem;
-  height: 1rem;
+  width: 0.88rem;
+  height: 0.88rem;
   border-radius: 999px;
   background: var(--surface-strong);
-  box-shadow: 0 1px 3px rgba(61, 40, 24, 0.18);
+  box-shadow: 0 1px 2px rgba(61, 40, 24, 0.18);
   transform: translateX(0);
   transition: transform 0.15s ease;
 }
@@ -428,7 +430,7 @@ input[type="number"].workspace-config-input::-webkit-outer-spin-button {
 }
 
 .workspace-config-toggle-input:checked + .workspace-config-toggle-switch .workspace-config-toggle-knob {
-  transform: translateX(1rem);
+  transform: translateX(0.9rem);
 }
 
 .workspace-config-toggle:focus-within { outline: none; }
@@ -1524,9 +1526,9 @@ select.is-valid:focus {
 /* Paper selector */
 .smart-sheet-select {
   width: 100%;
-  min-height: 2.2rem;
-  padding: 0.35rem 2rem 0.35rem 0.65rem;
-  font-size: 0.8rem;
+  min-height: 1.85rem;
+  padding: 0.25rem 1.7rem 0.25rem 0.55rem;
+  font-size: 0.74rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--accent-dark);
@@ -1537,7 +1539,7 @@ select.is-valid:focus {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%2371717a' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.7rem center;
+  background-position: right 0.6rem center;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -1558,7 +1560,7 @@ select.is-valid:focus {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 500;
   color: #16a34a;
   opacity: 0;
@@ -1570,39 +1572,40 @@ select.is-valid:focus {
 }
 
 .smart-sheet-paper-recommend .material-symbols-outlined {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* Orientation buttons */
 .smart-sheet-orientation {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .smart-sheet-orientation-seg {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem;
+  gap: 0.35rem;
   width: 100%;
 }
 
 .smart-sheet-orientation-btn {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
-  min-height: 3.6rem;
-  padding: 0.5rem 0.45rem;
+  gap: 0.25rem;
+  min-height: 1.85rem;
+  padding: 0.22rem 0.4rem;
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-button);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.15;
   color: var(--accent-dark);
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
@@ -1617,7 +1620,7 @@ select.is-valid:focus {
 }
 
 .smart-sheet-orientation-btn .material-symbols-outlined {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: var(--muted-ink);
 }
 
@@ -1626,8 +1629,8 @@ select.is-valid:focus {
 }
 
 .smart-sheet-orientation-btn .smart-sheet-dim {
-  display: block;
-  font-size: 0.68rem;
+  display: inline;
+  font-size: 0.62rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--muted-ink);
@@ -1689,14 +1692,14 @@ select.is-valid:focus {
 
 /* Compact, responsive sheet setup panel */
 .smart-sheet-config {
-  gap: 0.85rem;
+  gap: 0.35rem;
   min-width: 0;
 }
 
 .smart-sheet-section {
   min-width: 0;
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
+  gap: 0.25rem;
+  padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--border-faint);
 }
 

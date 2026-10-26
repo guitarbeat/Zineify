@@ -3,33 +3,56 @@
 /* ─── Contrasting Outer Frame & Rounded App Shell ─────────── */
 html, body {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
-body {
-  background-color: var(--outer-frame-bg);
-  padding: 0.85rem;
-  box-sizing: border-box;
-}
+@media (min-width: 768px) {
+  html, body {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
 
-[data-theme="dark"] body {
-  background-color: var(--outer-frame-bg);
-}
+  body {
+    background-color: var(--outer-frame-bg);
+    padding: 0.65rem 0.85rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
 
-.app-shell {
-  min-height: calc(100dvh - 1.7rem);
-  padding: clamp(0.75rem, 1.5vw, 1.15rem);
-  box-sizing: border-box;
-  border-radius: 14px;
-  background-color: var(--bg-neutral);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
-  overflow: visible;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  .app-shell {
+    height: 100%;
+    max-height: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0.65rem 0.85rem;
+    box-sizing: border-box;
+    border-radius: 14px;
+    background-color: var(--bg-neutral);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .gs-wrapper {
+    height: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .grid-stack {
+    height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto;
+  }
 }
 
 /* ─── GridStack Container ─────────────────────────────────── */
@@ -38,7 +61,7 @@ body {
 }
 
 .grid-stack-item-content {
-  overflow: visible !important;
+  overflow: hidden !important;
 }
 
 .grid-stack > .grid-stack-item > .grid-stack-item-content {
@@ -73,9 +96,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 0.65rem;
+  gap: 0.35rem;
   height: 100%;
-  padding: 0.8rem 0.9rem;
+  padding: 0.45rem 0.65rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-panel);
   background: var(--surface-bg);
@@ -83,6 +106,7 @@ body {
   cursor: grab;
   user-select: none;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .brand-panel:active {
@@ -93,7 +117,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.4rem;
   width: 100%;
 }
 
@@ -105,7 +129,7 @@ body {
 
 .brand-logo-img {
   display: block;
-  height: 2.15rem;
+  height: 1.75rem;
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -115,28 +139,28 @@ body {
 .brand-icon-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
 .app-header-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: stretch;
-  gap: 0.5rem;
+  gap: 0.35rem;
   width: 100%;
 }
 
 .brand-preview-btn,
 .brand-export-btn {
   width: 100%;
-  min-height: 2.2rem;
-  padding: 0.42rem 0.7rem;
+  min-height: 1.85rem;
+  padding: 0.28rem 0.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   font-family: var(--font-sans);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-transform: none;
@@ -185,8 +209,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-button);
   background: var(--surface-muted);
@@ -207,7 +231,8 @@ body {
 .snap-card {
   display: flex;
   flex-direction: column;
-  height: auto;
+  height: 100%;
+  min-height: 0;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-panel);
   background: var(--surface-bg);
@@ -221,13 +246,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.55rem 0.85rem;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  min-height: 1.85rem;
   border-bottom: 1px solid var(--border-color);
   cursor: grab;
   user-select: none;
   flex-shrink: 0;
   background: var(--surface-muted);
+  box-sizing: border-box;
 }
 
 .snap-card-handle:active {
@@ -237,26 +264,47 @@ body {
 .snap-card-title-wrap {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.55rem;
+  gap: 0.45rem;
   min-width: 0;
 }
 
 .snap-card-grip {
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border-radius: 3px;
   color: var(--muted-ink);
-  opacity: 0.65;
-  transition: opacity 0.15s ease, color 0.15s ease;
+  opacity: 0.45;
+  cursor: grab;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
 }
 
-.snap-card-handle:hover .snap-card-grip {
-  opacity: 1;
+.snap-card-handle:hover .snap-card-grip,
+.brand-panel:hover .snap-card-grip,
+.snap-card-grip:hover {
+  opacity: 0.9;
   color: var(--accent-dark);
+  background: var(--surface-strong);
+}
+
+.snap-card-grip:active {
+  cursor: grabbing;
+}
+
+.snap-card-grip-svg {
+  display: block;
+  width: 8px;
+  height: 12px;
 }
 
 /* Sentence-case card heading in Fraunces display serif */
 .snap-card-label {
   font-family: var(--font-display);
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: -0.015em;
   text-transform: none;
@@ -376,50 +424,86 @@ body {
 .snap-card-body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0.8rem 0.9rem;
+  padding: 0.45rem 0.6rem;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.35rem;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted-ink) 35%, transparent) transparent;
 }
 
 /* Zine Canvas Card Body */
 .snap-card-body--canvas {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(0.85rem, 1.8vw, 1.5rem);
-  overflow: auto;
+  padding: clamp(0.4rem, 1vw, 0.75rem);
+  overflow: hidden;
+  container-type: size;
   background-color: var(--surface-paper-stack);
   background-image: radial-gradient(var(--pasteboard-dot) 1px, transparent 1px);
   background-size: 16px 16px;
 }
 
+#preview-area {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#unified-drop-zone {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#zine-sheets-container {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .display-card-body {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.25rem;
+  padding: 0.35rem 0.55rem;
 }
 
 .display-card-actions,
 .display-reset-row {
-  margin-top: 0.25rem;
-  padding-top: 0.55rem;
+  margin-top: 0.15rem;
+  padding-top: 0.35rem;
   border-top: 1px solid var(--border-faint);
 }
 
 .display-reset-btn {
   width: 100%;
-  min-height: 2.1rem;
-  padding: 0.4rem 0.7rem;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   font-family: var(--font-sans);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-transform: none;
@@ -429,14 +513,23 @@ body {
 
 /* ─── Mobile Stacked Layout (< 768px) ─────────────────────── */
 @media (max-width: 767px) {
+  html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100%;
+  }
+
   body {
     padding: 0.45rem;
   }
 
   .app-shell {
     min-height: calc(100dvh - 0.9rem);
+    height: auto;
     border-radius: 1rem;
     padding: 0.55rem;
+    overflow: visible;
   }
 
   .grid-stack {
@@ -463,6 +556,16 @@ body {
 
   .grid-stack > .grid-stack-item.hidden {
     display: none !important;
+  }
+
+  .snap-card {
+    height: auto;
+  }
+
+  .snap-card-body--canvas {
+    min-height: 320px;
+    height: auto;
+    overflow: visible;
   }
 
   .snap-card-handle,

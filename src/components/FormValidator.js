@@ -378,6 +378,7 @@ export class FormValidator {
    * Add constraint hint below a field
    */
   _addConstraintHint(field, constraints) {
+    if (!field || field.type === 'hidden') {return;}
     const hint = createConstraintHint(constraints);
     if (!hint) {return;}
 

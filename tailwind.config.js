@@ -1,3 +1,6 @@
+import forms from '@tailwindcss/forms';
+import containerQueries from '@tailwindcss/container-queries';
+
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
@@ -7,13 +10,14 @@ export default {
     theme: {
         extend: {
             colors: {
-                "neutral-bg": "#f0f0f0",
-                "primary-vibrant": "#ff00ff",
+                "neutral-bg": "#f4f1ea",
+                "primary-vibrant": "#ff5555",
             }
         },
     },
     plugins: [
-        require('@tailwindcss/forms'),
-        require('@tailwindcss/container-queries'),
+        forms,
+        containerQueries,
     ],
-}
+};
+

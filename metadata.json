@@ -1,0 +1,8 @@
+{
+  "name": "Zine-ify — DIY Punk Xerox & Mini-Zine Imposition Studio",
+  "description": "Convert PDFs, images, or built-in starter templates into printable 8-page single-sheet mini-zines with live imposition guides, 3D fold simulation, and 300 DPI PDF export.",
+  "requestFramePermissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

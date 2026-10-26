@@ -1,19 +1,20 @@
 import { GridStack } from '#gridStackImports';
 
-const STORAGE_KEY_DESKTOP = 'zine-grid-v9';
-const STORAGE_KEY_MOBILE = 'zine-grid-mobile-v9';
+const STORAGE_KEY_DESKTOP = 'zine-grid-v8';
+const STORAGE_KEY_MOBILE = 'zine-grid-mobile-v8';
 const MOBILE_BREAKPOINT = 768;
 const CELL_HEIGHT = 32;
 const MOBILE_CELL_HEIGHT = 24;
 
 const DEFAULT_LAYOUT = [
   { id: 'brand', x: 0, y: 0, w: 4, h: 3 },
-  { id: 'canvas', x: 0, y: 3, w: 9, h: 10 },
-  { id: 'upload', x: 9, y: 3, w: 3, h: 4 },
-  { id: 'settings', x: 9, y: 7, w: 3, h: 8 },
-  { id: 'fold-viewer', x: 0, y: 15, w: 6, h: 6 },
-  { id: 'fold-booklet', x: 6, y: 15, w: 3, h: 4 },
-  { id: 'fold-guide', x: 9, y: 15, w: 3, h: 4 }
+  { id: 'canvas', x: 4, y: 0, w: 8, h: 12 },
+  { id: 'upload', x: 0, y: 3, w: 4, h: 5 },
+  { id: 'settings', x: 0, y: 8, w: 4, h: 8 },
+  { id: 'display', x: 0, y: 16, w: 4, h: 4 },
+  { id: 'fold-viewer', x: 4, y: 12, w: 8, h: 6 },
+  { id: 'fold-booklet', x: 4, y: 18, w: 4, h: 5 },
+  { id: 'fold-guide', x: 8, y: 18, w: 4, h: 5 }
 ];
 
 let grid = null;
@@ -114,7 +115,7 @@ function saveLayout() {
   try {
     localStorage.setItem(storageKey(), JSON.stringify(grid.save(false)));
   } catch {
-    // Safely ignore storage errors (e.g. QuotaExceededError, private browsing restrictions, or disabled localStorage)
+    // Ignore storage quota errors
   }
 }
 
@@ -131,6 +132,7 @@ function relayoutPanels({ fitContent = false } = {}) {
     const items = grid.getGridItems();
     for (let i = 0; i < items.length; i++) {
       const el = items[i];
+      if (el.classList.contains('hidden')) { continue; }
       const content = (el.firstElementChild?.classList.contains('grid-stack-item-content'))
         ? el.firstElementChild
         : el.querySelector('.grid-stack-item-content');
@@ -144,7 +146,7 @@ function relayoutPanels({ fitContent = false } = {}) {
   isRelayouting = false;
 }
 
-function resetToDefaults() {
+export function resetToDefaults() {
   if (!grid) { return; }
   localStorage.removeItem(storageKey());
 
@@ -254,6 +256,7 @@ export function initGridStack() {
     float: !isMobile(),
     animate: true,
     sizeToContent: true,
+    handle: '.snap-card-handle, .brand-panel',
     resizable: { handles: 'se', autoHide: false },
     columnOpts: {
       breakpointForWindow: true,
@@ -274,15 +277,9 @@ export function initGridStack() {
   window.__resetPanelLayout = () => {
     localStorage.removeItem(STORAGE_KEY_DESKTOP);
     localStorage.removeItem(STORAGE_KEY_MOBILE);
-    localStorage.removeItem('zine-grid-v1');
-    localStorage.removeItem('zine-grid-mobile-v1');
-    localStorage.removeItem('zine-grid-v2');
-    localStorage.removeItem('zine-grid-mobile-v2');
-    localStorage.removeItem('zine-grid-v8');
-    localStorage.removeItem('zine-grid-mobile-v8');
+    resetToDefaults();
     location.reload();
   };
-
   window.__resizePanels = relayoutPanels;
   window.__layoutHasOverlaps = layoutHasOverlaps;
   window.__initGridStack = initGridStack;

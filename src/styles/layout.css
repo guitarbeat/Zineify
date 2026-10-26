@@ -1,575 +1,499 @@
 @reference "./theme.css";
 
-/* ─── Shell ──────────────────────────────────────────────── */
+/* ─── Contrasting Outer Frame & Rounded App Shell ─────────── */
 html, body {
   width: 100%;
   min-height: 100%;
   margin: 0;
+  padding: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-width: none;
 }
 
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  display: none;
-}
-
-/* The page sits inside a contrasting rounded frame, like woods.engineer. */
 body {
-  background: var(--accent-dark);
-}
-
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100dvh - 14px);
-  max-width: 1680px;
-  margin: 7px auto;
-  padding: 1.25rem 1.25rem 2rem;
-  overflow: hidden;
-  border-radius: 14px;
-  background: var(--bg-neutral);
+  background-color: var(--outer-frame-bg);
+  padding: 0.85rem;
   box-sizing: border-box;
 }
 
-/* ─── Header ─────────────────────────────────────────────── */
-.app-header {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  padding: 0 0.875rem;
-  height: 3.25rem;
-  flex-shrink: 0;
-  background: #000;
-  border-bottom: 1px solid var(--border-color);
+[data-theme="dark"] body {
+  background-color: var(--outer-frame-bg);
 }
 
-.app-header-left {
-  grid-column: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
+.app-shell {
+  min-height: calc(100dvh - 1.7rem);
+  padding: clamp(0.75rem, 1.5vw, 1.15rem);
+  box-sizing: border-box;
+  border-radius: 14px;
+  background-color: var(--bg-neutral);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  overflow: visible;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
+/* ─── GridStack Container ─────────────────────────────────── */
+.grid-stack {
+  width: 100%;
+}
+
+.grid-stack-item-content {
+  overflow: visible !important;
+}
+
+.grid-stack > .grid-stack-item > .grid-stack-item-content {
+  inset: 0 !important;
+}
+
+.grid-stack-placeholder > .placeholder-content {
+  background: var(--primary-glow) !important;
+  border: 1px dashed var(--primary-vibrant) !important;
+  border-radius: var(--radius-panel) !important;
+}
+
+.ui-resizable-handle {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.grid-stack-item:hover .ui-resizable-handle {
+  opacity: 0.45;
+}
+
+.ui-resizable-se {
+  width: 14px !important;
+  height: 14px !important;
+  right: 4px !important;
+  bottom: 4px !important;
+}
+
+/* ─── Brand Panel (Card 0) — Keeps Zine-ify Logo Sticker ──── */
 .brand-panel {
+  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  max-width: calc(100% - 1rem);
-  margin: 0.65rem auto 0;
-  padding: 0.35rem 0.75rem;
-  gap: 0.75rem;
-  background: #000;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.65rem;
+  height: auto;
+  padding: 0.8rem 0.9rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-panel);
+  background: var(--surface-bg);
+  box-shadow: var(--shadow-md);
+  cursor: grab;
+  user-select: none;
+  box-sizing: border-box;
 }
 
-.brand-panel .logo-image {
+.brand-panel:active {
+  cursor: grabbing;
+}
+
+.brand-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.brand-logo-img {
   display: block;
-  height: 3.35rem;
+  height: 2.35rem;
   width: auto;
-  filter: brightness(1.2);
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid #111111;
 }
 
 .app-header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.375rem;
-  grid-column: 3;
-  justify-content: flex-end;
-  position: relative;
-  z-index: 1;
-}
-
-.app-header-actions .panel-icon-btn {
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e0e0e0;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-
-.app-header-actions .panel-icon-btn:hover {
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  border-color: rgba(255,255,255,0.3);
-}
-
-/* ── Header action buttons ───────────────────────────────── */
-.header-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.28rem 0.7rem;
-  border-radius: var(--radius-button);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  white-space: nowrap;
-  font-family: 'IBM Plex Mono', monospace;
-  flex-shrink: 0;
-}
-
-.header-action-btn--primary {
-  background: var(--primary-vibrant);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.15);
-}
-
-.header-action-btn--ghost {
-  background: rgba(255,255,255,0.07);
-  color: #c8c8c8;
-  border: 1px solid rgba(255,255,255,0.18);
-}
-
-.header-action-btn:not(:disabled):hover { opacity: 0.82; transform: translateY(-1px); }
-.header-action-btn:not(:disabled):active { transform: none; opacity: 0.7; }
-.header-action-btn:disabled { opacity: 0.28; cursor: not-allowed; }
-
-@media (max-width: 767px) {
-  .app-shell { padding: 0.75rem; }
-}
-
-@media (max-width: 540px) {
-  .header-action-label { display: none; }
-  .header-action-btn { padding: 0.28rem 0.45rem; gap: 0; }
-}
-
-/* ─── GridStack wrapper ──────────────────────────────────── */
-.gs-wrapper {
-  flex: 1 0 auto;
-  overflow: visible;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-/* ─── GridStack overrides ────────────────────────────────── */
-.grid-stack {
-  background: transparent !important;
-}
-
-.grid-stack-item {
-  overflow: visible;
-  isolation: isolate;
-  transition: z-index 0s linear;
-}
-
-.grid-stack-item:hover,
-.grid-stack-item:focus-within {
-  z-index: 20 !important;
-}
-
-.grid-stack-item.ui-draggable-dragging,
-.grid-stack-item.ui-resizable-resizing {
-  z-index: 50 !important;
-}
-
-/* Panels fill their gridstack cell */
-.grid-stack-item-content {
-  border-radius: 2px;
-  overflow: hidden;
-  height: 100%;
-  cursor: move;
-}
-
-.grid-stack-item-content .snap-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* ─── Resize handle ──────────────────────────────────────── */
-.grid-stack-item > .ui-resizable-se {
-  width: 16px;
-  height: 16px;
-  right: 3px;
-  bottom: 3px;
-  background: none;
-  border-bottom: 2px solid var(--border-color);
-  border-right: 2px solid var(--border-color);
-  border-radius: 0 0 calc(var(--radius-panel) - 2px) 0;
-  opacity: 0;
-  transition: opacity 0.2s;
-  cursor: se-resize;
-  z-index: 10;
-}
-
-.grid-stack-item:hover > .ui-resizable-se {
-  opacity: 0.6;
-}
-
-.grid-stack-item:hover > .ui-resizable-se:hover {
-  opacity: 1;
-  border-color: var(--primary-vibrant);
-}
-
-/* ─── Panel (snap-card) ──────────────────────────────────── */
-.snap-card {
-  cursor: move;
-  position: relative;
-  background: var(--surface-bg);
-  border: 1px solid var(--workspace-edge);
-  border-radius: 0.2rem;
-  transition: border-color 0.2s ease;
-}
-
-.ui-draggable-dragging .snap-card {
-  border-color: var(--primary-vibrant);
-}
-
-/* Primary action card */
-.snap-card--action {
-  border-color: var(--primary-vibrant);
-}
-
-/* ─── Panel handle ───────────────────────────────────────── */
-.snap-card-handle {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.55rem 0.75rem 0.35rem;
-  cursor: grab;
-  user-select: none;
-  flex-shrink: 0;
-}
-
-.snap-card-handle:active { cursor: grabbing; }
-
-.snap-card-grip,
-.brand-panel-drag-handle {
-  display: none;
-}
-
-.snap-card-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.72);
-  white-space: nowrap;
-  font-family: 'Fraunces', 'IBM Plex Mono', serif;
-  flex: 1;
-  transition: color 0.2s;
-}
-
-/* ─── Panel body ─────────────────────────────────────────── */
-.snap-card-body {
-  flex: 0 0 auto;
-  overflow: visible;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-/* ─── Canvas panel body ───────────────────────────���──────── */
-.snap-card-body--canvas {
-  padding: 0.5rem;
-}
-
-#card-zine #preview-area,
-#card-zine #unified-drop-zone {
+  gap: 0.45rem;
   width: 100%;
 }
 
-/* ─── Display panel body ─────────────────────────────────── */
-.snap-card-body--display {
-  padding: 0.5rem 0.75rem;
-  gap: 0.25rem;
-  justify-content: center;
-}
-
-/* ─── Action panels ──────────────────────────────────────── */
-.snap-card--action .snap-card-body--action,
-.snap-card--actions .snap-card-body--actions {
-  align-items: stretch;
-  padding: 0.7rem;
-}
-
-.snap-card--actions .snap-card-body--actions {
-  flex-direction: row;
-  gap: 0.5rem;
-}
-
-.panel-action-btn {
-  flex: 1;
-  min-height: 2.5rem;
-  border-radius: var(--radius-button);
-}
-
-/* ─── Workspace action buttons ───────────────────────────── */
-.workspace-action-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  border-radius: var(--radius-button);
-  background: var(--primary-vibrant);
-  color: #ffffff;
-  transition: opacity 0.2s, transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-  border: none;
-  box-shadow: var(--shadow-md), 0 0 0 0 rgba(230, 57, 70, 0.3);
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
-  font-family: 'Fraunces', sans-serif;
-  min-height: 2.5rem;
-}
-
-.workspace-action-button:not(:disabled):hover  {
-  background: #d62828;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg), 0 0 0 3px rgba(230, 57, 70, 0.2);
-}
-.workspace-action-button:not(:disabled):active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm), 0 0 0 1px var(--primary-vibrant) inset;
-}
-.workspace-action-button .material-symbols-outlined { font-size: 1.1rem; }
-.workspace-action-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--surface-strong);
-  color: var(--muted-ink);
-}
-
-.workspace-action-button-secondary {
-  background: var(--surface-bg);
-  color: var(--accent-dark);
-  border: 1px solid var(--primary-vibrant) !important;
-  box-shadow: var(--shadow-sm);
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
-}
-
-.workspace-action-button-secondary:not(:disabled):hover {
-  opacity: 0.9;
-}
-
-.workspace-action-button-secondary:not(:disabled):active {
-  opacity: 0.8;
-}
-
-/* ─── Status chip ────────────────────────────────────────── */
-.snap-status-chip {
-  font-size: 0.67rem;
-  font-weight: 500;
-  color: var(--muted-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ─── Clear button ───────────────────────────────────────── */
-.panel-clear-btn {
+.brand-preview-btn,
+.brand-export-btn {
+  flex: 1 1 auto;
+  min-height: 2.2rem;
+  padding: 0.42rem 0.7rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-bg);
-  color: var(--muted-ink);
-  font-size: 0.62rem;
+  justify-content: center;
+  gap: 0.35rem;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  border-radius: var(--radius-button) !important;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  white-space: nowrap;
 }
 
-.panel-clear-btn:hover {
-  background: #fef2f2;
-  color: #dc2626;
-  border-color: #fca5a5;
-}
-
-/* ─── Icon buttons ───────────────────────────────────────── */
-.panel-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-bg);
-  color: var(--accent-dark);
-  cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
-  flex-shrink: 0;
-}
-
-.panel-icon-btn:hover {
-  background: var(--surface-strong);
-  color: var(--primary-vibrant);
-  border-color: var(--primary-vibrant);
-  box-shadow: var(--shadow-sm);
-  transform: scale(1.1);
-}
-
-/* ─── Drop-zone drag-active ──────────────────────────────── */
-#unified-drop-zone.drag-active {
-  background: var(--primary-glow);
-  box-shadow: inset 0 0 0 2px var(--primary-vibrant);
-  border-radius: 0.5rem;
-}
-
-.workspace-stage.drag-active {
-  background: var(--primary-glow);
-  box-shadow: inset 0 0 0 2px var(--primary-vibrant);
-  border-radius: 0.75rem;
-}
-
-/* ─── Dragging / placeholder ─────────────────────────────── */
-/* Handled above in .snap-card:hover and .ui-draggable-dragging .snap-card rules */
-
-.grid-stack-item.grid-stack-placeholder > .placeholder-content {
-  background: var(--primary-glow) !important;
-  border: 1.5px dashed var(--primary-vibrant) !important;
-  border-radius: var(--radius-panel) !important;
+/* Single Coral-Red Accent reserved for primary Export CTA */
+.brand-export-btn {
+  background: var(--primary-vibrant) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--primary-vibrant) !important;
   box-shadow: none !important;
 }
 
-/* ─── Dark mode ──────────────────────────────────────────── */
-[data-theme="dark"] .app-header { border-bottom-color: rgba(255,85,85,0.5); }
-[data-theme="dark"] .snap-card-handle { background: #181818; border-bottom-color: rgba(255,255,255,0.05); }
-[data-theme="dark"] .panel-clear-btn:hover {
-  background: rgba(220,38,38,0.15);
-  border-color: rgba(220,38,38,0.4);
+.brand-export-btn:hover:not(:disabled) {
+  background: var(--primary-deep) !important;
+  border-color: var(--primary-deep) !important;
+  color: #ffffff !important;
 }
 
-/* ─── Legacy aliases (duplicate the properties, no @extend) ── */
-.snap-icon-btn {
+.brand-export-btn:disabled {
+  background: var(--surface-muted) !important;
+  border-color: var(--border-color) !important;
+  color: var(--muted-ink) !important;
+  opacity: 0.55;
+}
+
+/* Flat tonal surface for secondary Preview Fold button (no competing yellow) */
+.brand-preview-btn {
+  background: var(--surface-muted) !important;
+  color: var(--accent-dark) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: none !important;
+}
+
+.brand-preview-btn:hover:not(:disabled),
+.brand-preview-btn.is-active {
+  background: var(--accent-dark) !important;
+  color: var(--surface-bg) !important;
+  border-color: var(--accent-dark) !important;
+}
+
+.theme-toggle-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 999px;
+  width: 2.2rem;
+  height: 2.2rem;
   border: 1px solid var(--border-color);
-  background: var(--surface-bg);
-  color: var(--muted-ink);
+  border-radius: var(--radius-button);
+  background: var(--surface-muted);
+  color: var(--accent-dark);
+  box-shadow: none;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.snap-icon-btn:hover { background: var(--surface-muted); color: var(--accent-dark); }
 
-.snap-clear-btn {
+.theme-toggle-btn:hover {
+  background: var(--surface-strong);
+  color: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+/* ─── Snap Cards ──────────────────────────────────────────── */
+.snap-card {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-panel);
+  background: var(--surface-bg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.snap-card-handle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  background: var(--surface-muted);
+}
+
+.snap-card-handle:active {
+  cursor: grabbing;
+}
+
+.snap-card-title-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.snap-card-grip {
+  font-size: 14px;
+  color: var(--muted-ink);
+  opacity: 0.65;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.snap-card-handle:hover .snap-card-grip {
+  opacity: 1;
+  color: var(--accent-dark);
+}
+
+/* Sentence-case card heading in Fraunces display serif */
+.snap-card-label {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-transform: none;
+  color: var(--accent-dark);
+  line-height: 1.2;
+}
+
+[data-theme="dark"] .snap-card-label {
+  color: var(--accent-dark);
+}
+
+/* Unboxed tabular-nums page count (Zero Pill Badges rule) */
+.snap-card-meta-chip,
+.snap-card-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-ink);
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.snap-card-header-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.header-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 1.85rem;
+  padding: 0.25rem 0.5rem;
   border: 1px solid var(--border-color);
+  border-radius: var(--radius-button);
+  background: var(--surface-bg);
+  color: var(--accent-dark);
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 500;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.header-tool-label {
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.header-tool-btn:hover:not(:disabled) {
+  background: var(--surface-strong);
+  color: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.header-tool-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.clear-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.85rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-button);
   background: var(--surface-bg);
   color: var(--muted-ink);
-  font-size: 0.62rem;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 500;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.snap-clear-btn:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
 
-.snap-action-btn {
-  flex: 1;
-  min-height: 2.25rem;
+.clear-inline-btn:hover {
+  border-color: var(--primary-vibrant);
+  color: var(--primary-vibrant);
+  background: var(--primary-glow);
+}
+
+.snap-card-close {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 1px solid transparent;
   border-radius: var(--radius-button);
-}
-
-.rail-section-title, .app-overview-title {
-  font-size: 0.68rem; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase;
+  background: transparent;
   color: var(--muted-ink);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-/* ─── Print ──────────────────────────────────────────────── */
-@media print {
-  .app-header { display: none !important; }
-  .gs-wrapper { padding: 0 !important; overflow: visible !important; }
-  .grid-stack-item:not([gs-id="canvas"]) { display: none !important; }
-  #card-zine  { position: static !important; box-shadow: none !important; border: none !important; }
-  .snap-card-handle { display: none !important; }
-  .ui-resizable-handle { display: none !important; }
+.snap-card-close:hover {
+  background: var(--surface-strong);
+  color: var(--accent-dark);
+  border-color: var(--border-color);
 }
 
-/* ─── Responsive: tablet (< 1024px) ─────────────────────── */
-@media (max-width: 1023px) {
-  .ui-resizable-se {
-    display: block !important;
-    opacity: 0.7;
-  }
+.snap-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.8rem 0.9rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
-/* ──��� Responsive: mobile (single-column stack, drag to reorder) ─ */
+/* Zine Canvas Card Body */
+.snap-card-body--canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.85rem, 1.8vw, 1.5rem);
+  overflow: auto;
+  background-color: var(--surface-paper-stack);
+  background-image: radial-gradient(var(--pasteboard-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.display-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.display-card-actions,
+.display-reset-row {
+  margin-top: 0.25rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border-faint);
+}
+
+.display-reset-btn {
+  width: 100%;
+  min-height: 2.1rem;
+  padding: 0.4rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  cursor: pointer;
+}
+
+
+/* ─── Mobile Stacked Layout (< 768px) ─────────────────────── */
 @media (max-width: 767px) {
-  .app-header {
-    height: 3.25rem;
-    padding: 0 0.625rem;
+  body {
+    padding: 0.45rem;
   }
 
+  .app-shell {
+    min-height: calc(100dvh - 0.9rem);
+    border-radius: 1rem;
+    padding: 0.55rem;
+  }
+
+  .grid-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    height: auto !important;
+  }
+
+  .grid-stack > .grid-stack-item {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .grid-stack > .grid-stack-item > .grid-stack-item-content {
+    position: relative !important;
+    inset: auto !important;
+    height: auto !important;
+  }
+
+  .grid-stack > .grid-stack-item.hidden {
+    display: none !important;
+  }
+
+  .snap-card-handle,
   .brand-panel {
-    margin-top: 0.45rem;
-    padding: 0.25rem 0.5rem;
-    gap: 0.5rem;
+    cursor: default;
   }
 
-  .brand-panel .logo-image {
-    height: 2.65rem;
+  .snap-card-grip,
+  .ui-resizable-handle {
+    display: none !important;
   }
 
-  .gs-wrapper {
-    overflow: visible;
-    padding: 6px;
-  }
-
-  .snap-card {
-    box-shadow: var(--shadow-sm);
-  }
-
-  .snap-card-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.07em;
-  }
-
-  .snap-status-chip {
-    max-width: 9rem;
-  }
-
-  .snap-card-body {
-    padding: 0.65rem;
-    gap: 0.5rem;
-  }
-
-  .snap-card-body--canvas {
-    padding: 0.4rem;
-  }
-
-  .snap-card--actions .snap-card-body--actions {
-    flex-direction: row;
-    gap: 0.4rem;
+  .brand-actions-row {
+    grid-template-columns: 1fr;
   }
 }
 
-body.layout-mobile .snap-card-handle .panel-clear-btn,
-body.layout-mobile .snap-card-handle button {
-  touch-action: manipulation;
-}
+@media print {
+  body {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
 
-/* ─── Touch ──────────────────────────────────────────────── */
-input, select, textarea { touch-action: manipulation; }
+  .app-shell {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
 
-@media (max-width: 600px) {
-  input, select, textarea { font-size: 16px; }
-  .panel-action-btn  { min-height: 2.75rem; }
+  #card-brand,
+  #card-upload,
+  #card-settings,
+  #card-display,
+  #card-fold-viewer,
+  #card-fold-booklet,
+  #card-fold-guide,
+  .snap-card-handle {
+    display: none !important;
+  }
+
+  #card-zine {
+    position: static !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
 }

@@ -4,18 +4,27 @@
  */
 export class StateStore {
   constructor() {
-    this.allPageImages = new Array(8).fill(null);
+    this.allPageImages = new Array(12).fill(null);
     this._blankPageUrl = null;
     this.pageFlips = {}; // { pageIndex: boolean }
+    this.pageRotations = {}; // { pageIndex: 0 | 90 | 180 | 270 }
     this.pageZooms = {}; // { pageIndex: boolean }
     this.pageTransforms = {}; // { pageIndex: { rotation, fit, crop, pan, zoom } }
     this.pageNumberVisibility = {};
     this.selectedPageIndex = null;
-    this.layoutPresetId = 'mini-8';
-    this.guideToggles = { fold: true, cut: true, boundaries: true, numbers: true, arrows: false, safeArea: false, margins: true };
+    this.layoutPresetId = 'layout-12';
+    this.guideToggles = {
+      fold: true,
+      cut: true,
+      boundaries: true,
+      numbers: true,
+      arrows: false,
+      safeArea: false,
+      margins: true,
+    };
     this.printSettings = { duplex: true, scale: 'fit', bleed: 0, trim: 0 };
     this.projectMeta = { name: 'Untitled zine', createdAt: Date.now(), updatedAt: Date.now() };
-    this.gridSize = { rows: 2, cols: 4 };
+    this.gridSize = { rows: 3, cols: 4 };
     this.uploadedFiles = [];
     this.totalPages = 0;
     this.fileQueue = [];
@@ -25,6 +34,14 @@ export class StateStore {
     this.paperSize = 'letter';
     this.orientation = 'landscape';
     this.margin = 0;
+    this.customPaper = { width: 215.9, height: 279.4 };
+  }
+
+  getPageRotation(index) {
+    if (Number.isFinite(this.pageRotations?.[index])) {
+      return ((this.pageRotations[index] % 360) + 360) % 360;
+    }
+    return this.pageFlips?.[index] ? 180 : 0;
   }
 
   getFilledPageCount() {
@@ -34,6 +51,26 @@ export class StateStore {
       }
     }
     return 0;
+  }
+
+  getRealFilledSlotCount() {
+    let count = 0;
+    for (let i = 0; i < this.allPageImages.length; i++) {
+      if (this.allPageImages[i] && this.allPageImages[i] !== this._blankPageUrl) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  getNonEmptySlotCount() {
+    let count = 0;
+    for (let i = 0; i < this.allPageImages.length; i++) {
+      if (this.allPageImages[i]) {
+        count++;
+      }
+    }
+    return count;
   }
 
   getRequiredPageCapacity() {
@@ -60,10 +97,20 @@ export class StateStore {
     this.workflowExported = false;
   }
 
-  updatePaperSettings({ paperSize, orientation }) {
-    if (paperSize) {this.paperSize = paperSize;}
-    if (orientation) {this.orientation = orientation;}
+  updatePaperSettings({ paperSize, orientation, customPaper }) {
+    if (paperSize) { this.paperSize = paperSize; }
+    if (orientation) { this.orientation = orientation; }
+    if (customPaper && customPaper.width > 0 && customPaper.height > 0) {
+      this.customPaper = { ...customPaper };
+    }
     this.projectMeta.updatedAt = Date.now();
+  }
+
+  setGuideToggle(key, enabled) {
+    if (Object.prototype.hasOwnProperty.call(this.guideToggles, key)) {
+      this.guideToggles[key] = Boolean(enabled);
+      this.projectMeta.updatedAt = Date.now();
+    }
   }
 
   selectPage(pageIndex) {
@@ -72,7 +119,7 @@ export class StateStore {
 
   setLayoutPreset(presetId, gridSize) {
     this.layoutPresetId = presetId || 'custom';
-    if (gridSize?.rows && gridSize?.cols) {this.gridSize = { rows: gridSize.rows, cols: gridSize.cols };}
+    if (gridSize?.rows && gridSize?.cols) { this.gridSize = { rows: gridSize.rows, cols: gridSize.cols }; }
     this.projectMeta.updatedAt = Date.now();
   }
 
@@ -102,18 +149,20 @@ export class StateStore {
   }
 
   restoreProjectJSON(project = {}) {
-    if (project.layoutPresetId) {this.layoutPresetId = project.layoutPresetId;}
-    if (project.gridSize) {this.gridSize = { ...this.gridSize, ...project.gridSize };}
+    if (project.layoutPresetId) { this.layoutPresetId = project.layoutPresetId; }
+    if (project.gridSize) { this.gridSize = { ...this.gridSize, ...project.gridSize }; }
     this.pageFlips = { ...project.pageFlips };
+    this.pageRotations = { ...(project.pageRotations || {}) };
     this.pageZooms = { ...project.pageZooms };
     this.pageTransforms = structuredClone(project.pageTransforms || {});
     this.pageNumberVisibility = { ...project.pageNumberVisibility };
     this.selectedPageIndex = Number.isInteger(project.selectedPageIndex) ? project.selectedPageIndex : null;
     this.guideToggles = { ...this.guideToggles, ...project.guideToggles };
     this.printSettings = { ...this.printSettings, ...project.printSettings };
-    if (project.paperSize) {this.paperSize = project.paperSize;}
-    if (project.orientation) {this.orientation = project.orientation;}
-    if (Number.isFinite(project.margin)) {this.margin = project.margin;}
+    if (project.paperSize) { this.paperSize = project.paperSize; }
+    if (project.orientation) { this.orientation = project.orientation; }
+    if (Number.isFinite(project.margin)) { this.margin = project.margin; }
+    if (project.customPaper) { this.customPaper = { ...this.customPaper, ...project.customPaper }; }
     this.projectMeta = { ...this.projectMeta, ...project.projectMeta, updatedAt: Date.now() };
   }
 }

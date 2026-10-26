@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'zine-ify-v1';
+const CACHE_VERSION = 'zine-ify-v3';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -29,19 +29,26 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request)
-        .then((response) => {
-          if (response && response.ok && response.type === 'basic') {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
+  const url = new URL(event.request.url);
+  if (
+    url.origin !== self.location.origin ||
+    url.pathname.startsWith('/@vite') ||
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/node_modules/')
+  ) {
+    return;
+  }
 
-      return cached || fetchPromise;
-    })
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.ok && response.type === 'basic') {
+          const copy = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
+

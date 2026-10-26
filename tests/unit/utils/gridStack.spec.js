@@ -275,7 +275,7 @@ test.describe('initGridStack', () => {
       };
     });
 
-    expect(result.totalItems).toBe(7); // merged with missing defaults
+    expect(result.totalItems).toBe(8); // merged with missing defaults (including display)
     expect(result.brandX).toBe(2);
     expect(result.brandY).toBe(2);
   });

@@ -1,115 +1,129 @@
-# Zine-ify Studio Revamp — DIY Punk Xerox Press & Guided Imposition Suite
+# Zine-ify: Stylesheet Recovery & `taste-skill` App-Screen Refinement Plan
 
-Zine-ify is being completely reimagined from a scattered floating widget board into a cohesive **DIY Punk Xerox & Cut-and-Paste Collage** print-press studio. The revamped experience guides creators through a focused 4-stage production pipeline (**1. Import → 2. Arrange & Impose → 3. Fold & Inspect → 4. Export & Print**) while adding one-click sample zine templates, toggleable crop/bleed/cut-line press marks, and a unified 2D/3D Fold & Spread Inspector Dock.
+An architectural and visual refinement plan that fixes the root cause of the unstyled HTML preview shown in your screenshot while applying the confirmed **`Leonxlnx/taste-skill`** (`tasteskill v2`) App-Screen house rules across the draggable GridStack Zine-ify workspace.
 
-### User Review & Critical Decisions
+---
+
+## User Review & Critical Decisions
+
+> [!WARNING]
+> **Root Cause of Unstyled HTML in Your Screenshot**
+> In your screenshot, Zine-ify rendered as raw, unstyled browser HTML for three compounding reasons:
+> 1. **Restrictive Content-Security-Policy (`index.html`)**: The hardcoded CSP `<meta>` tag only permitted two SHA-256 inline script hashes and `connect-src 'self' ws: http://localhost:8001`. When served inside the HTTPS preview environment (`https://*.run.app`), Vite's module scripts and `wss:` connections are blocked, preventing `src/core/main.js` from executing.
+> 2. **JS-Only Stylesheet Injection**: Because `index.html` had no `<link rel="stylesheet" href="/src/styles/index.css" />` in `<head>`, any script or CSP block caused the entire stylesheet to never load.
+> 3. **Service Worker Cache Stale Lock (`public/sw.js`)**: The Service Worker used a cache-first responder (`cached || fetchPromise`) under `zine-ify-v1`, serving stale cached responses across rebuilds.
 
 > [!IMPORTANT]
-> Review the confirmed product and aesthetic direction below. Once approved, we will execute the full visual, layout, and workflow transformation across the application.
-
-- **Confirmed Aesthetic Direction**: **DIY Punk Xerox & Cut-and-Paste Collage** — High-contrast photocopy halftone grain, ink-black structural borders, off-white newsprint sheets, stencil/stamp accents in Cinnabar Xerox Red (`#E63946`), and tactile cut-out shadows (`4px 4px 0 #0F0F0F`).
-- **Confirmed Workspace Architecture**: **Step-by-Step Guided Flow (Import, Arrange, Fold, Export)** — A dedicated 4-step studio pipeline with instant step switching, live progress state, and persistent sheet access so users never get lost in overlapping panels.
-- **Confirmed Workflow Enhancements**:
-  1. **Built-in Sample Zine & Quick-Start Demo Templates**: Instant 1-click procedural 8-page zine generators (*"Subterranean Punk Issue #1"*, *"Riso Art Monograph"*, and *"Field Notes Pocket Guide"*) so users can test folding, imposition, and export immediately without uploading files first.
-  2. **Print Marks, Bleed Guides & Cut-Line Overlays**: Live imposition overlays for center slit cut-lines, valley/mountain fold creases, outer crop marks, and bleed/margin safe zones—available both on the interactive canvas and baked optionally into exported PDFs/prints.
-  3. **Interactive 2D/3D Fold & Spread Inspector Dock**: A unified inspection stage combining the interactive Three.js 3D folding simulation, a collapsible bottom control dock with 6 fold checkpoints, a 2D page-turn booklet spread reader, and an illustrated 8-step physical folding guide.
+> **Confirmed `taste-skill` House Rules for Zine-ify**
+> - **Keep the Draggable GridStack Cards & Logo Sticker**: Preserve the framed workbench, draggable GridStack snap-cards, and the Zine-ify logo sticker in the Brand card.
+> - **One Ground, One Ink, One Coral-Red Accent**: Unify the palette around warm paper ground (`#f4f1ea` light / `#0d0d0d` dark), crisp editorial ink (`#111111` / `#fafafa`), and a single coral-red accent (`#ff5555`) reserved for primary actions and cut lines—eliminating competing secondary mustard/yellow fills.
+> - **Sentence-Case Labels & Two-Font Cap**: Replace tiny uppercase letter-spaced micro-labels (`0.55rem–0.67rem` tracked all-caps) with readable sentence-case labels, and cap typography at two families (`Fraunces` for editorial headings + `Plus Jakarta Sans` with `tabular-nums` for UI and numeric counters).
+> - **Flat Tonal Surfaces & Unboxed Counts**: Replace gradients, glows, and heavy shadows on small buttons with flat tonal surface steps and crisp `1px` hairlines, and unbox static pill badges (`0/8`, status tags) into clean inline `tabular-nums` text.
 
 ---
 
-### 1. Overview & Core Concept
+## 1. Overview & Core Concept
 
-- **What It Does**: Converts multi-page PDFs, image batches, or built-in starter templates into print-ready, single-sheet 8-page mini-zines (and custom imposition grids) with real-time 2D sheet editing, 3D physical fold simulation, and 300 DPI PDF/print output.
-- **Target Audience / Persona**: Independent zinesters, DIY publishers, comic artists, educators, and printmakers who want a tactile, zero-friction pressroom tool that respects physical paper geometry.
-- **Key Value**: Eliminates the confusion of upside-down imposition math (pages 2, 3, 4, 5 rotated 180° on the top row vs. pages 6, 7, 8, 1 on the bottom row) by pairing a crystal-clear guided press workflow with instant 3D physical verification.
+**Zine-ify** is a client-side studio utility that transforms multi-page PDFs and images into printable 8-page mini-zine imposition sheets with interactive 3D fold previews. Under `Leonxlnx/taste-skill`, Zine-ify is classified as an **App Screen**—a calm, high-trust workspace where every control, counter, and canvas panel serves page curation, imposition accuracy, and print output.
 
----
-
-### 2. User Experience & Visual Design
-
-- **Key User Flows**:
-  1. **Top Bar & Guided Stepper**: A clean 3-zone top bar houses the single-line **ZINE-IFY** wordmark on the left, the 4-stage interactive workflow links (**01. Import**, **02. Arrange**, **03. Fold & Inspect**, **04. Export**) in the center, and the primary **Export PDF** action on the right.
-  2. **Stage 01 — Import & Starter Press**: Users drop PDFs/PNGs/JPGs/WEBPs into a tactile pasteboard dropzone, manage their queued source files, or launch one of three **Built-in Sample Zines** with a single click to populate all 8 slots immediately.
-  3. **Stage 02 — Arrange & Impose**: The central pasteboard displays the imposed press sheet with true paper aspect ratio (Letter, A4, A3, Legal, A5, or Custom) alongside a focused Press Config sidebar. Users drag-and-drop pages to swap slots, flip individual pages 180°, toggle Fit/Fill crop, duplicate or clear slots, and toggle live **Press Overlays** (Center Slit Cut Mark, Fold Creases, Trim/Crop Marks, Safe Bleed Zone, and Page Numbers).
-  4. **Stage 03 — Fold & Inspect (2D/3D Inspector Dock)**: Users inspect how their flat imposed sheet transforms into a physical 8-page booklet. A dedicated viewport switcher toggles between the **3D Interactive Fold Stage** (with a collapsible bottom control dock for scrubbing stages 1–6: *Flat → Crease → Strip → Center Cut → Diamond → Booklet*), the **2D Spread Reader** (flipping through Cover, Spreads 2–3, 4–5, 6–7, and Back Cover), and the **Physical Fold Manual**.
-  5. **Stage 04 — Export & Print Press**: Users review a pre-flight summary of their zine (filled pages, paper size, orientation, margin, and optional printable crop/cut marks), then trigger **Download 300 DPI PDF** or **Direct Print Sheet**.
-
-- **Visual Identity & Theme**:
-  - *Aesthetic Direction*: **DIY Punk Xerox & Cut-and-Paste Collage** — Authentic underground print-shop atmosphere combining tactile newsprint surfaces, stark ink-black framing, halftone dot patterns, and razor-sharp editorial typography.
-  - *Color Palette & Mood* (60-30-10 discipline):
-    - **60% Dominant Neutral Canvas (`--background`)**: Warm Newsprint Paper (`#F4F1EA` light) / Deep Toner Black (`#0B0B0C` dark) with subtle photocopy grain.
-    - **30% Structural Surfaces (`--surface-bg`, `--border-color`)**: Crisp Pasteboard White (`#FFFFFF` light) / Charcoal Press Plate (`#161618` dark) framed by solid `2px solid #0F0F0F` (`#E4E4E7` in dark mode) structural borders and hard offset shadows (`4px 4px 0px`).
-    - **10% Accent Budget (`--primary`, `--accent`)**: Cinnabar Xerox Red (`#E63946`) reserved strictly for primary CTAs, active step indicators, and the center slit cut-line, paired with Press Mustard (`#F2B705`) for bleed/crop guide highlights.
-  - *Typography & Hierarchy* (2+1 Font Rule):
-    - **Display & Editorial Headings**: `Fraunces` (600/700 weights, tight tracking) for expressive zine mastheads, step titles, and editorial callouts.
-    - **UI & Body Prose**: `Plus Jakarta Sans` (400/600 weights) for crisp, high-legibility studio controls and instructions.
-    - **Technical & Press Metrics**: `IBM Plex Mono` (`tabular-nums`) for page slot indices, paper dimensions (`mm`/`in`), DPI readouts, and fold angle checkpoints.
-  - *Component Styling & Layout*:
-    - Full `1440px` desktop studio presence with a 12-column layout: a 4-column contextual press inspector on the left and an 8-column interactive pasteboard stage on the right.
-    - Zero nested "cards within cards"—sections within the inspector are separated by crisp `1px` rules and generous whitespace.
-    - Zero static pill badges—metadata (page counts, paper dimensions, orientation specs) is rendered as clean inline monospace text separated by middle dots (`·`).
-
-- **Interactive Feedback & Motion**:
-  - Fast `150ms` compositor-only (`transform`, `opacity`) press-down micro-interactions on buttons (`translate(2px, 2px)` shadow collapse on click).
-  - Smooth exponential damping in the 3D fold viewer when jumping between checkpoints `1`–`6` or dragging the fold slider.
-  - Keyboard shortcuts (`Ctrl/Cmd+Z` Undo, `Ctrl/Cmd+Y` Redo, `1`–`6` fold checkpoints, `C` crop toggle, `R` rotate 180°) with instant toast feedback.
+Our goal is twofold:
+1. **Guarantee Bulletproof Stylesheet & Asset Delivery**: Link `/src/styles/index.css` directly in `<head>`, relax the CSP `<meta>` tag so HTTPS/WSS preview environments and Vite module bundles never get blocked, and switch the Service Worker in development/preview to network-first with cache version bumping so stale unstyled snapshots can never persist.
+2. **Apply `taste-skill` App-Screen Discipline to GridStack Cards**: Strip away visual noise (competing yellow accent fills, tiny tracked-out uppercase labels, pill-wrapped counters, and heavy offset button shadows) while keeping the tactile GridStack card workbench and Zine-ify brand sticker that give the app its identity.
 
 ---
 
-### 3. Key Product Decisions & Trade-Offs
+## 2. User Experience & Visual Design
 
-- **Decision 1: Guided 4-Stage Pipeline with Persistent Sheet Canvas vs. Freeform GridStack Windows**
-  - *Chosen Approach*: Replace the overlapping draggable GridStack window cards with a structured 4-step studio workspace (**Import → Arrange → Fold → Export**) where stages 1, 2, and 4 keep the live imposition sheet visible on the right pasteboard while stage 3 expands the 2D/3D Fold & Spread Inspector to full stage width.
-  - *Why*: Freeform draggable panels caused layout collisions, hidden scrollbars, and disorientation on both desktop and mobile. A guided pipeline matches the actual physical printmaking process while still allowing non-linear jumping between steps at any time.
-  - *Alternatives Considered*: Keeping GridStack panels with locked positions was considered, but it adds unnecessary DOM wrapper overhead and prevents a clean step-by-step editorial flow.
-- **Decision 2: Procedural Canvas Sample Zine Generator**
-  - *Chosen Approach*: Build a client-side procedural zine generator that renders 8 distinct, high-contrast punk/editorial zine pages onto HTML5 canvases (complete with cover typography, collage geometry, page numbers, and back-cover colophon) and converts them into blob URLs.
-  - *Why*: Allows first-time visitors to experience the entire Arrange, 3D Fold, Booklet Spread, and PDF Export workflow in one click with zero external network dependencies or 404 risks.
-- **Decision 3: Non-Destructive Print Marks & Bleed Overlays**
-  - *Chosen Approach*: Render fold lines, center slit cut markers, corner crop marks, and bleed safe-zones as toggleable SVG/CSS overlays on the pasteboard and optional vector/canvas layers in `ExportService` during 300 DPI PDF generation.
-  - *Why*: Lets users verify safe margins visually while choosing whether physical cut/fold ticks should appear on their final printed sheet.
+### Aesthetic Direction & Domain Exemplars
+- **Tactile Print Workbench Meets Modern Studio Utility**: Inspired by Linear and Figma's calm property panels blended with physical risograph/zine print-shop clarity.
+- **High-Craft Light Mode Default + Carbon Dark Mode**: Warm archival paper ground in light mode and deep carbon-black in dark mode, with cards sitting one subtle tonal step above the workspace ground.
+
+### Color & Atmospheric Polarity
+| Semantic Role | Light Mode Token | Dark Mode Token | Usage Discipline |
+| :--- | :--- | :--- | :--- |
+| **Workspace Ground** | `#ebe6dc` (Outer Frame) / `#f4f1ea` (Canvas) | `#080808` (Outer Frame) / `#0d0d0d` (Canvas) | Calm, non-competing studio surface |
+| **Card Surface** | `#faf8f4` (Elevated Card) / `#efebe2` (Subtle Well) | `#141414` (Elevated Card) / `#1c1c1c` (Subtle Well) | Flat tonal hierarchy without heavy drop-shadow clutter |
+| **Primary Ink** | `#111111` | `#f5f5f3` | Card titles, primary controls, active values |
+| **Muted Ink** | `#57534e` | `#a1a1aa` | Sentence-case field labels, helper descriptions, page counts |
+| **Single Accent (Coral-Red)** | `#ff5555` (Hover `#e03e3e`) | `#ff5555` (Hover `#ff6b6b`) | Reserved strictly for primary CTA (`Export PDF`), active selection states, and zine cut lines |
+| **Structural Hairline** | `#dcd6ca` (`1px solid`) | `#262626` (`1px solid`) | Clean `1px` borders separating cards, headers, and input controls |
+
+### Typography & Scannable Hierarchy
+- **Two-Font Cap**:
+  - **Display (`--font-display`)**: `'Fraunces', Georgia, serif` for card header titles and empty-state headings (`font-weight: 600`, tight tracking `-0.02em`).
+  - **UI & Numeric (`--font-sans`)**: `'Plus Jakarta Sans', -apple-system, sans-serif` across all buttons, form labels, selects, and counters—eliminating the third monospace font stack from general UI labels.
+- **Sentence-Case Labels**: All form labels (`PageLayout`, `Margin`, `Scaling`, `Duplex`, `Slotassignment`), card sub-labels, and buttons use natural sentence case (`0.78rem–0.85rem`, `font-weight: 500`, normal letter-spacing) instead of `0.55rem–0.67rem` uppercase tracked caps.
+- **Tabular Numerals (`tabular-nums`)**: Every counter (`0/8` pages, sheet badges, margin inputs, zoom percentages, and page slot indices) enforces `font-variant-numeric: tabular-nums` as plain unboxed inline text.
+
+### Layout, Spatial Architecture & Interactive Flows
+- **GridStack 12-Column Workbench**:
+  - **Left Column (`w: 3`)**:
+    - **Brand Card (`card-brand`)**: Preserves the Zine-ify logo sticker (`/icons/zine-ify-logo.jpg`), paired with clean flat icon controls for Theme Toggle, Undo, Redo, Reset Layout, and the **Preview Fold** toggle button (`#view3dBtn`).
+    - **Display Card (`card-display`)**: Houses the segmented Simple / Pro mode switch and dark/light indicator without overlapping neighboring cards.
+    - **Upload Card (`card-upload`)**: Clean dashed dropzone with sentence-case helper text and unboxed `tabular-nums` page counter (`0/8`).
+    - **Settings Card (`card-settings`)**: Sentence-case field labels, flat tonal `<select>` and `<input>` controls, and a single coral-red primary action button (`#generateBtn`).
+  - **Right Column (`w: 9`)**:
+    - **Pages Card (`card-pages`)**: Scannable thumbnail strip with hover/focus **90° Rotate** (`↻`), **Delete** (`×`), and drag-reorder handles.
+    - **Print Sheet Preview (`card-preview`)**: High-clarity imposition canvas showing fold lines and coral-red cut marks, with flat zoom controls.
+    - **On-Demand 3D Fold, Booklet & Fold Guide Cards (`card-3d`, `card-booklet`, `card-howto`)**: Toggled cleanly via **Preview Fold** (`#view3dBtn`), synchronized with GridStack so there is never empty ghost space when hidden.
 
 ---
 
-### 4. Technical Architecture & Data Strategy *(Technical Reference)*
+## 3. Key Product Decisions & Trade-Offs
 
-- **Architecture & Component Diagram**:
+1. **Direct `<link rel="stylesheet">` + Relaxed CSP vs. Strict Hash-Locked Inline CSP**
+   - *Decision*: Add `<link rel="stylesheet" href="/src/styles/index.css" />` directly in `index.html` and update the CSP `<meta>` policy to allow `'self' 'unsafe-inline'` for scripts/styles and `https: wss: ws: http:` for connections.
+   - *Rationale*: In Vite + cloud preview environments, hash-locked CSP blocks module preloads and stylesheet injection, causing the exact unstyled HTML failure seen in the screenshot. Linking the CSS directly guarantees instant styling on first paint with zero Flash of Unstyled Content (FOUC).
+2. **One Accent Color (`#ff5555`) vs. Multi-Accent Brutalist Palette**
+   - *Decision*: Retire the secondary mustard-yellow (`#ffd166`) button/badge fills and use tonal paper/ink surfaces for secondary controls, reserving `#ff5555` exclusively for primary actions and active states.
+   - *Rationale*: Follows your confirmed `taste-skill` choice ("One ground, one ink, and one coral-red accent color") so primary actions and zine cut marks command immediate visual hierarchy.
+3. **Unboxed `tabular-nums` Counts vs. Pill Badges**
+   - *Decision*: Render `0/8` page counts, sheet counts, and status indicators as plain right-aligned `tabular-nums` text in muted ink instead of bordered pill chips.
+   - *Rationale*: Directly implements your confirmed `taste-skill` rule ("Remove pill badges and use plain tabular-nums text counts") and matches the universal Zero-Pill discipline.
+
+---
+
+## 4. Technical Architecture & Data Strategy
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                        TOP BAR (3-Zone Contract)                             │
-│  [ZINE-IFY Wordmark]   [01.Import · 02.Arrange · 03.Fold · 04.Export]  [CTA] │
-└──────────────────────────────────────┬───────────────────────────────────────┘
-                                       │
-                                       ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                         AppController & StateStore                           │
-│  • activeStep ('import' | 'arrange' | 'fold' | 'export')                     │
-│  • allPageImages[8], pageFlips, pageZooms, UndoManager (Ctrl+Z / Ctrl+Y)     │
-│  • paperSize, orientation, margin, guideToggles (cut, fold, crop, bleed)     │
-└───────────────┬──────────────────────────────────────────────┬───────────────┘
-                │                                              │
-                ▼                                              ▼
-┌───────────────────────────────────────────┐  ┌───────────────────────────────┐
-│      LEFT CONTEXTUAL STUDIO DOCK          │  │    RIGHT PASTEBOARD STAGE     │
-│                                           │  │                               │
-│  • Step 1: Dropzone, File Queue,          │  │  • Live Imposition Sheet      │
-│    & Sample Zine Template Launcher        │  │    (LayoutRenderer + Sortable)│
-│  • Step 2: SmartSheetConfig (Paper,       │  │  • SVG Press Marks Overlay    │
-│    Orientation, Margin) + Press Overlays  │  │    (Center Slit, Fold Grid,   │
-│    (Cut Line, Crease, Bleed, Page #s)     │  │     Crop Ticks, Safe Bleed)   │
-│  • Step 3: Fold Stepper & Spread Controls │  │  • Interactive 3D Fold Stage  │
-│  • Step 4: Pre-Flight Summary & Print     │  │    (Zine3DViewer + Bottom HUD │
-│    Marks Export Options                   │  │     Dock + BookletPreview)    │
-└───────────────────────────────────────────┘  └───────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        index.html (<head> CSS Link)                     │
+│   Direct <link rel="stylesheet" href="/src/styles/index.css"> + Safe CSP│
+└───────────────────┬─────────────────────────────────────┬───────────────┘
+                    │                                     │
+                    ▼                                     ▼
+┌───────────────────────────────────────┐ ┌───────────────────────────────┐
+│     Design Tokens & Stylesheets       │ │  Service Worker & PWA Layer   │
+│  • One Ground / One Ink / One Accent  │ │  • Bump cache to zine-ify-v2  │
+│  • Two-Font Cap (Fraunces + Plus      │ │  • Purge stale v1 HTML/CSS    │
+│    Jakarta Sans with tabular-nums)    │ │  • Network-first for HTML/CSS │
+│  • Flat tonal borders (1px solid)     │ └───────────────────────────────┘
+│  • Sentence-case labels & unboxed     │
+│    tabular-nums metadata counts       │
+└───────────────────┬───────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   GridStack 12-Column App-Screen Workbench              │
+│  ┌─────────────────────────┐  ┌──────────────────────────────────────┐  │
+│  │ Left Rail (w: 3)        │  │ Main Studio Stage (w: 9)             │  │
+│  │ • Brand Sticker + Tools │  │ • Page Strip (90° Rotate, Reorder)   │  │
+│  │ • Display Mode Switch   │  │ • Print Sheet Imposition Canvas      │  │
+│  │ • Upload Dropzone (0/8) │  │ • On-Demand 3D Fold / Booklet /      │  │
+│  │ • Settings & Export CTA │  │   Fold Guide Cards (Preview Fold)    │  │
+│  └─────────────────────────┘  └──────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Data Model & State**:
-  - `StateStore`: Holds `activeStep` (`'import' | 'arrange' | 'fold' | 'export'`), `allPageImages` (8-slot blob URL array), `pageFlips` & `pageZooms` maps, `paperSize` (`letter`, `a4`, `a3`, `legal`, `a5`, `custom`), `orientation` (`landscape` | `portrait`), `margin` (`0–25mm`), `guideToggles` (`cut: true, fold: true, cropMarks: true, bleed: false, numbers: true`), and `includeMarksInExport` (`boolean`).
-  - `UndoManager`: Snapshots page image arrays, flips, zooms, and layout presets with automatic blob URL lifecycle cleanup on prune.
-
-- **Interactive Component & State Mapping**:
-  - **Guided Stepper Navigation**: Clicking steps `01`–`04` in the top bar or contextual "Next Step / Previous Step" footer buttons updates `state.activeStep`, switches the left inspector view, and automatically initializes/resizes the 3D Fold & Booklet Inspector when entering Step `03`.
-  - **Sample Zine Loader**: Clicking any starter template card (*Subterranean Punk #1*, *Risograph Geometry*, *Pocket Field Zine*) generates 8 themed high-resolution canvas pages, pushes an undo snapshot, populates `state.allPageImages`, and advances to Step `02 (Arrange)` with a confirmation toast.
-  - **Sheet Imposition & Press Marks**: Toggling press guide checkboxes in Step `02` updates `state.guideToggles` and immediately toggles `.show-cut-marks`, `.show-fold-creases`, `.show-crop-ticks`, and `.show-bleed-zone` overlays on the rendered `.print-sheet`.
-  - **Unified 2D/3D Fold & Spread Dock (Step 03)**: Provides tabs to view the **3D Fold Simulation** (with a collapsible bottom HUD bar containing the continuous `0.00–3.00` fold slider and 6 checkpoint buttons), **2D Booklet Spreads** (`BookletPreview` with Previous/Next spread navigation), or the **8-Step Illustrated Fold Guide** side-by-side.
-  - **Export & Print Pipeline (Step 04)**: `ExportService` renders all slots at 300 DPI onto an offscreen canvas, optionally draws physical trim/crop ticks and center-slit guides when `includeMarksInExport` is enabled, and outputs `zine.pdf` via `jsPDF` or launches a clean print sheet frame.
+### Key Implementation Steps
+1. **Fix Unstyled HTML & Stale Cache Delivery**:
+   - Add `<link rel="stylesheet" href="/src/styles/index.css" />` to `<head>` in `index.html`.
+   - Update the `<meta http-equiv="Content-Security-Policy">` tag in `index.html` so HTTPS/WSS preview connections, Google Fonts, and Vite scripts/styles load without CSP blocks.
+   - Convert `tailwind.config.js` plugin imports to clean ESM imports compatible with `"type": "module"`, and bump `CACHE_VERSION` in `public/sw.js` to `zine-ify-v2` with network-first navigation/stylesheet handling so any cached unstyled page is immediately evicted.
+2. **Enforce `taste-skill` Tokens & Surface Rules**:
+   - Update design tokens so `--accent` (`#ff5555`) is the sole accent color, replacing secondary yellow (`#ffd166`) surface fills with calm tonal paper steps (`--surface-subtle`, `--surface-elevated`) and `1px solid` structural hairlines.
+   - Replace heavy offset shadows (`3px 3px 0px`) and button gradients/glows on cards and small controls with flat tonal surfaces and crisp `1px` borders.
+3. **Typography, Sentence-Case Labels & Unboxed `tabular-nums` Counts**:
+   - Remove `text-transform: uppercase` and wide letter-spacing (`0.08em–0.16em`) from card headers, form labels, buttons, dropzone copy, and status counters.
+   - Update copy and labels in `index.html` to clean sentence case while keeping the Zine-ify logo sticker in the Brand card and maintaining all test selectors (`#pageCountBadge`, `#sheetCountBadge`, `#view3dBtn`, `#generateBtn`, `.page-rotate-btn`, etc.).
+   - Style `#pageCountBadge`, `#sheetCountBadge`, and status indicators as plain inline `tabular-nums` text without pill borders or background chips.

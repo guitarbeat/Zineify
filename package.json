@@ -4,7 +4,7 @@
   "description": "A modern web application to convert PDFs into printable 8-page zine layouts",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --strictPort false",
+    "dev": "vite --host 0.0.0.0 --port 3000 --strictPort false",
     "build": "vite build",
     "preview": "vite preview",
     "serve": "vite preview --host 0.0.0.0 --port 8001",

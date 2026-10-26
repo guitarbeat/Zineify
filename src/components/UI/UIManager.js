@@ -15,40 +15,16 @@ import { DragAndDropHandler } from './DragAndDropHandler.js';
 import { LayoutRenderer } from './LayoutRenderer.js';
 import { PAGE_CELL_TEMPLATE, createUploadedFileItem } from './Templates.js';
 
-
 const DEFAULT_GRID_ROWS = 2;
 const DEFAULT_GRID_COLS = 4;
+
 const FOLD_STEPS = [
-  {
-    value: 0,
-    status: 'Flat',
-    helper: 'Start with the imposed sheet face up. Red marks the center slit; gray marks the crease grid.'
-  },
-  {
-    value: 0.5,
-    status: 'Creasing',
-    helper: 'Crease the sheet across the short and long axes, then reopen it so every panel has a hinge.'
-  },
-  {
-    value: 1,
-    status: 'Folded Strip',
-    helper: 'Fold the sheet lengthwise into a strip with the page artwork facing outward.'
-  },
-  {
-    value: 1.5,
-    status: 'Center Cut',
-    helper: 'Cut only the center slit, stopping at the quarter folds. The red guide shows the cut span.'
-  },
-  {
-    value: 2,
-    status: 'Diamond Open',
-    helper: 'Push the short ends together so the slit opens into a diamond and the page stacks swing inward.'
-  },
-  {
-    value: 3,
-    status: 'Booklet',
-    helper: 'Press the panels into a booklet stack with the cover outside, then page through the reading preview.'
-  }
+  { value: 0, status: 'Flat Sheet', helper: 'Drag to orbit · Scroll to zoom · Keys 1–6 jump to steps' },
+  { value: 0.5, status: 'Creasing', helper: 'Step 2: Crease sheet in half and into quarters' },
+  { value: 1, status: 'Folded Strip', helper: 'Step 3: Fold lengthwise (hotdog style)' },
+  { value: 1.5, status: 'Center Slit', helper: 'Step 4: Cut center crease between inner panels' },
+  { value: 2, status: 'Diamond Open', helper: 'Step 5: Push outer ends inward into a diamond' },
+  { value: 3, status: 'Booklet', helper: 'Step 6: Wrap pages around into finished 8-page zine' }
 ];
 
 export class UIManager {
@@ -57,6 +33,17 @@ export class UIManager {
     this.elements = {};
     this.pageNumbersVisible = true;
     this.activePageIndex = null;
+    this.guideToggles = {
+      cut: true,
+      fold: true,
+      cropMarks: true,
+      bleed: false,
+      numbers: true,
+      includeInExport: true,
+      bakeCutMarks: true,
+      bakeFoldGuides: true,
+      bakeCropMarks: true
+    };
 
     this.init();
   }
@@ -89,26 +76,12 @@ export class UIManager {
 
   initSmartSheetConfig() {
     const container = document.getElementById('smart-sheet-config-container');
-    if (!container) {return;}
-
-    let lastGridState = { rows: DEFAULT_GRID_ROWS, cols: DEFAULT_GRID_COLS };
+    if (!container) { return; }
 
     this.smartSheetConfig = new SmartSheetConfig(container, {
       initialRows: DEFAULT_GRID_ROWS,
       initialCols: DEFAULT_GRID_COLS,
-      onChange: ({ rows, cols, layoutPresetId, paperSize, orientation, margin, customPaper, _totalSlots }) => {
-        if (this.elements.gridRows) {this.elements.gridRows.value = rows;}
-        if (this.elements.gridCols) {this.elements.gridCols.value = cols;}
-        this.updateGridTotalBadge(rows, cols);
-        this._syncOrientationVisibility(rows, cols);
-
-        // Only emit gridSizeChanged when grid dimensions actually changed
-        if (lastGridState.rows !== rows || lastGridState.cols !== cols) {
-          lastGridState = { rows, cols };
-          this.emitter.emit('gridSizeChanged', { rows, cols });
-        }
-
-        this.emitter.emit('layoutPresetChanged', { layoutPresetId, rows, cols });
+      onChange: ({ paperSize, orientation, margin, customPaper }) => {
         this.emitter.emit('paperSizeChanged', { paperSize, customPaper });
         this.emitter.emit('orientationChanged', { orientation });
         this.emitter.emit('marginChanged', { margin });
@@ -141,8 +114,14 @@ export class UIManager {
       return;
     }
     this.elements.uploadedFilesList.classList.remove('hidden');
+
+    const title = document.createElement('p');
+    title.className = 'rail-section-title';
+    title.textContent = `Uploaded Files (${files.length})`;
+    this.elements.uploadedFilesList.appendChild(title);
+
     const wrapper = document.createElement('div');
-    wrapper.className = 'base-panel';
+    wrapper.className = 'uploaded-files-stack';
     files.forEach((file, index) => {
       const item = createUploadedFileItem(file, () => this.emitter.emit('removeUploadedFile', index));
       wrapper.appendChild(item);
@@ -163,9 +142,9 @@ export class UIManager {
       img.classList.toggle('hidden', !url);
     }
     if (placeholder) {
-      placeholder.classList.toggle('hidden', !!url);
+      placeholder.classList.toggle('hidden', Boolean(url));
     }
-    cell.classList.toggle('has-page', !!url);
+    cell.classList.toggle('has-page', Boolean(url));
     const baseLabel = (cell.getAttribute('aria-label') || '').replace(/, (empty slot|has content)$/, '');
     if (baseLabel) {
       cell.setAttribute('aria-label', url ? `${baseLabel}, has content` : `${baseLabel}, empty slot`);
@@ -174,12 +153,33 @@ export class UIManager {
 
   setPageFlip(index, enabled) {
     const cell = this._getPageCell(index);
-    cell?.classList.toggle('is-flipped', !!enabled);
+    if (!cell) { return; }
+    cell.classList.toggle('is-flipped', Boolean(enabled));
+    const deg = enabled ? 180 : 0;
+    cell.style.setProperty('--page-image-rotation', `${deg}deg`);
+    const rotBadge = cell.querySelector('.page-rotation-badge');
+    if (rotBadge) {
+      rotBadge.textContent = deg > 0 ? `${deg}°` : '';
+      rotBadge.classList.toggle('hidden', deg === 0);
+    }
+  }
+
+  setPageRotation(index, degrees = 0) {
+    const cell = this._getPageCell(index);
+    if (!cell) { return; }
+    const norm = ((Number(degrees) || 0) % 360 + 360) % 360;
+    cell.classList.toggle('is-flipped', norm === 180);
+    cell.style.setProperty('--page-image-rotation', `${norm}deg`);
+    const rotBadge = cell.querySelector('.page-rotation-badge');
+    if (rotBadge) {
+      rotBadge.textContent = norm > 0 ? `${norm}°` : '';
+      rotBadge.classList.toggle('hidden', norm === 0);
+    }
   }
 
   setPageZoom(index, enabled) {
     const cell = this._getPageCell(index);
-    cell?.classList.toggle('page-zoomed', !!enabled);
+    cell?.classList.toggle('page-zoomed', Boolean(enabled));
   }
 
   toggle3DModal(show) {
@@ -215,11 +215,11 @@ export class UIManager {
   }
 
   toggleMobileRail(show) {
-    document.body.classList.toggle('mobile-rail-open', !!show);
+    document.body.classList.toggle('mobile-rail-open', Boolean(show));
     const rail = document.getElementById('control-rail');
     const overlay = document.getElementById('mobile-rail-overlay');
     if (rail) {
-      rail.classList.toggle('is-open', !!show);
+      rail.classList.toggle('is-open', Boolean(show));
       rail.setAttribute('aria-hidden', !show);
     }
     if (overlay) {
@@ -241,23 +241,68 @@ export class UIManager {
     files.forEach((file) => this.emitter.emit('fileSelected', file));
   }
 
-  updateWorkspaceState({ placedCount = 0 } = {}) {
-    const hasPagesLoaded = placedCount > 0;
+  syncFormatPresetUi(_layoutPresetId = 'mini-8', rows = 2, cols = 4) {
+    if (this.elements.gridRows) {
+      this.elements.gridRows.value = rows;
+    }
+    if (this.elements.gridCols) {
+      this.elements.gridCols.value = cols;
+    }
+    this.updateGridTotalBadge(rows, cols);
+  }
+
+  updateWorkspaceState({
+    placedCount = 0,
+    realFilledCount = placedCount,
+    nonEmptySlotCount = placedCount,
+    totalSlots = 8,
+    rows = 2,
+    cols = 4,
+    layoutPresetId = 'mini-8',
+    canUndo = false,
+    canRedo = false
+  } = {}) {
+    const hasAnySlotContent = nonEmptySlotCount > 0 || placedCount > 0;
+
+    if (this.elements.previewArea) {
+      this.elements.previewArea.classList.toggle('is-empty', !hasAnySlotContent);
+    }
+
+    if (this.elements.previewCountChip) {
+      const filled = Number.isFinite(realFilledCount) ? realFilledCount : placedCount;
+      const cap = Number.isFinite(totalSlots) && totalSlots > 0 ? totalSlots : rows * cols;
+      this.elements.previewCountChip.textContent = `${filled}/${cap}`;
+    }
+
     if (this.elements.clearAllBtn) {
-      this.elements.clearAllBtn.style.display = hasPagesLoaded ? '' : 'none';
+      this.elements.clearAllBtn.style.display = hasAnySlotContent ? '' : 'none';
+      this.elements.clearAllBtn.classList.toggle('is-hidden', !hasAnySlotContent);
     }
     if (this.elements.exportPdfBtn) {
-      this.elements.exportPdfBtn.disabled = !hasPagesLoaded;
+      this.elements.exportPdfBtn.disabled = !hasAnySlotContent;
     }
     if (this.elements.view3dBtn) {
-      this.elements.view3dBtn.disabled = !hasPagesLoaded;
+      this.elements.view3dBtn.disabled = !hasAnySlotContent;
     }
-    if (this.elements.headerExportBtn) {
-      this.elements.headerExportBtn.disabled = !hasPagesLoaded;
+    if (this.elements.undoBtn) {
+      this.elements.undoBtn.disabled = !canUndo;
     }
-    if (this.elements.headerPreviewBtn) {
-      this.elements.headerPreviewBtn.disabled = !hasPagesLoaded;
+    if (this.elements.redoBtn) {
+      this.elements.redoBtn.disabled = !canRedo;
     }
+
+    this.syncFormatPresetUi(layoutPresetId, rows, cols);
+  }
+
+  applySheetGuideAttributes(guideToggles = this.guideToggles) {
+    this.guideToggles = { ...this.guideToggles, ...guideToggles };
+    const sheets = this.elements.zineSheetsContainer?.querySelectorAll('.print-sheet');
+    sheets?.forEach((sheet) => {
+      sheet.setAttribute('data-guide-cut', String(this.guideToggles.cut !== false));
+      sheet.setAttribute('data-guide-fold', String(this.guideToggles.fold !== false));
+      sheet.setAttribute('data-guide-crop', String(this.guideToggles.cropMarks !== false));
+      sheet.setAttribute('data-guide-bleed', String(Boolean(this.guideToggles.bleed)));
+    });
   }
 
   renderPaperSizeOptions() {
@@ -303,23 +348,19 @@ export class UIManager {
   }
 
   _syncOrientationVisibility(rows, cols) {
-    if (this.smartSheetConfig) {return;}
+    if (this.smartSheetConfig) { return; }
     const isMini8 = rows === 2 && cols === 4;
     const wrapper = this.elements.orientationToggle?.closest('.workspace-config-field');
     if (wrapper) {
       wrapper.style.display = isMini8 ? 'none' : '';
     }
     const labelEl = document.getElementById('orientation-label');
-    if (labelEl) {
-      labelEl.closest('.workspace-config-field') && (labelEl.closest('.workspace-config-field').style.display = isMini8 ? 'none' : '');
+    if (labelEl && labelEl.closest('.workspace-config-field')) {
+      labelEl.closest('.workspace-config-field').style.display = isMini8 ? 'none' : '';
     }
   }
 
   normalizeGridInputs() {
-    if (this.smartSheetConfig) {
-      const state = this.smartSheetConfig.getState();
-      return { rows: state.rows, cols: state.cols };
-    }
     const rows = parseBoundedInteger(this.elements.gridRows?.value, { min: GRID_DIMENSION_MIN, max: GRID_DIMENSION_MAX, fallback: DEFAULT_GRID_ROWS });
     const cols = parseBoundedInteger(this.elements.gridCols?.value, { min: GRID_DIMENSION_MIN, max: GRID_DIMENSION_MAX, fallback: DEFAULT_GRID_COLS });
     if (this.elements.gridRows) { this.elements.gridRows.value = rows; }
@@ -336,7 +377,6 @@ export class UIManager {
   syncResponsiveUI() {
     const isMobile = window.matchMedia('(max-width: 1023px)').matches;
     this.elements.previewArea?.classList.toggle('is-mobile', isMobile);
-    // Close mobile rail when resizing to desktop
     if (!isMobile && document.body.classList.contains('mobile-rail-open')) {
       this.toggleMobileRail(false);
     }
@@ -347,7 +387,7 @@ export class UIManager {
       const cells = this.elements.zineSheetsContainer?.querySelectorAll('.page-cell');
       if (cells && cells.length > 0) {
         this.pageCellCache = new Map();
-        cells.forEach(cell => {
+        cells.forEach((cell) => {
           const idx = parseInt(cell.getAttribute('data-page-index'), 10);
           if (!isNaN(idx)) {
             this.pageCellCache.set(idx, cell);
@@ -364,8 +404,8 @@ export class UIManager {
     const paper = resolvePaperSize(paperSizeKey, customPaper);
     const landscape = orientation === 'landscape';
     return landscape
-      ? { width: paper.height, height: paper.width }
-      : { width: paper.width, height: paper.height };
+      ? { width: Math.max(paper.width, paper.height), height: Math.min(paper.width, paper.height) }
+      : { width: Math.min(paper.width, paper.height), height: Math.max(paper.width, paper.height) };
   }
 
   _applyPageControlsVisibility(show) {
@@ -377,18 +417,22 @@ export class UIManager {
     const $ = (selector) => document.querySelector(selector);
 
     this.elements = {
+      workspaceMain: $('#workspace-main'),
       unifiedDropZone: $('#unified-drop-zone'),
-  uploadZone: $('#upload-zone'),
-  browseFilesBtn: $('#browse-files-btn'),
-  uploadStatus: $('#upload-status'),
+      uploadZone: $('#upload-zone'),
+      browseFilesBtn: $('#browse-files-btn'),
+      uploadStatus: $('#upload-status'),
       uploadedFilesList: $('#uploaded-files-list'),
       previewArea: $('#preview-area'),
+      previewCountChip: $('#preview-count-chip'),
       zineSheetsContainer: $('#zine-sheets-container'),
       paperSizeSelect: $('#paper-size-select'),
       orientationToggle: $('#orientation-toggle'),
       marginInput: $('#margin-input'),
       pageNumbersCheckbox: $('#show-page-numbers'),
       pageControlsCheckbox: $('#show-page-controls'),
+      toggleCutMarks: $('#toggle-cut-marks'),
+      resetLayoutBtn: $('#reset-layout-btn'),
       gridRows: $('#grid-rows'),
       gridCols: $('#grid-cols'),
       gridTotal: $('#grid-total'),
@@ -415,7 +459,10 @@ export class UIManager {
       pagePickerModal: $('#page-picker-modal'),
       pagePickerBackdrop: $('#page-picker-backdrop'),
       pagePickerCancel: $('#page-picker-cancel'),
+      cardZine: $('#card-zine'),
       foldViewerCard: $('#card-fold-viewer'),
+      foldBookletCard: $('#card-fold-booklet'),
+      foldGuideCard: $('#card-fold-guide'),
       pagePickerConfirm: $('#page-picker-confirm'),
       pagePickerSubtitle: $('#page-picker-subtitle'),
       pagePickerSelectFirst: $('#page-picker-select-first'),
@@ -430,8 +477,10 @@ export class UIManager {
       clearAllBtn: $('#clear-all-btn'),
       exportPdfBtn: $('#exportPdfBtn'),
       view3dBtn: $('#view3dBtn'),
-      headerExportBtn: $('#header-export-btn'),
-      headerPreviewBtn: $('#header-preview-btn')
+      undoBtn: $('#undo-btn'),
+      redoBtn: $('#redo-btn'),
+      themeToggleBtn: $('#theme-toggle'),
+      themeIcon: $('#theme-icon')
     };
   }
 
@@ -440,10 +489,50 @@ export class UIManager {
     this._setupActionListeners();
     this._setupUploadListeners();
     this._setupRailAndFoldListeners();
+    this._setupDisplayListeners();
     this._setupWindowListeners();
   }
 
+  _setupDisplayListeners() {
+    this.elements.toggleCutMarks?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      this.guideToggles.cut = checked;
+      this.guideToggles.fold = checked;
+      this.guideToggles.cropMarks = checked;
+      this.guideToggles.bakeCutMarks = checked;
+      this.guideToggles.bakeFoldGuides = checked;
+      this.guideToggles.bakeCropMarks = checked;
+      this.applySheetGuideAttributes(this.guideToggles);
+      this.emitter.emit('guideToggleChanged', { key: 'cut', enabled: checked });
+      this.emitter.emit('guideToggleChanged', { key: 'fold', enabled: checked });
+    });
+
+    this.elements.resetLayoutBtn?.addEventListener('click', () => {
+      if (typeof window !== 'undefined' && typeof window.__resetPanelLayout === 'function') {
+        window.__resetPanelLayout();
+      }
+    });
+  }
+
   _setupPaperAndGridListeners() {
+    let lastGridState = { rows: DEFAULT_GRID_ROWS, cols: DEFAULT_GRID_COLS };
+    const debouncedGridChange = debounce(() => {
+      const { rows, cols } = this.normalizeGridInputs();
+
+      this.updateGridTotalBadge(rows, cols);
+      this._syncOrientationVisibility(rows, cols);
+
+      if (lastGridState.rows !== rows || lastGridState.cols !== cols) {
+        lastGridState = { rows, cols };
+        this.emitter.emit('gridSizeChanged', { rows, cols });
+      }
+    }, 200);
+
+    this.elements.gridRows?.addEventListener('input', debouncedGridChange);
+    this.elements.gridCols?.addEventListener('input', debouncedGridChange);
+    this.elements.gridRows?.addEventListener('change', debouncedGridChange);
+    this.elements.gridCols?.addEventListener('change', debouncedGridChange);
+
     if (!this.smartSheetConfig) {
       this.elements.paperSizeSelect?.addEventListener('change', (event) => {
         this.emitter.emit('paperSizeChanged', { paperSize: event.target.value });
@@ -477,37 +566,6 @@ export class UIManager {
         this.elements.marginInput.value = val;
         this.emitter.emit('marginChanged', { margin: val });
       });
-
-      this.elements.gridRows?.closest('.workspace-config-split')?.querySelectorAll('.stepper-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const target = document.getElementById(btn.dataset.target);
-          if (!target) { return; }
-          const min = parseInt(target.min, 10) || 1;
-          const max = parseInt(target.max, 10) || 10;
-          const delta = parseInt(btn.dataset.delta, 10);
-          const next = Math.min(max, Math.max(min, parseInt(target.value, 10) + delta));
-          target.value = next;
-          target.dispatchEvent(new Event('change', { bubbles: true }));
-        });
-      });
-
-      let lastGridState = { rows: DEFAULT_GRID_ROWS, cols: DEFAULT_GRID_COLS };
-      const debouncedGridChange = debounce(() => {
-        const { rows, cols } = this.normalizeGridInputs();
-
-        this.updateGridTotalBadge(rows, cols);
-        this._syncOrientationVisibility(rows, cols);
-
-        // Only emit gridSizeChanged when grid dimensions actually changed
-        if (lastGridState.rows !== rows || lastGridState.cols !== cols) {
-          lastGridState = { rows, cols };
-          this.emitter.emit('gridSizeChanged', { rows, cols });
-        }
-
-      }, 300);
-
-      this.elements.gridRows?.addEventListener('input', debouncedGridChange);
-      this.elements.gridCols?.addEventListener('input', debouncedGridChange);
     }
   }
 
@@ -522,10 +580,17 @@ export class UIManager {
     });
 
     this.elements.exportPdfBtn?.addEventListener('click', () => this.emitter.emit('export'));
-    this.elements.view3dBtn?.addEventListener('click', () => this.emitter.emit('view3d'));
-    this.elements.headerExportBtn?.addEventListener('click', () => this.emitter.emit('export'));
-    this.elements.headerPreviewBtn?.addEventListener('click', () => this.emitter.emit('view3d'));
+    this.elements.view3dBtn?.addEventListener('click', () => {
+      if (this.isFoldPreviewOpen()) {
+        this.toggle3DModal(false);
+      } else {
+        this.emitter.emit('view3d');
+      }
+    });
+    this.elements.close3dBtn?.addEventListener('click', () => this.toggle3DModal(false));
     this.elements.clearAllBtn?.addEventListener('click', () => this.emitter.emit('clearAll'));
+    this.elements.undoBtn?.addEventListener('click', () => this.emitter.emit('undo'));
+    this.elements.redoBtn?.addEventListener('click', () => this.emitter.emit('redo'));
     this.elements.themeToggleBtn?.addEventListener('click', () => this.toggleTheme());
   }
 
@@ -591,6 +656,7 @@ export class UIManager {
   _setupWindowListeners() {
     window.addEventListener('resize', () => this.syncResponsiveUI());
   }
+
   toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -607,8 +673,8 @@ export class UIManager {
   }
 
   isFoldPreviewOpen() {
-    const foldViewerCard = this.elements.foldViewerCard;
-    return foldViewerCard && !foldViewerCard.classList.contains('hidden');
+    const foldViewerCard = this.elements.foldViewerCard || document.getElementById('card-fold-viewer');
+    return Boolean(foldViewerCard && !foldViewerCard.classList.contains('hidden'));
   }
 
   generateLayout(numPages, templateType, paperSettings = {}) {
@@ -634,6 +700,7 @@ export class UIManager {
           this.triggerFileUpload();
         }
       },
+      onRotate: (index) => this.emitter.emit('pageRotated', index),
       onFlip: (index) => this.emitter.emit('pageFlipped', index),
       onCrop: (index) => this.emitter.emit('pageCropToggled', index),
       onDuplicate: (index) => this.emitter.emit('pageDuplicated', index),
@@ -646,6 +713,8 @@ export class UIManager {
       paperSettings.customPaper
     );
     dimensions.margin = paperSettings.margin || 0;
+    dimensions.paperSize = paperSettings.paperSize || 'letter';
+    dimensions.orientation = paperSettings.orientation || 'landscape';
 
     this.dnd.destroySortables();
 
@@ -656,14 +725,15 @@ export class UIManager {
         pageNumbersVisible: this.pageNumbersVisible,
         pageImages: paperSettings.pageImages,
         pageFlips: paperSettings.pageFlips,
-        pageZooms: paperSettings.pageZooms
+        pageRotations: paperSettings.pageRotations,
+        pageZooms: paperSettings.pageZooms,
+        guideToggles: paperSettings.guideToggles || this.guideToggles
       },
       handlers,
       dimensions
     );
 
-    // Attach Sortable to every rendered grid
-    this.elements.zineSheetsContainer.querySelectorAll('.zine-grid').forEach(grid => {
+    this.elements.zineSheetsContainer.querySelectorAll('.zine-grid').forEach((grid) => {
       this.dnd.initSortable(grid);
     });
   }

@@ -54,9 +54,38 @@ export function initPwa() {
   wireInstallTrigger();
   wireInstallElementEvents();
 
+  let isIframe;
+  try {
+    isIframe = window.self !== window.top;
+  } catch {
+    isIframe = true;
+  }
+
+  if (isIframe) {
+    return;
+  }
+
+  if (typeof caches !== 'undefined' && typeof caches.keys === 'function') {
+    caches.keys().then((keys) => {
+      keys.forEach((key) => {
+        if (key !== 'zine-ify-v3') {
+          caches.delete(key).catch(() => undefined);
+        }
+      });
+    }).catch(() => undefined);
+  }
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => {
+          if (reg && typeof reg.update === 'function') {
+            reg.update().catch(() => undefined);
+          }
+        })
+        .catch(() => undefined);
     });
   }
 }
+
+

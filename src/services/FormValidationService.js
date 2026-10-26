@@ -13,7 +13,7 @@ import { GRID_DIMENSION_MAX, GRID_DIMENSION_MIN, MARGIN_MAX, MARGIN_MIN } from '
  * @param {number} min - Minimum allowed value
  * @param {number} max - Maximum allowed value
  */
-function clampFieldValue(field, min, max) {
+export function clampFieldValue(field, min, max) {
   const value = parseInt(field.value, 10);
   if (isNaN(value) || value < min) {
     field.value = min;
@@ -37,6 +37,10 @@ export function updateGridTotal(rowsVal, colsVal, uiManager = null, gridTotalEl 
   } else if (gridTotalEl) {
     gridTotalEl.textContent = `${rows * cols} slots`;
   }
+}
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.updateGridTotal = updateGridTotal;
 }
 
 /**

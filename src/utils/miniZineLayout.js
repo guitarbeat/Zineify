@@ -3,7 +3,10 @@ import { getLayoutPreset } from './layoutPresets.js';
 
 const MINI_ZINE_PRESET = getLayoutPreset('mini-8');
 export const MINI_ZINE_LAYOUT = MINI_ZINE_PRESET.readingToPrintOrder;
-export const MINI_ZINE_UPSIDE_DOWN_PAGES = MINI_ZINE_LAYOUT.filter((pageNumber, index) => MINI_ZINE_PRESET.rotations[index] === 180);
+export const MINI_ZINE_UPSIDE_DOWN_PAGES = MINI_ZINE_LAYOUT
+  .filter((pageNumber, index) => MINI_ZINE_PRESET.rotations[index] === 180)
+  .slice()
+  .sort((a, b) => a - b);
 
 export const MINI_ZINE_BOOKLET_SLOT_STATES = [
   { label: 'Cover', leftSlot: null, rightSlot: 7 },

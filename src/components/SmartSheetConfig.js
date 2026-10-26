@@ -78,7 +78,7 @@ export class SmartSheetConfig {
 
         <div class="smart-sheet-section">
           <div class="smart-sheet-header">
-            <span class="smart-sheet-label">Paper Size</span>
+            <span class="smart-sheet-label">Paper size</span>
             <div class="smart-sheet-unit-seg" role="group" aria-label="Measurement units">
               ${UNITS_ARRAY.map(([key, u]) => `
                 <button type="button"

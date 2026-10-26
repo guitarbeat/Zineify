@@ -7,6 +7,11 @@ const TOOLBAR_BUTTONS = [
     ariaLabel: (label) => `Toggle fit or fill for ${label} (C)`
   },
   {
+    selector: '.rotate-btn',
+    title: (label) => `Rotate ${label} 90° clockwise`,
+    ariaLabel: (label) => `Rotate ${label} 90 degrees clockwise (T)`
+  },
+  {
     selector: '.flip-btn',
     title: (label) => `Rotate ${label} 180° — flip the page upside-down`,
     ariaLabel: (label) => `Rotate ${label} 180 degrees (R)`
@@ -20,7 +25,7 @@ const TOOLBAR_BUTTONS = [
 
 /**
  * LayoutRenderer.js
- * Handles the rendering of zine sheets and grids
+ * Handles the rendering of zine sheets, imposition slots, and press mark overlays
  */
 export class LayoutRenderer {
   constructor(container, cellTemplate) {
@@ -30,10 +35,16 @@ export class LayoutRenderer {
 
   render(numPages, template, options, handlers, paper = {}) {
     this.container.replaceChildren();
-    
-    // Determine number of sheets needed based on template and pages
+
     const slotsPerSheet = template.grid.rows * template.grid.cols;
     const sheetCount = Math.max(1, Math.ceil(numPages / slotsPerSheet));
+    const guideToggles = options?.guideToggles || {
+      cut: true,
+      fold: true,
+      cropMarks: true,
+      bleed: false,
+      numbers: options?.pageNumbersVisible !== false
+    };
 
     for (let s = 0; s < sheetCount; s++) {
       const { sheetWrapper, grid } = this.createSheetGrid({
@@ -42,7 +53,8 @@ export class LayoutRenderer {
         columns: template.grid.cols,
         rows: template.grid.rows,
         id: `zine-grid-sheet-${s + 1}`,
-        paper
+        paper,
+        guideToggles
       });
 
       if (template.gridAreas) {
@@ -73,7 +85,7 @@ export class LayoutRenderer {
         if (template.gridAreas) {
           cell.style.gridArea = `page${pageNumberInSheet}`;
         }
-        
+
         if (options.pageImages && options.pageImages[pageIndex]) {
           const url = options.pageImages[pageIndex];
           const img = cell.querySelector('.page-content-img');
@@ -83,13 +95,26 @@ export class LayoutRenderer {
             img.classList.toggle('hidden', !url);
           }
           if (placeholder) {
-            placeholder.classList.toggle('hidden', !!url);
+            placeholder.classList.toggle('hidden', Boolean(url));
           }
-          cell.classList.toggle('has-page', !!url);
+          cell.classList.toggle('has-page', Boolean(url));
+          cell.setAttribute('aria-label', `${accessibleLabelText}, has content`);
         }
 
-        if (options.pageFlips && options.pageFlips[pageIndex]) {
+        const rawRotation = Number.isFinite(options.pageRotations?.[pageIndex])
+          ? ((options.pageRotations[pageIndex] % 360) + 360) % 360
+          : (options.pageFlips?.[pageIndex] ? 180 : 0);
+
+        if (rawRotation === 180 || (options.pageFlips && options.pageFlips[pageIndex])) {
           cell.classList.add('is-flipped');
+        }
+        if (rawRotation > 0) {
+          cell.style.setProperty('--page-image-rotation', `${rawRotation}deg`);
+          const rotBadge = cell.querySelector('.page-rotation-badge');
+          if (rotBadge && options.pageImages?.[pageIndex]) {
+            rotBadge.textContent = `${rawRotation}°`;
+            rotBadge.classList.remove('hidden');
+          }
         }
 
         if (options.pageZooms && options.pageZooms[pageIndex]) {
@@ -99,24 +124,62 @@ export class LayoutRenderer {
         grid.appendChild(cell);
       }
 
-      if (template.cutLines?.horizontal) {
-        const { afterRow, fromPct = 0, toPct = 100 } = template.cutLines.horizontal;
-        const cutLine = document.createElement('div');
-        cutLine.className = 'sheet-cut-line sheet-cut-line-h';
-        cutLine.setAttribute('aria-hidden', 'true');
-        cutLine.style.top = `${(afterRow / template.grid.rows) * 100}%`;
-        cutLine.style.left = `${fromPct}%`;
-        cutLine.style.right = `${100 - toPct}%`;
-        const label = document.createElement('span');
-        label.className = 'sheet-cut-line-label';
-        label.textContent = 'Cut here';
-        cutLine.appendChild(label);
-        grid.appendChild(cutLine);
-      }
+      this.appendPressOverlays(grid, sheetWrapper, template);
 
       sheetWrapper.appendChild(grid);
       this.container.appendChild(sheetWrapper);
     }
+  }
+
+  appendPressOverlays(grid, sheetWrapper, template) {
+    // 1. Fold Crease Grid Lines (Valley/Mountain dashed guides)
+    const foldOverlay = document.createElement('div');
+    foldOverlay.className = 'sheet-fold-overlay';
+    foldOverlay.setAttribute('aria-hidden', 'true');
+
+    for (let c = 1; c < template.grid.cols; c++) {
+      const vLine = document.createElement('div');
+      vLine.className = 'sheet-fold-line sheet-fold-line-v';
+      vLine.style.left = `${(c / template.grid.cols) * 100}%`;
+      foldOverlay.appendChild(vLine);
+    }
+
+    for (let r = 1; r < template.grid.rows; r++) {
+      const hLine = document.createElement('div');
+      hLine.className = 'sheet-fold-line sheet-fold-line-h';
+      hLine.style.top = `${(r / template.grid.rows) * 100}%`;
+      foldOverlay.appendChild(hLine);
+    }
+    grid.appendChild(foldOverlay);
+
+    // 2. Center Slit Cut Line
+    if (template.cutLines?.horizontal) {
+      const { afterRow, fromPct = 0, toPct = 100 } = template.cutLines.horizontal;
+      const cutLine = document.createElement('div');
+      cutLine.className = 'sheet-cut-line sheet-cut-line-h';
+      cutLine.setAttribute('aria-hidden', 'true');
+      cutLine.style.top = `${(afterRow / template.grid.rows) * 100}%`;
+      cutLine.style.left = `${fromPct}%`;
+      cutLine.style.right = `${100 - toPct}%`;
+      grid.appendChild(cutLine);
+    }
+
+    // 3. Corner Crop & Registration Marks on the Sheet Wrapper
+    const cropOverlay = document.createElement('div');
+    cropOverlay.className = 'sheet-crop-overlay';
+    cropOverlay.setAttribute('aria-hidden', 'true');
+    ['tl', 'tr', 'bl', 'br'].forEach((corner) => {
+      const tick = document.createElement('span');
+      tick.className = `sheet-crop-tick sheet-crop-tick--${corner}`;
+      cropOverlay.appendChild(tick);
+    });
+    sheetWrapper.appendChild(cropOverlay);
+
+    // 4. Safe Bleed / Trim Guide Overlay
+    const bleedOverlay = document.createElement('div');
+    bleedOverlay.className = 'sheet-bleed-overlay';
+    bleedOverlay.setAttribute('aria-hidden', 'true');
+    grid.appendChild(bleedOverlay);
   }
 
   normalizeSlotConfig(template, index) {
@@ -131,7 +194,7 @@ export class LayoutRenderer {
     if (rawSlot && typeof rawSlot === 'object') {
       return {
         page: rawSlot.page,
-        upsideDown: !!rawSlot.upsideDown
+        upsideDown: Boolean(rawSlot.upsideDown)
       };
     }
 
@@ -139,11 +202,15 @@ export class LayoutRenderer {
   }
 
   createSheetGrid(config) {
-    const { sheetNumber, template, columns, rows, id, paper } = config;
+    const { sheetNumber, template, columns, rows, id, paper, guideToggles = {} } = config;
     const sheetWrapper = document.createElement('div');
     sheetWrapper.className = 'print-sheet w-full p-0 relative overflow-hidden rounded-sm';
     sheetWrapper.setAttribute('data-sheet', sheetNumber);
     sheetWrapper.setAttribute('data-template', template);
+    sheetWrapper.setAttribute('data-guide-cut', String(guideToggles.cut !== false));
+    sheetWrapper.setAttribute('data-guide-fold', String(guideToggles.fold !== false));
+    sheetWrapper.setAttribute('data-guide-crop', String(guideToggles.cropMarks !== false));
+    sheetWrapper.setAttribute('data-guide-bleed', String(Boolean(guideToggles.bleed)));
 
     if (paper?.paperSize) {
       sheetWrapper.setAttribute('data-paper-size', paper.paperSize);
@@ -156,9 +223,6 @@ export class LayoutRenderer {
     if (paper?.width && paper?.height) {
       const aspectRatio = `${paper.width} / ${paper.height}`;
       sheetWrapper.style.aspectRatio = aspectRatio;
-    }
-
-    if (paper?.width && paper?.height) {
       const scale = this.getResponsiveSheetScale(paper.width, paper.height);
       sheetWrapper.style.setProperty('--sheet-scale', String(scale));
     }
@@ -173,6 +237,9 @@ export class LayoutRenderer {
     if (paper?.margin > 0 && paper?.width && paper?.height) {
       const padX = (paper.margin / paper.width) * 100;
       const padY = (paper.margin / paper.height) * 100;
+      sheetWrapper.setAttribute('data-has-margin', 'true');
+      sheetWrapper.style.setProperty('--margin-x', `${padX}%`);
+      sheetWrapper.style.setProperty('--margin-y', `${padY}%`);
       grid.style.position = 'absolute';
       grid.style.left = `${padX}%`;
       grid.style.right = `${padX}%`;
@@ -245,25 +312,38 @@ export class LayoutRenderer {
     });
 
     const toolbar = cell.querySelector('.page-toolbar');
-    TOOLBAR_BUTTONS.forEach(({ selector, title, ariaLabel }) => {
-      const button = toolbar.querySelector(selector);
-      if (!button) {
-        return;
-      }
+    if (toolbar) {
+      TOOLBAR_BUTTONS.forEach(({ selector, title, ariaLabel }) => {
+        const button = toolbar.querySelector(selector);
+        if (!button) {
+          return;
+        }
 
-      button.type = 'button';
-      button.setAttribute('title', title(accessibleLabelText));
-      button.setAttribute('aria-label', ariaLabel(accessibleLabelText));
-    });
+        button.type = 'button';
+        button.setAttribute('title', title(accessibleLabelText));
+        button.setAttribute('aria-label', ariaLabel(accessibleLabelText));
+      });
 
-    const flipBtn = toolbar.querySelector('.flip-btn');
-    if (flipBtn) {flipBtn.onclick = (e) => { e.stopPropagation(); handlers.onFlip(pageIndex); };}
+      const rotateBtn = toolbar.querySelector('.rotate-btn');
+      if (rotateBtn) { rotateBtn.onclick = (e) => { e.stopPropagation(); handlers.onRotate?.(pageIndex); }; }
 
-    const cropBtn = toolbar.querySelector('.crop-btn');
-    if (cropBtn) {cropBtn.onclick = (e) => { e.stopPropagation(); handlers.onCrop(pageIndex); };}
+      const flipBtn = toolbar.querySelector('.flip-btn');
+      if (flipBtn) { flipBtn.onclick = (e) => { e.stopPropagation(); handlers.onFlip(pageIndex); }; }
 
-    const duplicateBtn = toolbar.querySelector('.duplicate-btn');
-    if (duplicateBtn) {duplicateBtn.onclick = (e) => { e.stopPropagation(); handlers.onDuplicate?.(pageIndex); };}
+      const cropBtn = toolbar.querySelector('.crop-btn');
+      if (cropBtn) { cropBtn.onclick = (e) => { e.stopPropagation(); handlers.onCrop(pageIndex); }; }
+
+      const duplicateBtn = toolbar.querySelector('.duplicate-btn');
+      if (duplicateBtn) { duplicateBtn.onclick = (e) => { e.stopPropagation(); handlers.onDuplicate?.(pageIndex); }; }
+    }
+
+    const removeBtn = cell.querySelector('.page-cell-remove-hint');
+    if (removeBtn) {
+      removeBtn.onclick = (e) => {
+        e.stopPropagation();
+        handlers.onRemove?.(pageIndex);
+      };
+    }
 
     return cell;
   }

@@ -6,10 +6,15 @@ import DOMPurify from 'dompurify';
 
 const RAW_PAGE_CELL_TEMPLATE = `
   <span class="page-label"></span>
+  <span class="page-rotation-badge hidden"></span>
   <div class="page-toolbar absolute top-1.5 right-1.5 flex items-center gap-1 z-10" data-layout="row">
     <button class="crop-btn page-tool-btn" aria-label="Toggle fit or fill for this page (C)" title="Fit — make the whole page visible. Fill — zoom to cover the slot. (C)">
       <span class="material-symbols-outlined page-tool-icon" aria-hidden="true">fit_screen</span>
       <span class="page-tool-label">Fit</span>
+    </button>
+    <button class="rotate-btn page-tool-btn" aria-label="Rotate page 90 degrees clockwise (T)" title="Rotate 90° clockwise (T)">
+      <span class="material-symbols-outlined page-tool-icon" aria-hidden="true">rotate_90_degrees_cw</span>
+      <span class="page-tool-label">90°</span>
     </button>
     <button class="flip-btn page-tool-btn" aria-label="Rotate page 180 degrees (R)" title="Rotate 180° — flip the page upside-down. (R)">
       <span class="material-symbols-outlined page-tool-icon" aria-hidden="true">rotate_right</span>

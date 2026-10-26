@@ -1,19 +1,31 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MINI_ZINE_STACKS, computeMiniZineFoldState } from '../utils/miniZineFold.js';
-
 import { normalizePreviewPage } from '../utils/previewHelpers.js';
+
+function detectSoftwareGl() {
+  try {
+    const probeCanvas = document.createElement('canvas');
+    const gl = probeCanvas.getContext('webgl2') || probeCanvas.getContext('webgl');
+    if (!gl) { return true; }
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const param = ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER;
+    const gpu = String(gl.getParameter(param) || '');
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return /SwiftShader|llvmpipe|softpipe|Software|Basic Render/i.test(gpu);
+  } catch {
+    return true;
+  }
+}
 
 /**
  * 3D Fold Viewer component utilizing Three.js for interactive zine fold simulation.
  */
 export class Zine3DViewer {
-  /**
-   * Creates an instance of Zine3DViewer.
-   * @param {HTMLElement} containerElement - DOM container element for the 3D canvas viewport.
-   */
   constructor(containerElement) {
     this.container = containerElement;
+    this.isSoftwareGl = detectSoftwareGl();
 
     this._initCoreProperties();
     this._initVisualConfig();
@@ -22,10 +34,6 @@ export class Zine3DViewer {
     this.initScene();
   }
 
-  /**
-   * Initializes instance state arrays, temporary vectors/matrices, and animation state flags.
-   * @private
-   */
   _initCoreProperties() {
     this.pages = [];
     this.stacks = [];
@@ -39,16 +47,18 @@ export class Zine3DViewer {
     this.fallbackFoldProgress = 0;
     this.tmpVecC = new THREE.Vector3();
     this.tmpVecD = new THREE.Vector3();
+    this.tmpStartLocal = new THREE.Vector3();
+    this.tmpEndLocal = new THREE.Vector3();
+    this.tmpMidpoint = new THREE.Vector3();
+    this.tmpTangent = new THREE.Vector3();
+    this.tmpBitangent = new THREE.Vector3();
+    this.tmpCorrectedNormal = new THREE.Vector3();
     this.tmpMat = new THREE.Matrix4();
     this.cameraTarget = new THREE.Vector3(0, 0, 0);
     this.debugFoldState = null;
     this.currentFoldProgress = 0;
   }
 
-  /**
-   * Initializes visual styling dimensions, material colors, and guide line widths.
-   * @private
-   */
   _initVisualConfig() {
     this.w = 1.0;
     this.h = 1.414; // A-series proportion
@@ -60,13 +70,9 @@ export class Zine3DViewer {
     this.cutGuideCapHeight = 0.14;
     this.sheetMaterialColor = 0xf4f1ea;
     this.foldGuideColor = 0xb8b8b8;
-    this.slitGuideColor = 0xd32f2f;
+    this.slitGuideColor = 0xe63946;
   }
 
-  /**
-   * Initializes structural panel definitions, seam connections, and fold/slit guide mappings.
-   * @private
-   */
   _initStructuralDefinitions() {
     this.panelDefinitions = {
       1: { stackIndex: 3, isTop: false }, // Cover
@@ -111,21 +117,24 @@ export class Zine3DViewer {
     this.animate();
   }
 
-  /**
-   * Initializes WebGL scene, camera, renderer, controls, lighting, and environment stage.
-   * @private
-   * @param {number} width - Initial container width.
-   * @param {number} height - Initial container height.
-   * @returns {boolean} True if WebGL renderer was successfully initialized, false otherwise.
-   */
   _initSceneAndComponents(width, height) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#1a1a1a');
+    this.scene.background = new THREE.Color('#121214');
+    this.scene.fog = new THREE.FogExp2('#121214', 0.045);
 
     this._initCamera(width, height);
 
     if (!this._initRenderer(width, height)) {
       return false;
+    }
+
+    try {
+      const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+      this.envTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+      this.scene.environment = this.envTexture;
+      pmremGenerator.dispose();
+    } catch {
+      // Optional studio reflection fallback
     }
 
     this._initControls();
@@ -134,27 +143,30 @@ export class Zine3DViewer {
     return true;
   }
 
-  /**
-   * Sets up window resize event listener.
-   * @private
-   */
   _setupResizeHandler() {
     this.onWindowResize = () => this.refreshLayout();
     window.addEventListener('resize', this.onWindowResize);
   }
 
   _initCamera(width, height) {
-    this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    this.camera = new THREE.PerspectiveCamera(44, width / height, 0.1, 100);
     this.camera.position.set(0, 0, 4.6);
   }
 
   _initRenderer(width, height) {
     try {
-      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      this.renderer = new THREE.WebGLRenderer({
+        antialias: !this.isSoftwareGl,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.08;
       this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      this.renderer.setPixelRatio(this.isSoftwareGl ? 1 : Math.min(window.devicePixelRatio || 1, 2));
       this.renderer.domElement.classList.add('zine-3d-canvas');
-      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.enabled = !this.isSoftwareGl;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       this.container.appendChild(this.renderer.domElement);
       return true;
@@ -165,32 +177,34 @@ export class Zine3DViewer {
 
   _initControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.05;
+    this.controls.enableDamping = !this.isSoftwareGl;
+    this.controls.dampingFactor = 0.06;
     this.controls.enablePan = false;
-    this.controls.minDistance = 2.8;
-    this.controls.maxDistance = 9;
-    this.controls.maxPolarAngle = Math.PI * 0.56;
+    this.controls.minDistance = 2.6;
+    this.controls.maxDistance = 9.2;
+    this.controls.maxPolarAngle = Math.PI * 0.58;
   }
 
   _initLighting() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    const ambientLight = new THREE.AmbientLight(0xfffcf5, 0.72);
     this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
-    dirLight.position.set(2, 6, 5);
-    dirLight.castShadow = true;
+    const dirLight = new THREE.DirectionalLight(0xfff5e4, 1.25);
+    dirLight.position.set(2.5, 6.2, 5.2);
+    dirLight.castShadow = !this.isSoftwareGl;
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
     dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 12;
+    dirLight.shadow.camera.far = 14;
+    dirLight.shadow.bias = -0.0005;
+    dirLight.shadow.normalBias = 0.02;
     this.scene.add(dirLight);
 
-    const backLight = new THREE.DirectionalLight(0xffffff, 0.45);
-    backLight.position.set(-2, -4, -4);
+    const backLight = new THREE.DirectionalLight(0xdbeafe, 0.52);
+    backLight.position.set(-2.5, -4, -4);
     this.scene.add(backLight);
 
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3a55, 0.45));
+    this.scene.add(new THREE.HemisphereLight(0xfffaf0, 0x27272a, 0.5));
   }
 
   initFallbackScene(initialWidth, initialHeight) {
@@ -214,12 +228,12 @@ export class Zine3DViewer {
     const height = this.fallbackCanvas.height || 1;
     const context = this.fallbackContext;
 
-    context.fillStyle = '#111111';
+    context.fillStyle = '#111113';
     context.fillRect(0, 0, width, height);
 
     const gradient = context.createRadialGradient(width * 0.35, height * 0.2, 0, width * 0.5, height * 0.5, width * 0.7);
-    gradient.addColorStop(0, 'rgba(232,149,95,0.22)');
-    gradient.addColorStop(0.45, 'rgba(232,149,95,0.06)');
+    gradient.addColorStop(0, 'rgba(230,57,70,0.2)');
+    gradient.addColorStop(0.45, 'rgba(230,57,70,0.05)');
     gradient.addColorStop(1, 'rgba(0,0,0,0)');
     context.fillStyle = gradient;
     context.fillRect(0, 0, width, height);
@@ -244,7 +258,7 @@ export class Zine3DViewer {
 
     context.save();
     context.translate(width / 2, height / 2 + height * 0.02);
-    context.shadowColor = 'rgba(0,0,0,0.28)';
+    context.shadowColor = 'rgba(0,0,0,0.34)';
     context.shadowBlur = Math.max(8, width * 0.018);
     context.shadowOffsetY = Math.max(4, height * 0.01);
 
@@ -254,7 +268,7 @@ export class Zine3DViewer {
         return;
       }
       const page = this.fallbackPages[pageId - 1];
-      const loaded = !!(page?.previewUrl || page?.sourceUrl);
+      const loaded = Boolean(page?.previewUrl || page?.sourceUrl);
       const x = (pageState.position.x - centerX) * scale;
       const ySource = useFlatAxis ? -pageState.position.y : -pageState.position.z;
       const y = (ySource + centerY) * scale;
@@ -266,16 +280,16 @@ export class Zine3DViewer {
       if (!useFlatAxis) {
         context.rotate(pageState.rotation.y * 0.18);
       }
-      context.fillStyle = loaded ? '#fffdf8' : '#f4eadb';
-      context.strokeStyle = pageId === 1 ? '#e8955f' : 'rgba(61,52,40,0.34)';
-      context.lineWidth = Math.max(1, scale * 0.012);
+      context.fillStyle = loaded ? '#fffdf8' : '#f4f1ea';
+      context.strokeStyle = pageId === 1 ? '#e63946' : '#0f0f0f';
+      context.lineWidth = Math.max(1.5, scale * 0.014);
       context.beginPath();
-      context.roundRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, Math.max(3, scale * 0.025));
+      context.roundRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, Math.max(2, scale * 0.015));
       context.fill();
       context.stroke();
       context.shadowColor = 'transparent';
-      context.fillStyle = pageId === 1 ? '#9e4529' : '#3d3428';
-      context.font = `700 ${Math.max(11, scale * 0.16)}px Inter, sans-serif`;
+      context.fillStyle = pageId === 1 ? '#e63946' : '#0f0f0f';
+      context.font = `700 ${Math.max(11, scale * 0.16)}px "IBM Plex Mono", monospace`;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
       context.fillText(pageId === 1 ? 'Cover' : `P${pageId}`, 0, 0);
@@ -285,27 +299,27 @@ export class Zine3DViewer {
 
     const loadedPages = this.fallbackPages.reduce((count, page) => (page?.previewUrl || page?.sourceUrl ? count + 1 : count), 0);
     context.fillStyle = 'rgba(255,253,248,0.86)';
-    context.font = `700 ${Math.max(12, width * 0.026)}px Inter, sans-serif`;
+    context.font = `700 ${Math.max(12, width * 0.024)}px "IBM Plex Mono", monospace`;
     context.textAlign = 'left';
     context.fillText(`${loadedPages} pages loaded`, Math.max(16, width * 0.05), height - Math.max(18, height * 0.06));
   }
 
   createStageEnvironment() {
-    const floorGeometry = new THREE.PlaneGeometry(6.2, 4.4);
+    const floorGeometry = new THREE.PlaneGeometry(7.2, 5.2);
     const floorMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1c1713,
-      roughness: 0.92,
-      metalness: 0
+      color: 0x161618,
+      roughness: 0.94,
+      metalness: 0.02
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.position.z = -0.06;
+    floor.position.z = -0.08;
     floor.receiveShadow = true;
     this.scene.add(floor);
     this.environmentMeshes.push({ mesh: floor, geometry: floorGeometry, material: floorMaterial });
   }
 
   disposePage(page) {
-    if (!page) {return;}
+    if (!page) { return; }
     const frontMat = page.frontMaterial;
     if (frontMat) {
       frontMat.map?.dispose?.();
@@ -335,7 +349,7 @@ export class Zine3DViewer {
     const seams = this.seams;
     for (let i = 0; i < seams.length; i++) {
       const seam = seams[i];
-      if (!seam) {continue;}
+      if (!seam) { continue; }
       if (seam.mesh) {
         objectsToRemove.push(seam.mesh);
       }
@@ -346,7 +360,7 @@ export class Zine3DViewer {
     const guides = this.guides;
     for (let i = 0; i < guides.length; i++) {
       const guide = guides[i];
-      if (!guide) {continue;}
+      if (!guide) { continue; }
       if (guide.mesh) {
         objectsToRemove.push(guide.mesh);
       }
@@ -382,6 +396,9 @@ export class Zine3DViewer {
     if (url) {
       const texture = textureLoader.load(url);
       texture.colorSpace = THREE.SRGBColorSpace;
+      if (this.renderer?.capabilities?.getMaxAnisotropy) {
+        texture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+      }
       if (isTop) {
         texture.center.set(0.5, 0.5);
         texture.rotation = Math.PI;
@@ -389,14 +406,16 @@ export class Zine3DViewer {
       return new THREE.MeshStandardMaterial({
         map: texture,
         side: THREE.FrontSide,
-        roughness: 0.85
+        roughness: 0.82,
+        metalness: 0.02
       });
     }
 
     return new THREE.MeshStandardMaterial({
       color: 0xffffff,
       side: THREE.FrontSide,
-      roughness: 0.85
+      roughness: 0.85,
+      metalness: 0.02
     });
   }
 
@@ -404,7 +423,8 @@ export class Zine3DViewer {
     return new THREE.MeshStandardMaterial({
       color: this.sheetMaterialColor,
       side: THREE.DoubleSide,
-      roughness: 0.95
+      roughness: 0.94,
+      metalness: 0.01
     });
   }
 
@@ -416,14 +436,14 @@ export class Zine3DViewer {
     const yPosition = config.isTop ? this.h / 2 : -this.h / 2;
 
     const frontMesh = new THREE.Mesh(frontGeometry, frontMaterial);
-    frontMesh.castShadow = true;
-    frontMesh.receiveShadow = true;
+    frontMesh.castShadow = !this.isSoftwareGl;
+    frontMesh.receiveShadow = !this.isSoftwareGl;
     frontMesh.position.z = this.panelThickness;
     frontMesh.position.y = yPosition;
 
     const backMesh = new THREE.Mesh(backGeometry, backMaterial);
-    backMesh.castShadow = true;
-    backMesh.receiveShadow = true;
+    backMesh.castShadow = !this.isSoftwareGl;
+    backMesh.receiveShadow = !this.isSoftwareGl;
     backMesh.rotation.y = Math.PI;
     backMesh.position.z = -this.panelThickness;
     backMesh.position.y = yPosition;
@@ -460,8 +480,8 @@ export class Zine3DViewer {
 
     for (let i = 1; i <= 8; i++) {
       const config = this.panelDefinitions[i];
-      const pageData = previewPages[i - 1]; // Array is 0-indexed
-      const stack = this.stacks[config.stackIndex]; // ⚡️ Bolt: Optimize O(N) array search inside high-frequency animation loop using direct index lookup.
+      const pageData = previewPages[i - 1];
+      const stack = this.stacks[config.stackIndex];
 
       const page = this._createSinglePageMesh(i, config, pageData, frontGeometry, backGeometry, textureLoader);
       page.stackGroup = stack?.group ?? null;
@@ -471,10 +491,6 @@ export class Zine3DViewer {
     }
   }
 
-  /**
-   * Initializes or updates the page textures.
-   * @param {Array} imageUrls - Array of 8 image URLs (blob URLs or data URIs)
-   */
   loadPages(imageUrls) {
     if (this.isFallbackMode) {
       this.loadFallbackPages(imageUrls);
@@ -483,14 +499,10 @@ export class Zine3DViewer {
 
     const previewPages = (imageUrls || []).map((page) => normalizePreviewPage(page));
 
-    // Clear existing planes
     this.cleanupExistingPages();
-
     this.createPageMeshes(previewPages);
-
     this.createSeams();
     this.createGuides();
-
     this.setupInitialCameraView();
   }
 
@@ -500,10 +512,7 @@ export class Zine3DViewer {
   }
 
   setupInitialCameraView() {
-    // Initialize layout flat
     this.setFoldProgress(0);
-    
-    // Automatically adjust camera slightly so the flat sheet fits
     this.camera.position.set(0, 0, 4.9);
     this.controls.target.copy(this.cameraTarget);
     this.controls.update();
@@ -528,16 +537,10 @@ export class Zine3DViewer {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    this.renderer.setClearColor(0x111111, 1);
+    this.renderer.setPixelRatio(this.isSoftwareGl ? 1 : Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setClearColor(0x121214, 1);
   }
 
-  /**
-   * progressed folded state 0 to 3
-   * The mini-zine is formed by folding lengthwise, opening the center slit
-   * into the diamond/plus shape, then closing the booklet.
-   * @param {number} progress  0=flat, 1=lengthwise fold, 2=diamond open, 3=closed booklet
-   */
   setFoldProgress(progress) {
     this.currentFoldProgress = progress;
     if (this.isFallbackMode) {
@@ -556,7 +559,7 @@ export class Zine3DViewer {
 
     for (let i = 0; i < this.stacks.length; i++) {
       const stack = this.stacks[i];
-      const stackState = state.stacks[stack.index]; // ⚡️ Bolt: Optimize O(N) array search inside high-frequency animation loop using direct index lookup.
+      const stackState = state.stacks[stack.index];
       if (!stackState) {
         continue;
       }
@@ -626,9 +629,7 @@ export class Zine3DViewer {
 
   createSeams() {
     this.connectionDefinitions.forEach((connection) => {
-      const from = connection.from;
-      const to = connection.to;
-      const orientation = connection.orientation;
+      const { from, to, orientation } = connection;
       const geometry = new THREE.PlaneGeometry(1, 1);
       const material = new THREE.MeshStandardMaterial({
         color: this.sheetMaterialColor,
@@ -636,8 +637,8 @@ export class Zine3DViewer {
         roughness: 0.95
       });
       const mesh = new THREE.Mesh(geometry, material);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
+      mesh.castShadow = !this.isSoftwareGl;
+      mesh.receiveShadow = !this.isSoftwareGl;
       this.scene.add(mesh);
       const pageA = this.pages[from - 1];
       const pageB = this.pages[to - 1];
@@ -719,8 +720,6 @@ export class Zine3DViewer {
   }
 
   updateSeams() {
-    // ⚡️ Bolt: Optimize O(N) array search inside high-frequency animation loop using direct index lookup.
-
     const getAverageNormal = (pageA, pageB) => {
       const normalA = this.tmpVecC.set(0, 0, 1).applyQuaternion(pageA.group.quaternion);
       const normalB = this.tmpVecD.set(0, 0, 1).applyQuaternion(pageB.group.quaternion);
@@ -728,22 +727,22 @@ export class Zine3DViewer {
     };
 
     this.seams.forEach((seam) => {
-      const pageA = seam.pageA;
-      const pageB = seam.pageB;
+      const { pageA, pageB } = seam;
       if (!pageA || !pageB) { return; }
 
-      const startLocal = seam.orientation === 'horizontal'
-        ? new THREE.Vector3(this.w / 2, 0, 0)
-        : new THREE.Vector3(0, -this.h / 2, 0);
-      const endLocal = seam.orientation === 'horizontal'
-        ? new THREE.Vector3(-this.w / 2, 0, 0)
-        : new THREE.Vector3(0, this.h / 2, 0);
+      if (seam.orientation === 'horizontal') {
+        this.tmpStartLocal.set(this.w / 2, 0, 0);
+        this.tmpEndLocal.set(-this.w / 2, 0, 0);
+      } else {
+        this.tmpStartLocal.set(0, -this.h / 2, 0);
+        this.tmpEndLocal.set(0, this.h / 2, 0);
+      }
 
-      const startWorld = pageA.group.localToWorld(startLocal);
-      const endWorld = pageB.group.localToWorld(endLocal);
-      const midpoint = startWorld.clone().add(endWorld).multiplyScalar(0.5);
-      const tangent = endWorld.clone().sub(startWorld);
-      const length = tangent.length();
+      const startWorld = pageA.group.localToWorld(this.tmpStartLocal);
+      const endWorld = pageB.group.localToWorld(this.tmpEndLocal);
+      this.tmpMidpoint.copy(startWorld).add(endWorld).multiplyScalar(0.5);
+      this.tmpTangent.copy(endWorld).sub(startWorld);
+      const length = this.tmpTangent.length();
       const maxGap = seam.orientation === 'horizontal'
         ? this.w * 0.9
         : this.h * 0.25;
@@ -754,15 +753,15 @@ export class Zine3DViewer {
       }
 
       seam.mesh.visible = true;
-      tangent.normalize();
+      this.tmpTangent.normalize();
 
       const normal = getAverageNormal(pageA, pageB);
-      const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize();
-      const correctedNormal = new THREE.Vector3().crossVectors(tangent, bitangent).normalize();
+      this.tmpBitangent.crossVectors(normal, this.tmpTangent).normalize();
+      this.tmpCorrectedNormal.crossVectors(this.tmpTangent, this.tmpBitangent).normalize();
 
-      this.tmpMat.makeBasis(tangent, bitangent, correctedNormal);
+      this.tmpMat.makeBasis(this.tmpTangent, this.tmpBitangent, this.tmpCorrectedNormal);
       seam.mesh.setRotationFromMatrix(this.tmpMat);
-      seam.mesh.position.copy(midpoint);
+      seam.mesh.position.copy(this.tmpMidpoint);
       seam.mesh.scale.set(length, this.seamWidth, 1);
     });
   }
@@ -817,6 +816,7 @@ export class Zine3DViewer {
       this.container.removeChild(this.renderer.domElement);
     }
     this.cleanupExistingPages();
+    this.envTexture?.dispose?.();
     this.renderer.dispose();
     this.environmentMeshes.forEach(({ geometry, material }) => {
       geometry?.dispose?.();

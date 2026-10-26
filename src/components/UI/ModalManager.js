@@ -35,7 +35,7 @@ export class ModalManager {
     this.progress.update(percent);
   }
 
-  /* ── 3D Modal ── */
+  /* ── 3D Modal (Snap-Cards) ── */
   toggle3DModal(show) {
     const foldViewerCard = document.getElementById('card-fold-viewer');
     const foldBookletCard = document.getElementById('card-fold-booklet');
@@ -50,6 +50,18 @@ export class ModalManager {
         card.classList.add('hidden');
       }
     });
+
+    const view3dBtn = document.getElementById('view3dBtn');
+    if (view3dBtn) {
+      view3dBtn.classList.toggle('is-active', Boolean(show));
+      view3dBtn.setAttribute('aria-pressed', String(Boolean(show)));
+    }
+
+    if (typeof window !== 'undefined' && typeof window.__resizePanels === 'function') {
+      requestAnimationFrame(() => {
+        window.__resizePanels({ fitContent: true });
+      });
+    }
   }
 
   /* ── Zoom Modal ── */

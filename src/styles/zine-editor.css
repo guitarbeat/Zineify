@@ -2,13 +2,15 @@
   --sheet-width: 210;
   --sheet-height: 297;
   --sheet-scale: 1;
-  background: var(--surface-bg);
-  box-shadow: var(--shadow-md);
+  background: rgba(252, 249, 243, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-paper), inset 0 1px 0 var(--paper-edge-highlight);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-panel);
   position: relative;
   flex-shrink: 0;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   scroll-margin-top: 1rem;
   padding: 0.35rem;
   overflow: hidden;
@@ -20,10 +22,17 @@
   margin: auto;
 }
 
+#preview-area.is-empty .print-sheet {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.985);
+}
+
 [data-theme="dark"] .print-sheet {
-  background: var(--surface-bg);
+  background: rgba(22, 22, 27, 0.42);
   border-color: var(--border-color);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-paper), inset 0 1px 0 var(--paper-edge-highlight);
 }
 
 @media print {
@@ -63,7 +72,7 @@
 }
 
 .page-cell {
-  border: 1px solid rgba(15, 15, 15, 0.18);
+  border: 1px dashed rgba(35, 28, 20, 0.22);
   position: relative;
   display: flex;
   align-items: center;
@@ -74,12 +83,16 @@
   height: 100%;
   width: 100%;
   transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  background: #faf8f3;
+  background: rgba(250, 247, 240, 0.46);
+  background-image: var(--texture-paper);
+  background-size: 160px 160px;
 }
 
 [data-theme="dark"] .page-cell {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: #141417;
+  border-color: rgba(255, 250, 242, 0.16);
+  background: rgba(20, 20, 25, 0.44);
+  background-image: var(--texture-paper);
+  background-size: 160px 160px;
 }
 
 .page-cell:not(.has-page):hover {
@@ -159,24 +172,57 @@
   font-size: 14px;
 }
 
-/* ── SortableJS drag states ───────────────────────── */
+/* ── SortableJS & anagram.alw.lol Spring-Tilt Drag States ── */
+.page-cell {
+  will-change: transform, box-shadow;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.24s cubic-bezier(0.22, 1.28, 0.36, 1);
+}
+
 .page-cell.sortable-ghost {
   opacity: 0.35;
   background: var(--primary-glow) !important;
   border: 2px dashed var(--primary-vibrant) !important;
+  transform: scale(0.96);
 }
 
 .page-cell.sortable-chosen {
   cursor: grabbing;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
-  z-index: 50;
+  transform: scale(1.04) rotate(var(--drag-tilt, -1.8deg));
+  box-shadow:
+    0 14px 32px rgba(24, 18, 12, 0.28),
+    0 0 0 1.5px var(--primary-vibrant);
+  z-index: 60;
 }
 
 .page-cell.sortable-drag {
-  opacity: 0.94;
-  transform: scale(1.02);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  opacity: 0.96;
+  transform: scale(1.055) rotate(var(--drag-tilt, -2.2deg)) !important;
+  box-shadow:
+    0 18px 40px rgba(24, 18, 12, 0.34),
+    0 0 0 2px var(--primary-vibrant) !important;
   z-index: 200;
+}
+
+.page-cell.is-magnetic-target {
+  border: 2px solid var(--primary-vibrant) !important;
+  background: var(--primary-glow) !important;
+  transform: scale(0.972);
+  box-shadow:
+    inset 0 0 0 2px var(--primary-vibrant),
+    0 0 18px var(--primary-glow);
+  z-index: 30;
+}
+
+.page-cell.is-magnetic-swapped {
+  border-color: var(--primary-vibrant) !important;
+  box-shadow:
+    0 0 0 2px var(--primary-vibrant),
+    0 10px 24px rgba(24, 18, 12, 0.2);
+  z-index: 35;
 }
 
 .hide-page-controls .page-toolbar,

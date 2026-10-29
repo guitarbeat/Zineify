@@ -47,6 +47,28 @@ export class PersistenceService {
     return this._dbPromise;
   }
 
+  hasSavedSession() {
+    if (this._disabled || typeof localStorage === 'undefined') {
+      return false;
+    }
+    try {
+      const raw = localStorage.getItem(STORAGE_META_KEY);
+      if (!raw) {
+        return false;
+      }
+      const meta = JSON.parse(raw);
+      return Boolean(
+        meta &&
+        typeof meta === 'object' &&
+        meta.version === 1 &&
+        Array.isArray(meta.filledSlots) &&
+        meta.filledSlots.length > 0
+      );
+    } catch {
+      return false;
+    }
+  }
+
   scheduleSave(state, delayMs = 350) {
     if (this._disabled || typeof localStorage === 'undefined') {
       return;
@@ -112,9 +134,11 @@ export class PersistenceService {
         paperSize: state.paperSize,
         orientation: state.orientation,
         margin: state.margin || 0,
+        customPaper: state.customPaper ? { ...state.customPaper } : undefined,
         pageFlips: { ...state.pageFlips },
         pageRotations: { ...(state.pageRotations || {}) },
         pageZooms: { ...state.pageZooms },
+        pageTransforms: state.pageTransforms ? structuredClone(state.pageTransforms) : {},
         totalSlots: pageUrls.length,
         filledSlots
       };
@@ -177,9 +201,21 @@ export class PersistenceService {
         });
       }
 
+      const slotCount = Math.max(Number(meta.totalSlots) || 8, 8);
+      const allPageImages = new Array(slotCount).fill(null);
+      if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        for (const [slotIndex, blob] of pageBlobs.entries()) {
+          if (Number.isInteger(slotIndex) && slotIndex >= 0 && slotIndex < slotCount) {
+            allPageImages[slotIndex] = URL.createObjectURL(blob);
+          }
+        }
+      }
+
       return {
+        ...meta,
         meta,
-        pageBlobs
+        pageBlobs,
+        allPageImages
       };
     } catch {
       await this.clear();

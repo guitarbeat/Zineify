@@ -14,16 +14,16 @@
   flex: 1 1 auto;
   min-height: 2rem;
   padding: 0.25rem 0.5rem;
-  border: 1px dashed var(--border-color);
-  border-radius: var(--radius-panel);
-  background: var(--surface-muted);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  border: none;
+  border-top: 1px solid var(--border-faint);
+  border-radius: 0;
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .upload-box:hover,
 .upload-box:focus,
 .upload-box.dragover {
-  border-color: var(--primary-vibrant);
   background: var(--primary-glow);
 }
 

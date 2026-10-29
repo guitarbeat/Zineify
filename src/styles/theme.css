@@ -1,21 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  /* Light/Day theme: One warm archival paper ground, one crisp ink, one coral-red accent */
-  --background: #f4f1ea;
-  --bg-warm-highlight: #faf8f4;
-  --bg-warm-shadow: #eae5dc;
-  --bg-neutral: #f4f1ea;
-  --outer-frame-bg: #e6e1d6;
+  /* Light/Day theme: Warm archival vellum paper, crisp ink, coral-red accent */
+  --background: #f1ebe0;
+  --bg-warm-highlight: #faf6ee;
+  --bg-warm-shadow: #dfd7c8;
+  --bg-neutral: rgba(244, 238, 226, 0.72);
+  --outer-frame-bg: #cfc5b3;
 
-  /* Flat Tonal Surface Steps */
-  --surface-bg: #faf8f4;
-  --surface-strong: #e4dfd3;
-  --surface-muted: #efebe2;
-  --glass-bg-alt: #f4f1ea;
+  /* Frosted Vellum Paper-Glass Surfaces (65-75% opacity) */
+  --surface-bg: rgba(252, 249, 243, 0.68);
+  --surface-strong: rgba(226, 218, 203, 0.78);
+  --surface-muted: rgba(239, 233, 221, 0.62);
+  --glass-bg-alt: rgba(248, 244, 236, 0.68);
 
-  --surface-paper-stack: #eae5dc;
-  --pasteboard-dot: rgba(17, 17, 17, 0.10);
+  --surface-paper-stack: rgba(235, 228, 214, 0.38);
+  --pasteboard-dot: rgba(17, 17, 17, 0.16);
+  --panel-backdrop: blur(12px) saturate(135%);
+  --paper-edge-highlight: rgba(255, 255, 255, 0.78);
+
+  /* Deep Edge Vignette (Warm Press Ink Framing) */
+  --vignette-gradient: radial-gradient(
+    ellipse 76% 72% at 50% 50%,
+    rgba(250, 246, 238, 0) 35%,
+    rgba(156, 140, 118, 0.24) 74%,
+    rgba(38, 30, 22, 0.56) 100%
+  );
+  --vignette-inset-shadow: inset 0 0 76px rgba(36, 28, 20, 0.32), inset 0 0 22px rgba(36, 28, 20, 0.18);
 
   /* One Ink & One Coral-Red Accent (#ff5555) */
   --accent-dark: #111111;
@@ -23,25 +34,25 @@
   --primary: #ff5555;
   --primary-vibrant: #ff5555;
   --primary-deep: #e03e3e;
-  --primary-glow: rgba(255, 85, 85, 0.10);
+  --primary-glow: rgba(255, 85, 85, 0.14);
   --accent: #ff5555;
-  --accent-mustard: #efebe2;
-  --border-color: #d6d0c4;
+  --accent-mustard: rgba(239, 235, 226, 0.7);
+  --border-color: rgba(42, 35, 27, 0.22);
   --border-strong: #111111;
-  --border-faint: rgba(17, 17, 17, 0.12);
-  --workspace-edge: #d6d0c4;
-  --muted-ink: #57534e;
+  --border-faint: rgba(42, 35, 27, 0.12);
+  --workspace-edge: rgba(42, 35, 27, 0.26);
+  --muted-ink: #4f4a44;
   --paper-bg: #ffffff;
 
-  /* Flat Tonal Elevation (no heavy offset shadows or glows) */
-  --shadow-sm: none;
-  --shadow-md: 0 1px 2px rgba(17, 17, 17, 0.04);
-  --shadow-lg: 0 8px 24px rgba(17, 17, 17, 0.10);
-  --shadow-paper: none;
-  --surface-shadow-strong: none;
+  /* Tactile Cut-Paper Elevation & Specular Top Edge */
+  --shadow-sm: 0 8px 24px -6px rgba(28, 22, 16, 0.14), 0 2px 6px -1px rgba(28, 22, 16, 0.08), inset 0 1px 0 var(--paper-edge-highlight);
+  --shadow-md: 0 14px 34px -8px rgba(28, 22, 16, 0.20), 0 4px 12px -2px rgba(28, 22, 16, 0.10), inset 0 1px 0 var(--paper-edge-highlight);
+  --shadow-lg: 0 22px 48px -10px rgba(24, 18, 12, 0.30), 0 8px 18px -3px rgba(24, 18, 12, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-paper: 0 10px 28px -6px rgba(24, 18, 12, 0.18);
+  --surface-shadow-strong: 0 18px 40px -8px rgba(24, 18, 12, 0.26);
 
   /* Radii & Two-Font Cap Typography (Fraunces + Plus Jakarta Sans) */
-  --radius-panel: 8px;
+  --radius-panel: 10px;
   --radius-button: 6px;
   --radius-pill: 6px;
   --border-bold: 1px solid var(--border-color);
@@ -52,42 +63,55 @@
   --font-mono-label: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* ── Dark mode: Calm carbon-black studio workbench ──────────────────── */
+/* ── Dark mode: Darkroom Press Vellum & Deep Obsidian Vignette ──────── */
 [data-theme="dark"] {
-  --background: #0d0d0d;
-  --bg-warm-highlight: #18181b;
-  --bg-warm-shadow: #050505;
-  --bg-neutral: #0d0d0d;
-  --outer-frame-bg: #050505;
+  --background: #0b0b0d;
+  --bg-warm-highlight: #1a191e;
+  --bg-warm-shadow: #040405;
+  --bg-neutral: rgba(16, 16, 20, 0.72);
+  --outer-frame-bg: #030304;
 
-  --surface-bg: #141416;
-  --surface-strong: #26262a;
-  --surface-muted: #1c1c1f;
-  --glass-bg-alt: #141416;
+  /* Frosted Smoked Vellum Surfaces (65-75% opacity) */
+  --surface-bg: rgba(24, 24, 29, 0.66);
+  --surface-strong: rgba(48, 48, 56, 0.76);
+  --surface-muted: rgba(34, 34, 41, 0.58);
+  --glass-bg-alt: rgba(22, 22, 27, 0.66);
 
-  --surface-paper-stack: #101012;
-  --pasteboard-dot: rgba(250, 250, 250, 0.08);
+  --surface-paper-stack: rgba(14, 14, 18, 0.34);
+  --pasteboard-dot: rgba(250, 248, 244, 0.13);
+  --panel-backdrop: blur(12px) saturate(140%);
+  --paper-edge-highlight: rgba(255, 250, 242, 0.14);
 
-  --accent-dark: #f5f5f3;
-  --accent-ink-soft: #d4d4d8;
+  /* Deep Edge Vignette (Darkroom Obsidian Framing + Subtle Warm Core) */
+  --vignette-gradient: radial-gradient(
+    ellipse 76% 72% at 50% 50%,
+    rgba(255, 85, 85, 0.06) 0%,
+    rgba(12, 12, 16, 0) 38%,
+    rgba(0, 0, 0, 0.54) 74%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+  --vignette-inset-shadow: inset 0 0 88px rgba(0, 0, 0, 0.78), inset 0 0 26px rgba(0, 0, 0, 0.58);
+
+  --accent-dark: #f5f3ef;
+  --accent-ink-soft: #d6d3cd;
   --primary: #ff5555;
   --primary-vibrant: #ff5555;
   --primary-deep: #ff6b6b;
-  --primary-glow: rgba(255, 85, 85, 0.14);
+  --primary-glow: rgba(255, 85, 85, 0.18);
   --accent: #ff5555;
-  --accent-mustard: #1c1c1f;
-  --border-color: #27272a;
-  --border-strong: #3f3f46;
-  --border-faint: rgba(255, 255, 255, 0.08);
-  --workspace-edge: #27272a;
-  --muted-ink: #a1a1aa;
+  --accent-mustard: rgba(34, 34, 41, 0.7);
+  --border-color: rgba(255, 250, 242, 0.16);
+  --border-strong: rgba(255, 250, 242, 0.36);
+  --border-faint: rgba(255, 250, 242, 0.09);
+  --workspace-edge: rgba(255, 250, 242, 0.18);
+  --muted-ink: #a8a49e;
   --paper-bg: #18181b;
 
-  --shadow-sm: none;
-  --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.45);
-  --shadow-paper: none;
-  --surface-shadow-strong: none;
+  --shadow-sm: 0 8px 26px -4px rgba(0, 0, 0, 0.55), 0 2px 8px -1px rgba(0, 0, 0, 0.40), inset 0 1px 0 var(--paper-edge-highlight);
+  --shadow-md: 0 14px 36px -6px rgba(0, 0, 0, 0.68), 0 4px 14px -2px rgba(0, 0, 0, 0.48), inset 0 1px 0 var(--paper-edge-highlight);
+  --shadow-lg: 0 24px 54px -8px rgba(0, 0, 0, 0.85), 0 8px 22px -3px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 250, 242, 0.24);
+  --shadow-paper: 0 12px 32px -6px rgba(0, 0, 0, 0.65);
+  --surface-shadow-strong: 0 20px 44px -8px rgba(0, 0, 0, 0.78);
 
   --border-bold: 1px solid var(--border-color);
   --border-thin: 1px solid var(--border-color);

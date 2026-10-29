@@ -272,6 +272,10 @@ export class UIManager {
       const filled = Number.isFinite(realFilledCount) ? realFilledCount : placedCount;
       const cap = Number.isFinite(totalSlots) && totalSlots > 0 ? totalSlots : rows * cols;
       this.elements.previewCountChip.textContent = `${filled}/${cap}`;
+      const uploadSummary = document.getElementById('upload-summary-accessory');
+      if (uploadSummary) {
+        uploadSummary.textContent = `${filled}/${cap} pages`;
+      }
     }
 
     if (this.elements.clearAllBtn) {
@@ -493,6 +497,17 @@ export class UIManager {
     this._setupWindowListeners();
   }
 
+  _syncDisplaySummaryAccessory() {
+    const summaryEl = document.getElementById('display-summary-accessory');
+    if (!summaryEl) { return; }
+    const count = [
+      this.elements.pageNumbersCheckbox?.checked !== false,
+      this.elements.pageControlsCheckbox?.checked !== false,
+      this.elements.toggleCutMarks?.checked !== false
+    ].filter(Boolean).length;
+    summaryEl.textContent = `${count}/3 guides`;
+  }
+
   _setupDisplayListeners() {
     this.elements.toggleCutMarks?.addEventListener('change', (e) => {
       const checked = e.target.checked;
@@ -503,8 +518,17 @@ export class UIManager {
       this.guideToggles.bakeFoldGuides = checked;
       this.guideToggles.bakeCropMarks = checked;
       this.applySheetGuideAttributes(this.guideToggles);
+      this._syncDisplaySummaryAccessory();
       this.emitter.emit('guideToggleChanged', { key: 'cut', enabled: checked });
       this.emitter.emit('guideToggleChanged', { key: 'fold', enabled: checked });
+    });
+
+    this.elements.pageNumbersCheckbox?.addEventListener('change', () => {
+      this._syncDisplaySummaryAccessory();
+    });
+
+    this.elements.pageControlsCheckbox?.addEventListener('change', () => {
+      this._syncDisplaySummaryAccessory();
     });
 
     this.elements.resetLayoutBtn?.addEventListener('click', () => {
@@ -597,6 +621,11 @@ export class UIManager {
   _setupUploadListeners() {
     this.elements.uploadZone?.addEventListener('click', () => this.triggerFileUpload());
     this.elements.browseFilesBtn?.addEventListener('click', () => this.triggerFileUpload());
+    this.elements.unifiedDropZone?.addEventListener('click', (event) => {
+      if (this.elements.previewArea?.classList.contains('is-empty') && !event.target.closest('button')) {
+        this.triggerFileUpload();
+      }
+    });
     this.elements.uploadZone?.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();

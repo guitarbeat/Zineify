@@ -1,16 +1,16 @@
 import { GridStack } from '#gridStackImports';
 
-const STORAGE_KEY_DESKTOP = 'zine-grid-fit-v5';
-const STORAGE_KEY_MOBILE = 'zine-grid-mobile-fit-v5';
+const STORAGE_KEY_DESKTOP = 'zine-grid-fit-v6';
+const STORAGE_KEY_MOBILE = 'zine-grid-mobile-fit-v6';
 const MOBILE_BREAKPOINT = 768;
 const CELL_HEIGHT = 32;
 const MOBILE_CELL_HEIGHT = 24;
 
 const DEFAULT_LAYOUT = [
-  { id: 'canvas', x: 4, y: 0, w: 8, h: 12 },
-  { id: 'upload', x: 0, y: 0, w: 4, h: 3 },
-  { id: 'settings', x: 0, y: 3, w: 4, h: 5 },
-  { id: 'display', x: 0, y: 8, w: 4, h: 4 },
+  { id: 'canvas', x: 4, y: 6, w: 8, h: 6 },
+  { id: 'upload', x: 0, y: 0, w: 6, h: 6 },
+  { id: 'settings', x: 0, y: 6, w: 4, h: 4 },
+  { id: 'display', x: 0, y: 10, w: 4, h: 1 },
   { id: 'fold-viewer', x: 4, y: 12, w: 8, h: 6 },
   { id: 'fold-booklet', x: 4, y: 18, w: 4, h: 5 },
   { id: 'fold-guide', x: 8, y: 18, w: 4, h: 5 }
@@ -149,6 +149,8 @@ export function resetToDefaults() {
   if (!grid) { return; }
   localStorage.removeItem(storageKey());
 
+  Object.assign(expandedHeightsMemory, DEFAULT_CARD_HEIGHTS);
+
   grid.batchUpdate(true);
   DEFAULT_LAYOUT.forEach(({ id, x, y, w, h }) => {
     const el = gridEl.querySelector(`[gs-id="${id}"]`);
@@ -157,6 +159,7 @@ export function resetToDefaults() {
   grid.batchUpdate(false);
 
   relayoutPanels({ fitContent: true });
+  syncMiniOverlayStates();
 }
 
 function loadLayout() {
@@ -254,6 +257,218 @@ function setInteractionMode() {
   loadLayout();
 }
 
+const DEFAULT_CARD_HEIGHTS = {
+  upload: 6,
+  settings: 4,
+  display: 4
+};
+
+const expandedHeightsMemory = { ...DEFAULT_CARD_HEIGHTS };
+let prePeekLayoutSnapshot = null;
+let isPeekingBackground = false;
+
+function getGridItemEl(id) {
+  return gridEl?.querySelector(`.grid-stack-item[gs-id="${id}"]`) || null;
+}
+
+export function syncMiniOverlayStates() {
+  if (!gridEl) { return; }
+  ['upload', 'settings', 'display'].forEach((id) => {
+    const itemEl = getGridItemEl(id);
+    const cardEl = itemEl?.querySelector('.snap-card');
+    const node = itemEl?.gridstackNode;
+    if (!cardEl || !node) { return; }
+
+    const isMini = node.h <= 1;
+    cardEl.classList.toggle('is-mini-overlay', isMini);
+    itemEl.classList.toggle('is-mini-overlay-item', isMini);
+
+    if (!isMini && node.h >= 2) {
+      expandedHeightsMemory[id] = node.h;
+    }
+
+    const detentBtn = cardEl.querySelector('.vsplit-detent-btn');
+    if (detentBtn) {
+      detentBtn.setAttribute('aria-expanded', String(!isMini));
+      const icon = detentBtn.querySelector('.material-symbols-outlined');
+      if (icon) {
+        icon.textContent = isMini ? 'unfold_more' : 'unfold_less';
+      }
+    }
+  });
+}
+
+export function toggleCardDetent(cardId) {
+  if (!grid || !gridEl || !DEFAULT_CARD_HEIGHTS[cardId]) { return; }
+  const el = getGridItemEl(cardId);
+  const node = el?.gridstackNode;
+  if (!el || !node) { return; }
+
+  if (isPeekingBackground) {
+    setBackgroundPeek(false);
+  }
+
+  const currentlyMini = node.h <= 1;
+  const maxAvailableH = Math.max(1, 12 - node.y);
+  const desiredExpandedH = Math.max(2, expandedHeightsMemory[cardId] || DEFAULT_CARD_HEIGHTS[cardId]);
+  const targetH = currentlyMini
+    ? Math.min(maxAvailableH, desiredExpandedH)
+    : 1;
+
+  if (!currentlyMini) {
+    expandedHeightsMemory[cardId] = node.h;
+  }
+
+  grid.update(el, { h: targetH });
+  syncMiniOverlayStates();
+  saveLayout();
+}
+
+export function setBackgroundPeek(enable) {
+  if (!grid || !gridEl) { return; }
+  const nextState = typeof enable === 'boolean' ? enable : !isPeekingBackground;
+
+  if (nextState === isPeekingBackground) { return; }
+  isPeekingBackground = nextState;
+
+  const peekBtn = document.getElementById('peek-bg-btn');
+  const peekIcon = document.getElementById('peek-bg-icon');
+  document.body.classList.toggle('is-peeking-bg', isPeekingBackground);
+
+  if (peekBtn) {
+    peekBtn.classList.toggle('is-active', isPeekingBackground);
+    peekBtn.setAttribute('aria-pressed', String(isPeekingBackground));
+  }
+  if (peekIcon) {
+    peekIcon.textContent = isPeekingBackground ? 'visibility_off' : 'visibility';
+  }
+
+  if (isPeekingBackground) {
+    prePeekLayoutSnapshot = grid.save(false);
+    grid.batchUpdate(true);
+    ['upload', 'settings', 'display'].forEach((id, idx) => {
+      const el = getGridItemEl(id);
+      const node = el?.gridstackNode;
+      if (el && node) {
+        if (node.h > 1) {
+          expandedHeightsMemory[id] = node.h;
+        }
+        grid.update(el, { x: 0, y: idx, w: 4, h: 1 });
+      }
+    });
+    grid.batchUpdate(false);
+    syncMiniOverlayStates();
+  } else if (Array.isArray(prePeekLayoutSnapshot) && prePeekLayoutSnapshot.length > 0) {
+    grid.batchUpdate(true);
+    prePeekLayoutSnapshot.forEach(({ id, x, y, w, h }) => {
+      const el = getGridItemEl(id);
+      if (el) {
+        grid.update(el, { x, y, w, h });
+      }
+    });
+    grid.batchUpdate(false);
+    prePeekLayoutSnapshot = null;
+    syncMiniOverlayStates();
+    saveLayout();
+  }
+}
+
+function initVerticalSplitInteractions() {
+  if (!gridEl) { return; }
+
+  // 1. Detent button clicks (for upload and display; settings is handled in SmartSheetConfig + delegated here)
+  gridEl.addEventListener('click', (e) => {
+    const detentBtn = e.target.closest('.vsplit-detent-btn');
+    if (detentBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleCardDetent(detentBtn.dataset.detentCard);
+    }
+  });
+
+  // 2. Double-click on card header inline or split divider to snap detent
+  gridEl.addEventListener('dblclick', (e) => {
+    if (e.target.closest('button, input, select, label')) { return; }
+    const divider = e.target.closest('.vsplit-divider');
+    if (divider) {
+      e.preventDefault();
+      e.stopPropagation();
+      const [topId] = (divider.dataset.vsplitPair || '').split(':');
+      if (topId) {
+        toggleCardDetent(topId);
+      }
+      return;
+    }
+
+    const headerInline = e.target.closest('.card-header-inline');
+    if (headerInline) {
+      const card = headerInline.closest('.snap-card[data-card-id]');
+      if (card?.dataset.cardId) {
+        e.preventDefault();
+        toggleCardDetent(card.dataset.cardId);
+      }
+    }
+  });
+
+  // 3. Interactive Split Divider Dragging with Snap Detents
+  const dividers = gridEl.querySelectorAll('.vsplit-divider');
+  dividers.forEach((divider) => {
+    divider.addEventListener('pointerdown', (e) => {
+      if (isMobile() || e.button !== 0) { return; }
+      e.preventDefault();
+      e.stopPropagation();
+
+      const [topId] = (divider.dataset.vsplitPair || '').split(':');
+      const topEl = getGridItemEl(topId);
+      const topNode = topEl?.gridstackNode;
+      if (!topEl || !topNode) { return; }
+
+      const startY = e.clientY;
+      const startTopH = topNode.h;
+      const rowStepPx = Math.max(24, (grid.getCellHeight() || CELL_HEIGHT) + 6);
+
+      divider.classList.add('is-dragging');
+      document.body.classList.add('is-vsplit-dragging');
+      divider.setPointerCapture?.(e.pointerId);
+
+      const onPointerMove = (moveEvt) => {
+        const deltaPx = moveEvt.clientY - startY;
+        const deltaRows = Math.round(deltaPx / rowStepPx);
+        const maxH = Math.max(1, 12 - topNode.y);
+        const nextTopH = Math.max(1, Math.min(maxH, startTopH + deltaRows));
+
+        if (nextTopH !== topNode.h) {
+          grid.update(topEl, { h: nextTopH });
+          syncMiniOverlayStates();
+        }
+      };
+
+      const onPointerUp = (upEvt) => {
+        divider.classList.remove('is-dragging');
+        document.body.classList.remove('is-vsplit-dragging');
+        divider.releasePointerCapture?.(upEvt.pointerId);
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+        syncMiniOverlayStates();
+        saveLayout();
+      };
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    });
+  });
+
+  // 4. Peek Background button
+  const peekBtn = document.getElementById('peek-bg-btn');
+  if (peekBtn) {
+    peekBtn.addEventListener('click', () => {
+      setBackgroundPeek();
+    });
+  }
+}
+
 export function initGridStack() {
   gridEl = document.querySelector('.grid-stack');
   if (!gridEl) { return; }
@@ -266,7 +481,7 @@ export function initGridStack() {
     animate: true,
     sizeToContent: false,
     handle: '.snap-card, .brand-panel',
-    cancel: 'button, input, select, textarea, label, a, .upload-box, [role="button"], .smart-sheet-unit-btn, .smart-sheet-orientation-btn, .smart-sheet-stepper-btn, .smart-sheet-margin-slider, .workspace-config-toggle',
+    cancel: 'button, input, select, textarea, label, a, .upload-box, [role="button"], .smart-sheet-unit-btn, .smart-sheet-orientation-btn, .smart-sheet-stepper-btn, .smart-sheet-margin-slider, .workspace-config-toggle, .vsplit-divider, .vsplit-detent-btn, .vsplit-peek-btn',
     resizable: { handles: 'se', autoHide: false },
     columnOpts: {
       breakpointForWindow: true,
@@ -277,10 +492,18 @@ export function initGridStack() {
 
   grid.float(!isMobile());
 
-  grid.on('change', saveLayout);
-  grid.on('dragstop resizestop', saveLayout);
+  grid.on('change', () => {
+    syncMiniOverlayStates();
+    saveLayout();
+  });
+  grid.on('dragstop resizestop', () => {
+    syncMiniOverlayStates();
+    saveLayout();
+  });
 
   setInteractionMode();
+  initVerticalSplitInteractions();
+  syncMiniOverlayStates();
 
   window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).addEventListener('change', setInteractionMode);
 
@@ -292,11 +515,16 @@ export function initGridStack() {
     }, 100);
   });
 
+  window.__toggleCardDetent = toggleCardDetent;
+  window.__setBackgroundPeek = setBackgroundPeek;
   window.__resetPanelLayout = () => {
+    if (isPeekingBackground) {
+      setBackgroundPeek(false);
+    }
     localStorage.removeItem(STORAGE_KEY_DESKTOP);
     localStorage.removeItem(STORAGE_KEY_MOBILE);
     resetToDefaults();
-    location.reload();
+    syncMiniOverlayStates();
   };
   window.__resizePanels = relayoutPanels;
   window.__layoutHasOverlaps = layoutHasOverlaps;

@@ -44,10 +44,11 @@
             <div class="workspace-back-logo" aria-hidden="true">
                 <img src="/icons/zine-ify-logo.jpg" alt="" class="workspace-back-logo-img" />
             </div>
+            <div class="workspace-vignette" aria-hidden="true"></div>
             <div class="grid-stack">
 
                 <!-- ── Zine Layout Card (Hero Canvas) ────────────────── -->
-                <div class="grid-stack-item" gs-id="canvas" gs-x="4" gs-y="0" gs-w="8" gs-h="12" gs-min-w="5" gs-min-h="6">
+                <div class="grid-stack-item" gs-id="canvas" gs-x="4" gs-y="6" gs-w="8" gs-h="6" gs-min-w="5" gs-min-h="4">
                     <div class="grid-stack-item-content">
                         <div class="snap-card snap-card--canvas" id="card-zine">
                             <div class="snap-card-handle">
@@ -56,6 +57,11 @@
                                     <span id="preview-count-chip" class="snap-card-meta-chip tabular-nums">0/8</span>
                                 </div>
                                 <div class="snap-card-header-actions">
+                                    <button id="peek-bg-btn" type="button" class="header-tool-btn vsplit-peek-btn" aria-pressed="false" aria-label="Peek background artwork" title="Collapse panels to mini-overlays and peek background">
+                                        <span class="material-symbols-outlined icon-compact" id="peek-bg-icon" aria-hidden="true">visibility</span>
+                                        <span class="header-tool-label">Peek</span>
+                                    </button>
+                                    <span class="header-actions-divider" aria-hidden="true"></span>
                                     <button id="undo-btn" type="button" class="header-tool-btn" disabled aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)">
                                         <span class="material-symbols-outlined icon-compact" aria-hidden="true">undo</span>
                                         <span class="header-tool-label">Undo</span>
@@ -85,7 +91,7 @@
                                 </div>
                             </div>
                             <div class="snap-card-body snap-card-body--canvas">
-                                <div id="preview-area">
+                                <div id="preview-area" class="is-empty">
                                     <div id="unified-drop-zone"
                                         role="region"
                                         aria-label="Page layout grid">
@@ -99,37 +105,50 @@
                 </div>
 
                 <!-- ── Add Pages Card ────────────────────────────────── -->
-                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="0" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="2">
+                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="0" gs-w="6" gs-h="6" gs-min-w="3" gs-min-h="1">
                     <div class="grid-stack-item-content">
-                        <div class="snap-card" id="card-upload">
+                        <div class="snap-card" id="card-upload" data-card-id="upload">
                             <div class="snap-card-body upload-card-body">
                                 <div class="card-header-inline">
-                                    <h3 class="card-section-title">Add pages</h3>
-                                    <button id="browse-files-btn" type="button" class="browse-files-btn">
-                                        <i data-lucide="folder-open" aria-hidden="true"></i>
-                                        <span>Choose files</span>
-                                    </button>
+                                    <div class="vsplit-leading-group">
+                                        <h3 class="card-section-title">Add pages</h3>
+                                        <span id="upload-summary-accessory" class="vsplit-summary-accessory tabular-nums">0/8 pages</span>
+                                    </div>
+                                    <div class="vsplit-trailing-group">
+                                        <button id="browse-files-btn" type="button" class="browse-files-btn">
+                                            <i data-lucide="folder-open" aria-hidden="true"></i>
+                                            <span>Choose files</span>
+                                        </button>
+                                        <button type="button" class="vsplit-detent-btn" data-detent-card="upload" aria-label="Toggle Add pages mini-overlay" title="Snap between mini-overlay and full panel">
+                                            <span class="material-symbols-outlined icon-compact" aria-hidden="true">unfold_less</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div id="upload-zone" class="upload-box cursor-pointer"
-                                    role="button" tabindex="0"
-                                    aria-label="Drop PDF or image files here, or press Enter to browse">
-                                    <i data-lucide="upload" class="upload-icon" aria-hidden="true"></i>
-                                    <span class="upload-title">Drop PDF or images</span>
+                                <div class="vsplit-collapsible-content">
+                                    <div id="upload-zone" class="upload-box cursor-pointer"
+                                        role="button" tabindex="0"
+                                        aria-label="Drop PDF or image files here, or press Enter to browse">
+                                        <i data-lucide="upload" class="upload-icon" aria-hidden="true"></i>
+                                        <span class="upload-title">Drop PDF or images</span>
+                                    </div>
+                                    <input type="file" id="pdf-upload" class="sr-only"
+                                        accept="application/pdf,image/png,image/jpeg,image/webp"
+                                        multiple aria-hidden="true" tabindex="-1" />
+                                    <p id="upload-status" class="upload-status" aria-live="polite"></p>
+                                    <section id="uploaded-files-list" class="hidden" aria-label="Uploaded files"></section>
                                 </div>
-                                <input type="file" id="pdf-upload" class="sr-only"
-                                    accept="application/pdf,image/png,image/jpeg,image/webp"
-                                    multiple aria-hidden="true" tabindex="-1" />
-                                <p id="upload-status" class="upload-status" aria-live="polite"></p>
-                                <section id="uploaded-files-list" class="hidden" aria-label="Uploaded files"></section>
+                            </div>
+                            <div class="vsplit-divider" data-vsplit-pair="upload:settings" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Split divider between Add pages and Layout & paper. Drag to resize or double-click to snap detent." title="Drag to adjust split · Double-click to snap detent">
+                                <span class="vsplit-pill"><span class="vsplit-pill-dots"></span></span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- ── Layout & Paper Card ───────────────────────────── -->
-                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="3" gs-w="4" gs-h="5" gs-min-w="3" gs-min-h="3">
+                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="6" gs-w="4" gs-h="4" gs-min-w="3" gs-min-h="1">
                     <div class="grid-stack-item-content">
-                        <div class="snap-card" id="card-settings">
+                        <div class="snap-card" id="card-settings" data-card-id="settings">
                             <div class="snap-card-body" id="settings-group">
                                 <div id="smart-sheet-config-container"></div>
                                 <input type="hidden" id="paper-size-select" value="letter" />
@@ -137,23 +156,34 @@
                                 <input type="hidden" id="grid-rows" value="2" />
                                 <input type="hidden" id="grid-cols" value="4" />
                             </div>
+                            <div class="vsplit-divider" data-vsplit-pair="settings:display" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Split divider between Layout & paper and Display. Drag to resize or double-click to snap detent." title="Drag to adjust split · Double-click to snap detent">
+                                <span class="vsplit-pill"><span class="vsplit-pill-dots"></span></span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- ── Display Card ──────────────────────────────────── -->
-                <div class="grid-stack-item" gs-id="display" gs-x="0" gs-y="8" gs-w="4" gs-h="4" gs-min-w="3" gs-min-h="2">
+                <div class="grid-stack-item is-mini-overlay-item" gs-id="display" gs-x="0" gs-y="10" gs-w="4" gs-h="1" gs-min-w="3" gs-min-h="1">
                     <div class="grid-stack-item-content">
-                        <div class="snap-card" id="card-display">
+                        <div class="snap-card is-mini-overlay" id="card-display" data-card-id="display">
                             <div class="snap-card-body display-card-body">
                                 <div class="card-header-inline">
-                                    <h3 class="card-section-title">Display</h3>
-                                    <button id="reset-layout-btn" type="button" class="action-button display-reset-btn" aria-label="Reset panel layout" title="Snap all panels back to default layout">
-                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">grid_view</span>
-                                        <span>Reset</span>
-                                    </button>
+                                    <div class="vsplit-leading-group">
+                                        <h3 class="card-section-title">Display</h3>
+                                        <span id="display-summary-accessory" class="vsplit-summary-accessory tabular-nums">3/3 guides</span>
+                                    </div>
+                                    <div class="vsplit-trailing-group">
+                                        <button id="reset-layout-btn" type="button" class="action-button display-reset-btn" aria-label="Reset panel layout" title="Snap all panels back to default layout">
+                                            <span class="material-symbols-outlined icon-compact" aria-hidden="true">grid_view</span>
+                                            <span>Reset</span>
+                                        </button>
+                                        <button type="button" class="vsplit-detent-btn" data-detent-card="display" aria-expanded="false" aria-label="Toggle Display mini-overlay" title="Snap between mini-overlay and full panel">
+                                            <span class="material-symbols-outlined icon-compact" aria-hidden="true">unfold_more</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="display-toggles-list">
+                                <div class="display-toggles-list vsplit-collapsible-content">
                                     <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-numbers">
                                         <span class="workspace-config-toggle-copy">Page numbers</span>
                                         <input type="checkbox" id="show-page-numbers" checked class="workspace-config-toggle-input" />
@@ -170,6 +200,9 @@
                                         <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
                                     </label>
                                 </div>
+                            </div>
+                            <div class="vsplit-divider" data-vsplit-pair="display:bottom" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Split divider for Display card. Drag to resize or double-click to snap detent." title="Drag to adjust height · Double-click to snap detent">
+                                <span class="vsplit-pill"><span class="vsplit-pill-dots"></span></span>
                             </div>
                         </div>
                     </div>

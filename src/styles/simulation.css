@@ -1,16 +1,72 @@
-/* ── Fold Cards (GridStack items: #card-fold-viewer, #card-fold-booklet, #card-fold-guide) ── */
+/* ── Unified Tabbed Fold Preview Panel (#card-fold-viewer) ── */
+
+.fold-inspector-tabs {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--cutout-btn-border);
+  border-radius: 9999px;
+  background: var(--cutout-btn-bg);
+  box-shadow: 1.5px 1.5px 0 #080706;
+  overflow: hidden;
+  margin-left: 0.35rem;
+}
+
+.fold-tab-btn {
+  padding: 0.16rem 0.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--cutout-btn-ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.fold-tab-btn + .fold-tab-btn {
+  border-left: 1.5px solid var(--cutout-btn-border);
+}
+
+.fold-tab-btn.is-active {
+  background: var(--primary-vibrant);
+  color: #ffffff;
+}
+
+.fold-tab-btn:hover:not(.is-active) {
+  background: rgba(224, 36, 36, 0.14);
+  color: var(--primary-vibrant);
+}
+
+.fold-unified-body {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.fold-tab-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fold-tab-pane.hidden {
+  display: none !important;
+}
 
 .fold-viewer-body,
 .snap-card-body--fold-viewer {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  gap: 0.75rem;
-  padding: 0.8rem 0.9rem;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
   overflow: hidden;
 }
 
 .fold-viewer-stage {
-  min-height: 14rem;
+  min-height: 10rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-button);
   background: var(--surface-muted);
@@ -62,12 +118,14 @@
   color: var(--muted-ink);
 }
 
-/* ── Booklet Card ─────────────────────────────────────────── */
+/* ── Booklet Tab Pane ─────────────────────────────────────── */
 
-.fold-booklet-body {
+.fold-booklet-body,
+.snap-card-body--fold-booklet {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
 }
 
 .fold-booklet-header {
@@ -77,10 +135,12 @@
   gap: 0.5rem;
 }
 
-/* ── Fold Guide Card ──────────────────────────────────────── */
+/* ── Fold Guide Tab Pane ──────────────────────────────────── */
 
-.fold-guide-body {
+.fold-guide-body,
+.snap-card-body--fold-guide {
   overflow-y: auto;
+  padding: 0.65rem 0.85rem;
 }
 
 .fold-guide-list {

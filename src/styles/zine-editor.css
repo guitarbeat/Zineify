@@ -2,18 +2,18 @@
   --sheet-width: 210;
   --sheet-height: 297;
   --sheet-scale: 1;
-  background: rgba(252, 249, 243, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  box-shadow: var(--shadow-paper), inset 0 1px 0 var(--paper-edge-highlight);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-panel);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
   position: relative;
   flex-shrink: 0;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   scroll-margin-top: 1rem;
-  padding: 0.35rem;
-  overflow: hidden;
+  padding: 0;
+  overflow: visible;
   max-width: 100%;
   max-height: 100%;
   aspect-ratio: var(--sheet-width, 210) / var(--sheet-height, 297);
@@ -23,16 +23,16 @@
 }
 
 #preview-area.is-empty .print-sheet {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: scale(0.985);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: scale(1);
 }
 
 [data-theme="dark"] .print-sheet {
-  background: rgba(22, 22, 27, 0.42);
-  border-color: var(--border-color);
-  box-shadow: var(--shadow-paper), inset 0 1px 0 var(--paper-edge-highlight);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 @media print {
@@ -113,6 +113,20 @@
 .page-cell.has-page:hover {
   border-color: var(--primary-vibrant);
   z-index: 12;
+}
+
+.page-cell.is-selected,
+.page-cell.active {
+  border: 2px solid var(--primary-vibrant) !important;
+  box-shadow: inset 0 0 0 1.5px var(--primary-vibrant), 0 0 0 2px rgba(224, 36, 36, 0.18);
+  z-index: 16;
+}
+
+.page-cell.is-file-drop-target {
+  border: 2px dashed var(--primary-vibrant) !important;
+  background: var(--primary-glow) !important;
+  box-shadow: inset 0 0 0 2px var(--primary-vibrant);
+  z-index: 18;
 }
 
 .page-cell:focus-visible {
@@ -302,21 +316,43 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  opacity: 0.45;
-  transition: opacity 0.15s, color 0.15s;
+  gap: 0.18rem;
+  padding: 0.35rem;
+  text-align: center;
+  opacity: 0.72;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .page-placeholder .material-symbols-outlined {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
+  opacity: 0.85;
+}
+
+.page-placeholder-role {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  line-height: 1.15;
 }
 
 .page-placeholder-hint {
-  display: none;
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--muted-ink);
+  letter-spacing: -0.01em;
 }
 
 .page-cell:not(.has-page):hover .page-placeholder {
   color: var(--primary-vibrant);
   opacity: 1;
+}
+
+.page-cell:not(.has-page):hover .page-placeholder-role,
+.page-cell:not(.has-page):hover .page-placeholder-hint {
+  color: var(--primary-vibrant);
 }
 
 .page-cell.has-page .page-placeholder { display: none; }
@@ -403,14 +439,46 @@
 }
 .is-template-upside-down .page-placeholder { transform: rotate(180deg); }
 
+/* ── Upright Reading View Mode (Screen-only un-rotation of top row) ── */
+#preview-area.reading-view-mode:not(.is-exporting) .is-template-upside-down {
+  transform: rotate(0deg);
+}
+#preview-area.reading-view-mode:not(.is-exporting) .is-template-upside-down .page-label {
+  transform: rotate(0deg);
+  top: auto;
+  bottom: 0.35rem;
+  right: auto;
+  left: 0.35rem;
+}
+#preview-area.reading-view-mode:not(.is-exporting) .is-template-upside-down .page-orientation-tag {
+  transform: rotate(0deg);
+  bottom: auto;
+  top: 0.35rem;
+  right: auto;
+  left: 0.35rem;
+  opacity: 0.55;
+}
+#preview-area.reading-view-mode:not(.is-exporting) .is-template-upside-down .page-placeholder {
+  transform: rotate(0deg);
+}
+
+@media print {
+  #preview-area.reading-view-mode .is-template-upside-down {
+    transform: rotate(180deg) !important;
+  }
+}
+
 /* ── Press Marks, Fold Creases, Cut Slit & Bleed Overlays ─────── */
 .sheet-fold-overlay,
-.sheet-crop-overlay,
 .sheet-bleed-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 22;
+}
+
+.sheet-crop-overlay {
+  display: none !important;
 }
 
 .print-sheet[data-guide-fold="false"] .sheet-fold-overlay {

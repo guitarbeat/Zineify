@@ -11,6 +11,7 @@ export class ModalManager {
     this.emitter = emitter;
     this.pagePicker = new PagePicker(elements);
     this.progress = new ProgressOverlay(elements);
+    this.setupFoldModalListeners();
   }
 
   /* ── PagePicker ── */
@@ -35,33 +36,60 @@ export class ModalManager {
     this.progress.update(percent);
   }
 
-  /* ── 3D Modal (Snap-Cards) ── */
+  /* ── 3D Modal (Focused Overlay Modal) ── */
   toggle3DModal(show) {
-    const foldViewerCard = document.getElementById('card-fold-viewer');
-    const foldBookletCard = document.getElementById('card-fold-booklet');
-    const foldGuideCard = document.getElementById('card-fold-guide');
-
-    const cards = [foldViewerCard, foldBookletCard, foldGuideCard];
-    cards.forEach((card) => {
-      if (!card) { return; }
-      if (show) {
-        card.classList.remove('hidden');
+    const isShow = Boolean(show);
+    const modal = document.getElementById('zine-3d-modal');
+    if (modal) {
+      modal.classList.toggle('hidden', !isShow);
+      if (isShow) {
+        document.body.classList.add('fold-modal-open');
       } else {
-        card.classList.add('hidden');
+        document.body.classList.remove('fold-modal-open');
       }
-    });
+    }
+
+    const foldViewerCard = document.getElementById('card-fold-viewer');
+    if (foldViewerCard) {
+      foldViewerCard.classList.toggle('hidden', !isShow);
+    }
+    const bookletCard = document.getElementById('card-fold-booklet');
+    if (bookletCard) {
+      bookletCard.classList.toggle('hidden', !isShow);
+    }
+    const guideCard = document.getElementById('card-fold-guide');
+    if (guideCard) {
+      guideCard.classList.toggle('hidden', !isShow);
+    }
 
     const view3dBtn = document.getElementById('view3dBtn');
     if (view3dBtn) {
-      view3dBtn.classList.toggle('is-active', Boolean(show));
-      view3dBtn.setAttribute('aria-pressed', String(Boolean(show)));
+      view3dBtn.classList.toggle('is-active', isShow);
+      view3dBtn.setAttribute('aria-pressed', String(isShow));
     }
 
-    if (typeof window !== 'undefined' && typeof window.__resizePanels === 'function') {
-      requestAnimationFrame(() => {
-        window.__resizePanels({ fitContent: true });
-      });
+    if (isShow && typeof window !== 'undefined') {
+      if (typeof window.__syncFoldPreviewGrid === 'function') {
+        window.__syncFoldPreviewGrid(true);
+      }
     }
+  }
+
+  setupFoldModalListeners() {
+    const backdrop = document.getElementById('zine-3d-backdrop');
+    backdrop?.addEventListener('click', () => this.toggle3DModal(false));
+
+    const closeBtn = document.getElementById('close-3d-btn');
+    closeBtn?.addEventListener('click', () => this.toggle3DModal(false));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('zine-3d-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+          this.toggle3DModal(false);
+        }
+      }
+    });
   }
 
   /* ── Zoom Modal ── */
@@ -76,20 +104,38 @@ export class ModalManager {
       modal.appendChild(backdrop);
 
       const contentDiv = document.createElement('div');
-      contentDiv.className = 'relative w-11/12 h-11/12 max-w-7xl max-h-[90vh] bg-white overflow-hidden flex flex-col scale-95 transition-transform duration-300';
-      contentDiv.style.border = '3px solid black';
-      contentDiv.style.boxShadow = '6px 6px 0px 0px black';
+      contentDiv.className = 'relative w-11/12 h-11/12 max-w-7xl max-h-[90vh] overflow-hidden flex flex-col scale-95 transition-transform duration-300';
+      contentDiv.style.backgroundColor = 'var(--newsprint-bg)';
+      contentDiv.style.backgroundImage = 'var(--texture-halftone), var(--texture-paper)';
+      contentDiv.style.backgroundSize = '8px 8px, 160px 160px';
+      contentDiv.style.clipPath = 'var(--clip-deckle-panel)';
+      contentDiv.style.filter = 'var(--deckle-filter-hover)';
+      contentDiv.style.boxShadow = 'inset 0 0 0 1.5px var(--deckle-inner-rim)';
 
       const header = document.createElement('div');
-      header.className = 'flex justify-between items-center px-4 py-2 border-b-2 border-black';
+      header.className = 'flex justify-between items-center px-4 py-2.5';
+      header.style.backgroundColor = 'var(--cutout-header-bg)';
+      header.style.backgroundImage = 'var(--svg-crimson-brush), var(--texture-paper)';
+      header.style.backgroundRepeat = 'no-repeat, repeat';
+      header.style.backgroundPosition = 'left bottom, 0 0';
+      header.style.backgroundSize = '100% 7px, 140px 140px';
+      header.style.clipPath = 'var(--clip-deckle-header)';
+      header.style.color = 'var(--cutout-header-ink)';
 
       const title = document.createElement('h3');
-      title.className = 'font-bold uppercase tracking-wider text-sm';
+      title.className = 'font-bold tracking-wide text-sm';
+      title.style.fontFamily = 'var(--font-display)';
+      title.style.color = 'var(--cutout-header-ink)';
+      title.style.textShadow = '1.5px 1.5px 0 #000000';
       title.textContent = 'Page Preview';
 
       const closeBtn = document.createElement('button');
-      closeBtn.className = 'close-modal w-8 h-8 bg-white border-2 border-black text-black flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors focus:outline-none';
-      closeBtn.style.boxShadow = '2px 2px 0px 0px black';
+      closeBtn.className = 'close-modal w-8 h-8 flex items-center justify-center transition-colors focus:outline-none';
+      closeBtn.style.backgroundColor = 'var(--cutout-btn-bg)';
+      closeBtn.style.color = 'var(--cutout-btn-ink)';
+      closeBtn.style.border = '1.5px solid var(--cutout-btn-border)';
+      closeBtn.style.borderRadius = '2px';
+      closeBtn.style.boxShadow = '1.5px 1.5px 0 #080706';
       closeBtn.setAttribute('aria-label', 'Close page preview');
       closeBtn.setAttribute('title', 'Close page preview');
 

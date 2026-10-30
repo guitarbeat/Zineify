@@ -8,6 +8,10 @@ initPwa();
 window.app = new AppController();
 initSettingsValidation(document, window.app?.ui);
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initGridStack();
+  });
+} else {
   initGridStack();
-});
+}

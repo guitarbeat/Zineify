@@ -2,24 +2,29 @@ import { getPageLabel } from '../../utils/previewHelpers.js';
 
 const TOOLBAR_BUTTONS = [
   {
+    selector: '.replace-btn',
+    title: (label) => `Replace ${label} with another file`,
+    ariaLabel: (label) => `Replace ${label} with another file`
+  },
+  {
     selector: '.crop-btn',
-    title: (label) => `Fit / Fill ${label} — toggle between showing the full page or filling the slot`,
+    title: (label) => `Fit / Fill ${label} — toggle between showing the full page or filling the slot (C)`,
     ariaLabel: (label) => `Toggle fit or fill for ${label} (C)`
   },
   {
     selector: '.rotate-btn',
-    title: (label) => `Rotate ${label} 90° clockwise`,
+    title: (label) => `Rotate ${label} 90° clockwise (T)`,
     ariaLabel: (label) => `Rotate ${label} 90 degrees clockwise (T)`
   },
   {
     selector: '.flip-btn',
-    title: (label) => `Rotate ${label} 180° — flip the page upside-down`,
+    title: (label) => `Rotate ${label} 180° — flip the page upside-down (R)`,
     ariaLabel: (label) => `Rotate ${label} 180 degrees (R)`
   },
   {
     selector: '.duplicate-btn',
-    title: (label) => `Duplicate ${label}`,
-    ariaLabel: (label) => `Duplicate ${label}`
+    title: (label) => `Duplicate ${label} to next open slot (D)`,
+    ariaLabel: (label) => `Duplicate ${label} (D)`
   }
 ];
 
@@ -204,7 +209,7 @@ export class LayoutRenderer {
   createSheetGrid(config) {
     const { sheetNumber, template, columns, rows, id, paper, guideToggles = {} } = config;
     const sheetWrapper = document.createElement('div');
-    sheetWrapper.className = 'print-sheet p-0 relative overflow-hidden rounded-sm';
+    sheetWrapper.className = 'print-sheet p-0 relative';
     sheetWrapper.setAttribute('data-sheet', sheetNumber);
     sheetWrapper.setAttribute('data-template', template);
     sheetWrapper.setAttribute('data-guide-cut', String(guideToggles.cut !== false));
@@ -297,6 +302,17 @@ export class LayoutRenderer {
       label.classList.add('hidden');
     }
 
+    const orientTag = cell.querySelector('.page-orientation-tag');
+    if (orientTag && upsideDown) {
+      orientTag.textContent = '180° Fold';
+      orientTag.classList.remove('hidden');
+    }
+
+    const placeholderRole = cell.querySelector('.page-placeholder-role');
+    if (placeholderRole) {
+      placeholderRole.textContent = accessibleLabelText;
+    }
+
     const img = cell.querySelector('.page-content-img');
     img.alt = altText;
 
@@ -325,6 +341,9 @@ export class LayoutRenderer {
         button.setAttribute('title', title(accessibleLabelText));
         button.setAttribute('aria-label', ariaLabel(accessibleLabelText));
       });
+
+      const replaceBtn = toolbar.querySelector('.replace-btn');
+      if (replaceBtn) { replaceBtn.onclick = (e) => { e.stopPropagation(); handlers.onReplace?.(pageIndex); }; }
 
       const rotateBtn = toolbar.querySelector('.rotate-btn');
       if (rotateBtn) { rotateBtn.onclick = (e) => { e.stopPropagation(); handlers.onRotate?.(pageIndex); }; }

@@ -36,14 +36,33 @@ export class DragAndDropHandler {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
         zone.classList.add('drag-active');
+        const hoveredCell = e.target.closest?.('.page-cell');
+        zone.querySelectorAll('.page-cell.is-file-drop-target').forEach((cell) => {
+          if (cell !== hoveredCell) {cell.classList.remove('is-file-drop-target');}
+        });
+        if (hoveredCell) {hoveredCell.classList.add('is-file-drop-target');}
       });
       zone.addEventListener('dragleave', (e) => {
-        if (!zone.contains(e.relatedTarget)) {zone.classList.remove('drag-active');}
+        if (!zone.contains(e.relatedTarget)) {
+          zone.classList.remove('drag-active');
+          zone.querySelectorAll('.page-cell.is-file-drop-target').forEach((cell) => {
+            cell.classList.remove('is-file-drop-target');
+          });
+        }
       });
       zone.addEventListener('drop', (e) => {
         zone.classList.remove('drag-active');
+        zone.querySelectorAll('.page-cell.is-file-drop-target').forEach((cell) => {
+          cell.classList.remove('is-file-drop-target');
+        });
         const files = Array.from(e.dataTransfer?.files ?? []);
-        if (files.length) { e.preventDefault(); this.emitter.emit('filesDropped', files); }
+        if (files.length) {
+          e.preventDefault();
+          const dropCell = e.target.closest?.('.page-cell');
+          const rawSlotIdx = dropCell ? parseInt(dropCell.getAttribute('data-page-index'), 10) : NaN;
+          const targetSlotIndex = Number.isFinite(rawSlotIdx) ? rawSlotIdx : null;
+          this.emitter.emit('filesDropped', { files, targetSlotIndex });
+        }
       });
     }
   }

@@ -195,12 +195,18 @@ export class AppController {
       }
       this.state.totalPages = Math.max(this.state.totalPages, emptyIdx + 1);
       this.renderCurrentLayout();
+      toast.info('Blank page added', `Placed blank page in slot ${emptyIdx + 1}`);
     });
 
     this.ui.on('fillBlankSlotsRequested', async () => {
       this._pushSnapshot('Empty slots filled with blanks');
       await this.fillBlankSlots({ forceAllEmpty: true });
       this.renderCurrentLayout();
+      toast.info('Empty slots filled', 'All open slots filled with blank pages');
+    });
+
+    this.ui.on('loadSampleZineRequested', () => {
+      void this.handleLoadSampleZine();
     });
 
     this.ui.on('flipAllPagesRequested', () => {
@@ -217,6 +223,236 @@ export class AppController {
       }
       this.renderCurrentLayout();
     });
+  }
+
+  async handleLoadSampleZine() {
+    const slotCount = Math.max(8, this.state.gridSize.rows * this.state.gridSize.cols);
+    this._pushSnapshot('Loaded sample zine');
+    this.ui.modal.showProgress(true, 'Generating sample zine...', '0%');
+
+    try {
+      this.prepareLayoutForTotalPages(slotCount);
+      const samplePages = [
+        { num: 1, role: 'FRONT COVER', title: 'CUT & FOLD', subtitle: 'A DIY Pocket Field Guide to Single-Sheet Zines', accent: '#e02424', bg: '#fbf6ec', motif: 'burst' },
+        { num: 2, role: 'PAGE 02 · MANIFESTO', title: '1 SHEET = 8 PAGES', subtitle: 'No staples. No glue. Just one horizontal center slit and three crisp creases.', accent: '#181512', bg: '#f7f1e3', motif: 'grid' },
+        { num: 3, role: 'PAGE 03 · IMPOSITION', title: 'WHY TOP ROW FLIPS', subtitle: 'Pages 5, 4, 3, and 2 print upside-down so they land upright when folded.', accent: '#c81e1e', bg: '#fbf6ec', motif: 'arrows' },
+        { num: 4, role: 'PAGE 04 · THE CREASE', title: 'EIGHT EQUAL PANELS', subtitle: 'Fold widthwise, then fold outer edges to the center line to score 8 panels.', accent: '#181512', bg: '#f5efe0', motif: 'fold' },
+        { num: 5, role: 'PAGE 05 · THE SLIT', title: 'CENTER CUT LINE', subtitle: 'Cut only the middle two panels along the red dashed cut guide.', accent: '#e02424', bg: '#fbf6ec', motif: 'scissors' },
+        { num: 6, role: 'PAGE 06 · DIAMOND', title: 'PUSH ENDS INWARD', subtitle: 'Fold lengthwise like a hotdog and push outer edges together into a star.', accent: '#181512', bg: '#f7f1e3', motif: 'diamond' },
+        { num: 7, role: 'PAGE 07 · PRESS CHECK', title: 'PRESS CHECK', subtitle: 'Eight panels arranged in sequence. Ready for high-resolution print.', accent: '#c81e1e', bg: '#fbf6ec', motif: 'check' },
+        { num: 8, role: 'BACK COVER · COLOPHON', title: 'ZINE-IFY PRESS', subtitle: 'Printed at 100% scale · Single-sided sheet · Ready for xerox & risograph.', accent: '#181512', bg: '#f3ecdc', motif: 'stamp' }
+      ];
+
+      for (let i = 0; i < slotCount; i++) {
+        const spec = samplePages[i % samplePages.length];
+        const pageNumber = i + 1;
+        const canvas = this._renderSampleZinePageCanvas({
+          ...spec,
+          num: pageNumber,
+          role: i < 8 ? spec.role : `PAGE ${String(pageNumber).padStart(2, '0')}`
+        });
+        const url = await this.pdfProcessor.canvasToBlob(canvas);
+        const existingUrl = this.state.allPageImages[i];
+        if (existingUrl && existingUrl !== this.state._blankPageUrl) {
+          this.pdfProcessor.revokeBlobUrl(existingUrl);
+        }
+        this.state.allPageImages[i] = url;
+        this.state.pageFlips[i] = false;
+        if (this.state.pageRotations) {
+          this.state.pageRotations[i] = 0;
+        }
+        this.state.pageZooms[i] = false;
+      }
+
+      this.state.totalPages = this.state.getFilledPageCount();
+      this.state.resetWorkflowStatus();
+      this.renderCurrentLayout();
+      this.ui.setStatus(`Loaded ${slotCount}-page sample zine`, 'success');
+      toast.success('Sample Zine Loaded', 'Try dragging pages, toggling Upright View, or clicking Preview Fold!');
+    } catch (err) {
+      toast.error('Sample Load Failed', err?.message || 'Could not generate sample zine');
+    } finally {
+      this.ui.modal.showProgress(false);
+    }
+  }
+
+  _renderSampleZinePageCanvas({ num, role, title, subtitle, accent, bg, motif }) {
+    const canvas = document.createElement('canvas');
+    const w = 800;
+    const h = 1130;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    // Warm newsprint background
+    ctx.fillStyle = bg || '#fbf6ec';
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle halftone dot matrix
+    ctx.fillStyle = 'rgba(24, 21, 18, 0.055)';
+    for (let y = 28; y < h - 28; y += 22) {
+      for (let x = 28; x < w - 28; x += 22) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Outer double press border
+    ctx.strokeStyle = '#181512';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(36, 36, w - 72, h - 72);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(48, 48, w - 96, h - 96);
+
+    // Top charcoal cutout header bar
+    ctx.fillStyle = '#181512';
+    ctx.fillRect(68, 72, w - 136, 68);
+    ctx.fillStyle = accent || '#e02424';
+    ctx.fillRect(68, 134, w - 136, 8);
+
+    // Role label in header
+    ctx.fillStyle = '#fbf6ec';
+    ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(role, 92, 114);
+
+    // Page number in header right
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#ff6b6b';
+    ctx.font = '700 24px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(`P${num}`, w - 92, 115);
+
+    // Center graphic illustration area
+    const cx = w / 2;
+    const cy = 470;
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    if (motif === 'burst') {
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      const spikes = 16;
+      for (let i = 0; i < spikes * 2; i++) {
+        const r = i % 2 === 0 ? 175 : 115;
+        const angle = (i * Math.PI) / spikes;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#181512';
+      ctx.stroke();
+
+      ctx.fillStyle = '#fbf6ec';
+      ctx.font = '700 54px "Fraunces", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ZINE', 0, 8);
+      ctx.font = '700 26px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('ISSUE #01', 0, 44);
+    } else if (motif === 'grid') {
+      ctx.strokeStyle = '#181512';
+      ctx.lineWidth = 5;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-210, -130, 420, 260);
+      ctx.strokeRect(-210, -130, 420, 260);
+      ctx.setLineDash([10, 8]);
+      for (let c = -1; c <= 1; c++) {
+        ctx.beginPath();
+        ctx.moveTo(c * 105, -130);
+        ctx.lineTo(c * 105, 130);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(-210, 0);
+      ctx.lineTo(210, 0);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = '#e02424';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(-105, 0);
+      ctx.lineTo(105, 0);
+      ctx.stroke();
+    } else if (motif === 'arrows' || motif === 'fold') {
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(0, 0, 140, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#181512';
+      ctx.font = '700 68px "Fraunces", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(motif === 'arrows' ? '180°' : '8×', 0, 24);
+    } else if (motif === 'scissors' || motif === 'diamond') {
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.moveTo(0, -150);
+      ctx.lineTo(150, 0);
+      ctx.lineTo(0, 150);
+      ctx.lineTo(-150, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#181512';
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 44px "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(motif === 'scissors' ? 'CUT SLIT' : 'FOLD IN', 0, 15);
+    } else {
+      ctx.strokeStyle = '#181512';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(-155, -155, 310, 310);
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.arc(0, 0, 105, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fbf6ec';
+      ctx.font = '700 48px "Fraunces", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`0${num}`, 0, 18);
+    }
+    ctx.restore();
+
+    // Editorial Headline & Copy
+    ctx.fillStyle = '#181512';
+    ctx.textAlign = 'center';
+    ctx.font = '700 48px "Fraunces", Georgia, serif';
+    ctx.fillText(title, w / 2, 760);
+
+    // Divider line
+    ctx.fillStyle = accent || '#e02424';
+    ctx.fillRect(w / 2 - 80, 790, 160, 6);
+
+    // Wrapped subtitle
+    ctx.fillStyle = '#3a332c';
+    ctx.font = '600 26px "Plus Jakarta Sans", sans-serif';
+    const words = (subtitle || '').split(' ');
+    let line = '';
+    let y = 850;
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      if (ctx.measureText(testLine).width > w - 180 && n > 0) {
+        ctx.fillText(line.trim(), w / 2, y);
+        line = words[n] + ' ';
+        y += 38;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line.trim()) {
+      ctx.fillText(line.trim(), w / 2, y);
+    }
+
+    // Bottom folio footer
+    ctx.fillStyle = '#181512';
+    ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(`— PAGE ${num} OF 8 —`, w / 2, h - 78);
+
+    return canvas;
   }
 
   _setupKeyboardShortcuts() {
@@ -309,7 +545,13 @@ export class AppController {
     this.renderCurrentLayout();
   }
 
-  handleFileSelected(file) {
+  handleFileSelected(payload) {
+    const isWrapped = payload && typeof payload === 'object' && 'file' in payload && !(payload instanceof Blob);
+    const file = isWrapped ? payload.file : payload;
+    const targetSlotIndex = isWrapped && Number.isFinite(payload.targetSlotIndex)
+      ? payload.targetSlotIndex
+      : null;
+
     const kind = classifyFileKind(file);
     if (!kind) {
       const rejectedName = file?.name ? `"${file.name}"` : 'Selected file';
@@ -329,6 +571,7 @@ export class AppController {
       kind,
       name: file.name,
       size: file.size,
+      targetSlotIndex,
       status: 'Queued'
     };
 
@@ -384,7 +627,11 @@ export class AppController {
     this.ui.modal.showProgress(true, `Reading ${record.name}...`);
     this.ui.modal.setProgressCopy('Rendering image...');
 
-    const targetIndex = this.getNextInsertionIndex();
+    this._pushSnapshot(`Imported ${record.name}`);
+
+    const targetIndex = (Number.isFinite(record.targetSlotIndex) && record.targetSlotIndex >= 0)
+      ? record.targetSlotIndex
+      : this.getNextInsertionIndex();
     const currentFilledPages = this.state.getFilledPageCount();
     this.prepareLayoutForTotalPages(Math.max(currentFilledPages, targetIndex + 1));
 
@@ -405,7 +652,7 @@ export class AppController {
     const status = `Imported image: ${record.name}`;
     this.updateUploadedFileRecord(record, { status });
     this.ui.setStatus(status, 'success');
-    toast.success('Image imported', 'Drag to reorder or add more pages');
+    toast.success('Image imported', `Placed in page slot ${targetIndex + 1}`);
   }
 
   async processPdfUpload(record) {
@@ -424,7 +671,11 @@ export class AppController {
       return;
     }
 
-    const startIndex = this.state.getFilledPageCount();
+    this._pushSnapshot(`Imported ${record.name}`);
+
+    const startIndex = (Number.isFinite(record.targetSlotIndex) && record.targetSlotIndex >= 0)
+      ? record.targetSlotIndex
+      : this.state.getFilledPageCount();
     this.prepareLayoutForTotalPages(startIndex + selectedPages.length);
     this.ui.modal.showProgress(true, 'Rendering pages...', '0%');
 
@@ -685,7 +936,7 @@ export class AppController {
     this.renderCurrentLayout();
   }
 
-  handleGridSizeChanged({ rows, cols }) {
+  handleGridSizeChanged({ rows, cols, layoutPresetId }) {
     rows = parseBoundedInteger(rows, {
       min: GRID_DIMENSION_MIN,
       max: GRID_DIMENSION_MAX,
@@ -698,6 +949,17 @@ export class AppController {
     });
 
     this.state.gridSize = { rows, cols };
+    if (layoutPresetId) {
+      this.state.layoutPresetId = layoutPresetId;
+    } else if (rows === 2 && cols === 4) {
+      this.state.layoutPresetId = 'mini-8';
+    } else if (rows === 4 && cols === 4) {
+      this.state.layoutPresetId = 'double-16';
+    } else if (rows === 2 && cols === 2) {
+      this.state.layoutPresetId = 'quarter-4';
+    } else {
+      this.state.layoutPresetId = 'custom';
+    }
     this.state.resetWorkflowStatus();
 
     if (this.state.isMiniZineLayout()) {

@@ -1,61 +1,85 @@
 @import "tailwindcss";
 
 :root {
-  /* Light/Day theme: Warm archival vellum paper, crisp ink, coral-red accent */
-  --background: #f1ebe0;
-  --bg-warm-highlight: #faf6ee;
-  --bg-warm-shadow: #dfd7c8;
-  --bg-neutral: rgba(244, 238, 226, 0.72);
-  --outer-frame-bg: #cfc5b3;
+  /* Archival Newsprint & Tactile Vellum Palette */
+  --background: #f4eee2;
+  --bg-warm-highlight: #faf7f0;
+  --bg-warm-shadow: #e6dfd1;
+  --bg-neutral: #f4eee2;
+  --outer-frame-bg: #e2d8c4;
 
-  /* Frosted Vellum Paper-Glass Surfaces (65-75% opacity) */
-  --surface-bg: rgba(252, 249, 243, 0.68);
-  --surface-strong: rgba(226, 218, 203, 0.78);
-  --surface-muted: rgba(239, 233, 221, 0.62);
-  --glass-bg-alt: rgba(248, 244, 236, 0.68);
+  /* Tactile Newsprint Canvas & Scrap Surfaces */
+  --surface-bg: #faf7f0;
+  --surface-strong: #f0eae0;
+  --surface-muted: #f4eee2;
+  --glass-bg-alt: #f8f3e8;
+  --newsprint-bg: #faf7f0;
+  --newsprint-canvas-bg: #f4eee2;
 
-  --surface-paper-stack: rgba(235, 228, 214, 0.38);
-  --pasteboard-dot: rgba(17, 17, 17, 0.16);
-  --panel-backdrop: blur(12px) saturate(135%);
-  --paper-edge-highlight: rgba(255, 255, 255, 0.78);
+  /* Cutout Darkroom Header Tokens */
+  --cutout-header-bg: #141211;
+  --cutout-header-ink: #f7f2e7;
+  --cutout-header-muted: #a89f91;
+  --cutout-header-rim: rgba(247, 242, 231, 0.22);
+  --cutout-btn-bg: #221f1c;
+  --cutout-btn-ink: #f7f2e7;
+  --cutout-btn-border: #38332e;
 
-  /* Deep Edge Vignette (Warm Press Ink Framing) */
+  /* Rugged Deckle Edges, Paper Stack & Inner Highlights */
+  --deckle-ink: #141211;
+  --deckle-inner-rim: rgba(255, 255, 255, 0.85);
+  --deckle-filter:
+    drop-shadow(1px 1px 0 rgba(20, 18, 17, 0.28))
+    drop-shadow(0 10px 24px rgba(24, 20, 15, 0.14));
+  --deckle-filter-hover:
+    drop-shadow(1.5px 1.5px 0 rgba(20, 18, 17, 0.38))
+    drop-shadow(0 14px 30px rgba(24, 20, 15, 0.18));
+  --deckle-filter-active:
+    drop-shadow(2px 2px 0 var(--primary-vibrant))
+    drop-shadow(0 18px 36px rgba(224, 36, 36, 0.22));
+
+  --surface-paper-stack: rgba(230, 222, 208, 0.55);
+  --pasteboard-dot: rgba(35, 28, 20, 0.1);
+  --panel-backdrop: blur(10px);
+  --paper-edge-highlight: #ffffff;
+
+  /* Deep Edge Vignette Gradient */
   --vignette-gradient: radial-gradient(
-    ellipse 76% 72% at 50% 50%,
-    rgba(250, 246, 238, 0) 35%,
-    rgba(156, 140, 118, 0.24) 74%,
-    rgba(38, 30, 22, 0.56) 100%
+    ellipse 82% 82% at 50% 50%,
+    rgba(224, 36, 36, 0.04) 0%,
+    transparent 55%,
+    rgba(32, 24, 16, 0.22) 100%
   );
-  --vignette-inset-shadow: inset 0 0 76px rgba(36, 28, 20, 0.32), inset 0 0 22px rgba(36, 28, 20, 0.18);
+  --vignette-inset-shadow: inset 0 0 70px rgba(28, 22, 15, 0.18);
 
-  /* One Ink & One Coral-Red Accent (#ff5555) */
-  --accent-dark: #111111;
-  --accent-ink-soft: #262523;
-  --primary: #ff5555;
-  --primary-vibrant: #ff5555;
-  --primary-deep: #e03e3e;
-  --primary-glow: rgba(255, 85, 85, 0.14);
-  --accent: #ff5555;
-  --accent-mustard: rgba(239, 235, 226, 0.7);
-  --border-color: rgba(42, 35, 27, 0.22);
-  --border-strong: #111111;
-  --border-faint: rgba(42, 35, 27, 0.12);
-  --workspace-edge: rgba(42, 35, 27, 0.26);
-  --muted-ink: #4f4a44;
+  /* Vivid Crimson Accent (#e02424) & Rich Charcoal Ink (#141211) */
+  --accent-dark: #141211;
+  --accent-ink-soft: #282420;
+  --primary: #e02424;
+  --primary-vibrant: #e02424;
+  --primary-deep: #b91c1c;
+  --primary-glow: rgba(224, 36, 36, 0.12);
+  --accent: #e02424;
+  --accent-mustard: #f4eee2;
+  --border-color: rgba(20, 18, 17, 0.18);
+  --border-strong: #141211;
+  --border-faint: rgba(20, 18, 17, 0.12);
+  --workspace-edge: rgba(20, 18, 17, 0.15);
+  --muted-ink: #6b6357;
   --paper-bg: #ffffff;
 
-  /* Tactile Cut-Paper Elevation & Specular Top Edge */
-  --shadow-sm: 0 8px 24px -6px rgba(28, 22, 16, 0.14), 0 2px 6px -1px rgba(28, 22, 16, 0.08), inset 0 1px 0 var(--paper-edge-highlight);
-  --shadow-md: 0 14px 34px -8px rgba(28, 22, 16, 0.20), 0 4px 12px -2px rgba(28, 22, 16, 0.10), inset 0 1px 0 var(--paper-edge-highlight);
-  --shadow-lg: 0 22px 48px -10px rgba(24, 18, 12, 0.30), 0 8px 18px -3px rgba(24, 18, 12, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --shadow-paper: 0 10px 28px -6px rgba(24, 18, 12, 0.18);
-  --surface-shadow-strong: 0 18px 40px -8px rgba(24, 18, 12, 0.26);
+  /* Tactile Paper Shadows & Edge Elevation */
+  --shadow-sm: 0 1px 3px rgba(20, 18, 17, 0.06);
+  --shadow-md: 0 4px 14px rgba(20, 18, 17, 0.08);
+  --shadow-lg: 0 12px 28px rgba(20, 18, 17, 0.12);
+  --shadow-paper: 0 8px 24px rgba(20, 18, 17, 0.1), inset 0 1px 0 #ffffff;
+  --surface-shadow-strong: 0 14px 32px rgba(20, 18, 17, 0.14);
 
-  /* Radii & Two-Font Cap Typography (Fraunces + Plus Jakarta Sans) */
-  --radius-panel: 10px;
-  --radius-button: 6px;
-  --radius-pill: 6px;
-  --border-bold: 1px solid var(--border-color);
+  /* Organic Rugged Radii & Display Typography */
+  --radius-panel: 14px;
+  --radius-button: 9999px;
+  --radius-pill: 9999px;
+  --border-bold: 1.5px solid var(--border-strong);
   --border-thin: 1px solid var(--border-color);
   --font-display: 'Fraunces', Georgia, serif;
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -71,11 +95,45 @@
   --bg-neutral: rgba(16, 16, 20, 0.72);
   --outer-frame-bg: #030304;
 
-  /* Frosted Smoked Vellum Surfaces (65-75% opacity) */
-  --surface-bg: rgba(24, 24, 29, 0.66);
-  --surface-strong: rgba(48, 48, 56, 0.76);
-  --surface-muted: rgba(34, 34, 41, 0.58);
-  --glass-bg-alt: rgba(22, 22, 27, 0.66);
+  /* Darkroom Charcoal Newsprint Scrap Surfaces */
+  --surface-bg: #1c1a18;
+  --surface-strong: #2b2724;
+  --surface-muted: #24211e;
+  --glass-bg-alt: #1a1816;
+  --newsprint-bg: #1c1a18;
+  --newsprint-canvas-bg: rgba(24, 22, 20, 0.84);
+
+  --cutout-header-bg: #0f0e0d;
+  --cutout-header-ink: #f7f2e7;
+  --cutout-header-muted: #c8bfb0;
+  --cutout-header-rim: rgba(247, 242, 231, 0.34);
+  --cutout-btn-bg: #262320;
+  --cutout-btn-ink: #f7f2e7;
+  --cutout-btn-border: rgba(247, 242, 231, 0.42);
+
+  --deckle-ink: #f0e8d8;
+  --deckle-inner-rim: rgba(247, 242, 231, 0.16);
+  --deckle-filter:
+    drop-shadow(1px 0 0 rgba(240, 232, 216, 0.48))
+    drop-shadow(-1px 0 0 rgba(240, 232, 216, 0.48))
+    drop-shadow(0 1px 0 rgba(240, 232, 216, 0.48))
+    drop-shadow(0 -1px 0 rgba(240, 232, 216, 0.48))
+    drop-shadow(3px 4px 0 rgba(0, 0, 0, 0.75))
+    drop-shadow(0 14px 28px rgba(0, 0, 0, 0.65));
+  --deckle-filter-hover:
+    drop-shadow(1.2px 0 0 rgba(247, 242, 231, 0.72))
+    drop-shadow(-1.2px 0 0 rgba(247, 242, 231, 0.72))
+    drop-shadow(0 1.2px 0 rgba(247, 242, 231, 0.72))
+    drop-shadow(0 -1.2px 0 rgba(247, 242, 231, 0.72))
+    drop-shadow(4px 5px 0 rgba(0, 0, 0, 0.85))
+    drop-shadow(0 18px 34px rgba(0, 0, 0, 0.75));
+  --deckle-filter-active:
+    drop-shadow(1.5px 0 0 var(--primary-vibrant))
+    drop-shadow(-1.5px 0 0 var(--primary-vibrant))
+    drop-shadow(0 1.5px 0 var(--primary-vibrant))
+    drop-shadow(0 -1.5px 0 var(--primary-vibrant))
+    drop-shadow(5px 6px 0 rgba(0, 0, 0, 0.9))
+    drop-shadow(0 20px 40px rgba(255, 85, 85, 0.25));
 
   --surface-paper-stack: rgba(14, 14, 18, 0.34);
   --pasteboard-dot: rgba(250, 248, 244, 0.13);
@@ -92,7 +150,7 @@
   );
   --vignette-inset-shadow: inset 0 0 88px rgba(0, 0, 0, 0.78), inset 0 0 26px rgba(0, 0, 0, 0.58);
 
-  --accent-dark: #f5f3ef;
+  --accent-dark: #f5f0e6;
   --accent-ink-soft: #d6d3cd;
   --primary: #ff5555;
   --primary-vibrant: #ff5555;
@@ -100,11 +158,11 @@
   --primary-glow: rgba(255, 85, 85, 0.18);
   --accent: #ff5555;
   --accent-mustard: rgba(34, 34, 41, 0.7);
-  --border-color: rgba(255, 250, 242, 0.16);
-  --border-strong: rgba(255, 250, 242, 0.36);
-  --border-faint: rgba(255, 250, 242, 0.09);
+  --border-color: rgba(247, 242, 231, 0.24);
+  --border-strong: rgba(247, 242, 231, 0.52);
+  --border-faint: rgba(247, 242, 231, 0.12);
   --workspace-edge: rgba(255, 250, 242, 0.18);
-  --muted-ink: #a8a49e;
+  --muted-ink: #b5ada2;
   --paper-bg: #18181b;
 
   --shadow-sm: 0 8px 26px -4px rgba(0, 0, 0, 0.55), 0 2px 8px -1px rgba(0, 0, 0, 0.40), inset 0 1px 0 var(--paper-edge-highlight);
@@ -113,7 +171,7 @@
   --shadow-paper: 0 12px 32px -6px rgba(0, 0, 0, 0.65);
   --surface-shadow-strong: 0 20px 44px -8px rgba(0, 0, 0, 0.78);
 
-  --border-bold: 1px solid var(--border-color);
+  --border-bold: 1.5px solid var(--border-strong);
   --border-thin: 1px solid var(--border-color);
 }
 
@@ -138,12 +196,16 @@
 }
 
 @utility base-panel {
-  background-color: var(--surface-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-md);
+  background-color: var(--newsprint-bg);
+  background-image: var(--texture-halftone), var(--texture-paper);
+  background-size: 8px 8px, 160px 160px;
+  clip-path: var(--clip-deckle-panel);
+  filter: var(--deckle-filter);
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--deckle-inner-rim);
   padding: 1.25rem;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: filter 0.15s ease, background-color 0.15s ease;
 }
 
 body {

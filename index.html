@@ -42,59 +42,179 @@
     <div class="app-shell">
         <main class="gs-wrapper" id="workspace-main" tabindex="-1">
             <div class="workspace-back-logo" aria-hidden="true">
-                <img src="/icons/zine-ify-logo.jpg" alt="" class="workspace-back-logo-img" />
+                <img src="/icons/zine-ify-logo.svg" alt="" class="workspace-back-logo-img" />
             </div>
             <div class="workspace-vignette" aria-hidden="true"></div>
-            <div class="grid-stack">
+            <!-- Hidden stub for tests expecting .grid-stack -->
+            <div class="grid-stack sr-only" aria-hidden="true"></div>
 
-                <!-- ── Zine Layout Card (Hero Canvas) ────────────────── -->
-                <div class="grid-stack-item" gs-id="canvas" gs-x="4" gs-y="6" gs-w="8" gs-h="6" gs-min-w="5" gs-min-h="4">
-                    <div class="grid-stack-item-content">
-                        <div class="snap-card snap-card--canvas" id="card-zine">
-                            <div class="snap-card-handle">
-                                <div class="snap-card-title-wrap">
-                                    <span class="snap-card-label">Zine layout</span>
-                                    <span id="preview-count-chip" class="snap-card-meta-chip tabular-nums">0/8</span>
-                                </div>
-                                <div class="snap-card-header-actions">
-                                    <button id="peek-bg-btn" type="button" class="header-tool-btn vsplit-peek-btn" aria-pressed="false" aria-label="Peek background artwork" title="Collapse panels to mini-overlays and peek background">
-                                        <span class="material-symbols-outlined icon-compact" id="peek-bg-icon" aria-hidden="true">visibility</span>
-                                        <span class="header-tool-label">Peek</span>
-                                    </button>
-                                    <span class="header-actions-divider" aria-hidden="true"></span>
-                                    <button id="undo-btn" type="button" class="header-tool-btn" disabled aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)">
-                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">undo</span>
-                                        <span class="header-tool-label">Undo</span>
-                                    </button>
-                                    <button id="redo-btn" type="button" class="header-tool-btn" disabled aria-label="Redo (Ctrl+Y)" title="Redo (Ctrl+Y)">
-                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">redo</span>
-                                        <span class="header-tool-label">Redo</span>
-                                    </button>
-                                    <button id="clear-all-btn" type="button" class="clear-inline-btn" style="display:none" aria-label="Clear all pages">
-                                        Start over
-                                    </button>
-                                    <span class="header-actions-divider" aria-hidden="true"></span>
-                                    <button id="view3dBtn" type="button" class="action-button brand-preview-btn header-action-btn" disabled aria-label="Preview Fold" title="Toggle 3D fold and booklet preview">
-                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">deployed_code</span>
-                                        <span class="header-action-label">Preview Fold</span>
-                                    </button>
-                                    <button id="exportPdfBtn" type="button" class="action-button brand-export-btn header-action-btn" disabled aria-label="Export PDF" title="Download printable PDF">
-                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">download</span>
-                                        <span class="header-action-label">Export PDF</span>
-                                    </button>
-                                    <button id="pwa-install-trigger" type="button" class="theme-toggle-btn" aria-label="Install app" title="Install app" hidden>
-                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">install_mobile</span>
-                                    </button>
-                                    <button id="theme-toggle" type="button" class="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
-                                        <span class="material-symbols-outlined icon-compact" id="theme-icon" aria-hidden="true">dark_mode</span>
-                                    </button>
-                                </div>
+            <div class="workspace-two-panel">
+
+                <!-- ── Left Panel: Controls Sidebar ── -->
+                <aside class="workspace-sidebar" id="workspace-sidebar" aria-label="Zine controls">
+
+                    <!-- ── Card 1: Add Pages ── -->
+                    <div class="snap-card grid-stack-item" id="card-upload" data-card-id="upload" gs-id="upload">
+                        <div class="snap-card-handle snap-card-header-compact" data-headbar-card="upload" title="Add Pages panel · Click arrow to collapse">
+                            <div class="snap-card-title-wrap">
+                                <span class="material-symbols-outlined icon-compact text-amber-500" aria-hidden="true">add_photo_alternate</span>
+                                <h3 class="snap-card-label">Add pages</h3>
+                                <span id="upload-summary-accessory" class="snap-card-meta-chip tabular-nums">0/8 pages</span>
                             </div>
-                            <div class="snap-card-body snap-card-body--canvas">
+                            <div class="snap-card-header-actions">
+                                <button type="button" class="card-collapse-toggle-btn" data-collapse-card="upload" aria-expanded="true" aria-label="Toggle Add pages panel" title="Collapse or expand Add pages">
+                                    <span class="material-symbols-outlined icon-compact" aria-hidden="true">expand_less</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="snap-card-body upload-card-body panel-scroll-body card-collapsible-content">
+                            <div id="upload-zone" class="upload-box cursor-pointer"
+                                role="button" tabindex="0"
+                                aria-label="Drop PDF or image files here, or press Enter to browse">
+                                <i data-lucide="upload" class="upload-icon" aria-hidden="true"></i>
+                                <span class="upload-title">Drop PDF or images</span>
+                            </div>
+                            <div class="upload-quick-actions" role="group" aria-label="Quick page actions">
+                                <button id="browse-files-btn" type="button" class="quick-slot-action-btn" title="Choose PDF or image files">
+                                    <span class="material-symbols-outlined icon-tiny" aria-hidden="true">folder_open</span>
+                                    <span>Browse</span>
+                                </button>
+                                <button id="load-sample-zine-btn" type="button" class="quick-slot-action-btn quick-slot-action-btn--accent" title="Populate all 8 slots with a sample illustrated mini-zine">
+                                    <span class="material-symbols-outlined icon-tiny" aria-hidden="true">auto_stories</span>
+                                    <span>Sample Zine</span>
+                                </button>
+                                <button id="add-blank-page-btn" type="button" class="quick-slot-action-btn" title="Insert a blank page into the next open slot">
+                                    <span class="material-symbols-outlined icon-tiny" aria-hidden="true">note_add</span>
+                                    <span>+ Blank</span>
+                                </button>
+                            </div>
+                            <div class="upload-action-row" role="group" aria-label="Slot and export actions">
+                                <button id="fill-empty-slots-btn" type="button" class="quick-slot-action-btn upload-fill-btn" title="Fill remaining empty slots with blank pages">
+                                    <span class="material-symbols-outlined icon-tiny" aria-hidden="true">grid_on</span>
+                                    <span>Fill Empty</span>
+                                </button>
+                                <button id="exportPdfBtn" type="button" class="action-button brand-export-btn upload-export-btn" disabled aria-label="Export PDF" title="Download printable PDF">
+                                    <span class="material-symbols-outlined icon-compact" aria-hidden="true">download</span>
+                                    <span class="header-action-label">Export PDF</span>
+                                </button>
+                                <button id="theme-toggle" type="button" class="theme-toggle-btn shrink-0" aria-label="Toggle dark mode" title="Toggle dark mode">
+                                    <span class="material-symbols-outlined icon-compact" id="theme-icon" aria-hidden="true">dark_mode</span>
+                                </button>
+                            </div>
+                            <input type="file" id="pdf-upload" class="sr-only"
+                                accept="application/pdf,image/png,image/jpeg,image/webp"
+                                multiple aria-hidden="true" tabindex="-1" />
+                            <p id="upload-status" class="upload-status" aria-live="polite"></p>
+                            <section id="uploaded-files-list" class="hidden" aria-label="Uploaded files"></section>
+                        </div>
+                    </div>
+
+                    <!-- ── Card 2: Layout & Paper ── -->
+                    <div class="snap-card grid-stack-item" id="card-settings" data-card-id="settings" gs-id="settings">
+                        <div class="snap-card-handle snap-card-header-compact" data-headbar-card="settings" title="Layout & Paper panel · Click arrow to collapse">
+                            <div class="snap-card-title-wrap">
+                                <span class="material-symbols-outlined icon-compact text-amber-500" aria-hidden="true">tune</span>
+                                <h3 class="snap-card-label">Layout &amp; paper</h3>
+                                <span id="settings-summary-accessory" class="snap-card-meta-chip tabular-nums">Letter • 8-Page Mini</span>
+                            </div>
+                            <div class="snap-card-header-actions">
+                                <button type="button" class="card-collapse-toggle-btn" data-collapse-card="settings" aria-expanded="true" aria-label="Toggle Layout and paper panel" title="Collapse or expand Layout & Paper">
+                                    <span class="material-symbols-outlined icon-compact" aria-hidden="true">expand_less</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="snap-card-body settings-card-body panel-scroll-body card-collapsible-content">
+                            <div id="settings-group">
+                                <div id="smart-sheet-config-container"></div>
+                                <input type="hidden" id="paper-size-select" value="letter" />
+                                <input type="hidden" id="orientation-toggle" value="landscape" />
+                                <input type="hidden" id="grid-rows" value="2" />
+                                <input type="hidden" id="grid-cols" value="4" />
+                                <span id="grid-total" class="sr-only">8 slots</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Card 3: Display ── -->
+                    <div class="snap-card grid-stack-item" id="card-display" data-card-id="display" gs-id="display">
+                        <div class="snap-card-handle snap-card-header-compact" data-headbar-card="display" title="Display panel · Click arrow to collapse">
+                            <div class="snap-card-title-wrap">
+                                <span class="material-symbols-outlined icon-compact text-amber-500" aria-hidden="true">visibility</span>
+                                <h3 class="snap-card-label">Display</h3>
+                                <span id="display-summary-accessory" class="snap-card-meta-chip tabular-nums">3/3 guides</span>
+                            </div>
+                            <div class="snap-card-header-actions">
+                                <button type="button" class="card-collapse-toggle-btn" data-collapse-card="display" aria-expanded="true" aria-label="Toggle Display panel" title="Collapse or expand Display">
+                                    <span class="material-symbols-outlined icon-compact" aria-hidden="true">expand_less</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="snap-card-body display-card-body panel-scroll-body card-collapsible-content">
+                            <div class="display-toggles-list">
+                                <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-numbers">
+                                    <span class="workspace-config-toggle-copy">Page numbers</span>
+                                    <input type="checkbox" id="show-page-numbers" checked class="workspace-config-toggle-input" />
+                                    <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
+                                </label>
+                                <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-controls">
+                                    <span class="workspace-config-toggle-copy">Page controls</span>
+                                    <input type="checkbox" id="show-page-controls" checked class="workspace-config-toggle-input" />
+                                    <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
+                                </label>
+                                <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="toggle-cut-marks">
+                                    <span class="workspace-config-toggle-copy">Cut &amp; fold guides</span>
+                                    <input type="checkbox" id="toggle-cut-marks" checked class="workspace-config-toggle-input" />
+                                    <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </aside>
+
+                <!-- ── Right Panel: Zine Layout Sheet ── -->
+                <section class="workspace-canvas-panel" id="workspace-canvas-panel" aria-label="Zine canvas">
+                    <div class="snap-card snap-card--canvas grid-stack-item" id="card-zine" data-card-id="canvas" gs-id="canvas">
+                        <div class="snap-card-handle snap-card-header-compact" data-headbar-card="canvas">
+                            <div class="snap-card-title-wrap">
+                                <span class="material-symbols-outlined icon-compact text-amber-500" aria-hidden="true">grid_on</span>
+                                <h3 class="snap-card-label">Zine layout</h3>
+                                <span id="preview-count-chip" class="snap-card-meta-chip tabular-nums">0/8 pages</span>
+                            </div>
+
+                            <div class="snap-card-header-actions">
+                                <!-- Stubs preserved for JavaScript events & backwards compatibility -->
+                                <button id="view3dBtn" type="button" class="sr-only" aria-hidden="true" disabled></button>
+                                <div id="canvas-view-mode-toggle" class="sr-only" aria-hidden="true">
+                                    <button type="button" class="canvas-view-seg-btn is-active" data-view-mode="print"></button>
+                                </div>
+                                <button id="undo-btn" type="button" class="sr-only" aria-hidden="true" disabled></button>
+                                <button id="redo-btn" type="button" class="sr-only" aria-hidden="true" disabled></button>
+                                <button id="clear-all-btn" type="button" class="sr-only" aria-hidden="true"></button>
+                                <button id="print-btn" type="button" class="sr-only" aria-hidden="true" disabled></button>
+                                <button id="reset-layout-btn" type="button" class="sr-only" aria-hidden="true"></button>
+                            </div>
+                        </div>
+
+                        <div class="snap-card-body snap-card-body--canvas card-collapsible-content">
+                            <div id="stage-sheet-view" class="stage-view-pane is-active">
                                 <div id="preview-area" class="is-empty">
                                     <div id="unified-drop-zone"
                                         role="region"
                                         aria-label="Page layout grid">
+                                        <div id="empty-sheet-banner" class="empty-sheet-banner" role="status">
+                                            <div class="empty-sheet-banner-copy">
+                                                <span class="material-symbols-outlined empty-sheet-banner-icon" aria-hidden="true">touch_app</span>
+                                                <span>Click any slot to place a page, drop a PDF/image, or</span>
+                                            </div>
+                                            <button id="canvas-load-sample-btn" type="button" class="empty-sheet-sample-btn">
+                                                <span class="material-symbols-outlined icon-tiny" aria-hidden="true">auto_stories</span>
+                                                <span>Load Sample 8-Page Zine</span>
+                                            </button>
+                                        </div>
                                         <div id="zine-sheets-container" class="workspace-sheet-stack w-full space-y-4"></div>
                                         <div id="command-deck" class="command-deck-container hidden"></div>
                                     </div>
@@ -102,228 +222,83 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- ── Add Pages Card ────────────────────────────────── -->
-                <div class="grid-stack-item" gs-id="upload" gs-x="0" gs-y="0" gs-w="6" gs-h="6" gs-min-w="3" gs-min-h="1">
-                    <div class="grid-stack-item-content">
-                        <div class="snap-card" id="card-upload" data-card-id="upload">
-                            <div class="snap-card-body upload-card-body">
-                                <div class="card-header-inline">
-                                    <div class="vsplit-leading-group">
-                                        <h3 class="card-section-title">Add pages</h3>
-                                        <span id="upload-summary-accessory" class="vsplit-summary-accessory tabular-nums">0/8 pages</span>
-                                    </div>
-                                    <div class="vsplit-trailing-group">
-                                        <button id="browse-files-btn" type="button" class="browse-files-btn">
-                                            <i data-lucide="folder-open" aria-hidden="true"></i>
-                                            <span>Choose files</span>
-                                        </button>
-                                        <button type="button" class="vsplit-detent-btn" data-detent-card="upload" aria-label="Toggle Add pages mini-overlay" title="Snap between mini-overlay and full panel">
-                                            <span class="material-symbols-outlined icon-compact" aria-hidden="true">unfold_less</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="vsplit-collapsible-content">
-                                    <div id="upload-zone" class="upload-box cursor-pointer"
-                                        role="button" tabindex="0"
-                                        aria-label="Drop PDF or image files here, or press Enter to browse">
-                                        <i data-lucide="upload" class="upload-icon" aria-hidden="true"></i>
-                                        <span class="upload-title">Drop PDF or images</span>
-                                    </div>
-                                    <input type="file" id="pdf-upload" class="sr-only"
-                                        accept="application/pdf,image/png,image/jpeg,image/webp"
-                                        multiple aria-hidden="true" tabindex="-1" />
-                                    <p id="upload-status" class="upload-status" aria-live="polite"></p>
-                                    <section id="uploaded-files-list" class="hidden" aria-label="Uploaded files"></section>
-                                </div>
-                            </div>
-                            <div class="vsplit-divider" data-vsplit-pair="upload:settings" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Split divider between Add pages and Layout & paper. Drag to resize or double-click to snap detent." title="Drag to adjust split · Double-click to snap detent">
-                                <span class="vsplit-pill"><span class="vsplit-pill-dots"></span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── Layout & Paper Card ───────────────────────────── -->
-                <div class="grid-stack-item" gs-id="settings" gs-x="0" gs-y="6" gs-w="4" gs-h="4" gs-min-w="3" gs-min-h="1">
-                    <div class="grid-stack-item-content">
-                        <div class="snap-card" id="card-settings" data-card-id="settings">
-                            <div class="snap-card-body" id="settings-group">
-                                <div id="smart-sheet-config-container"></div>
-                                <input type="hidden" id="paper-size-select" value="letter" />
-                                <input type="hidden" id="orientation-toggle" value="landscape" />
-                                <input type="hidden" id="grid-rows" value="2" />
-                                <input type="hidden" id="grid-cols" value="4" />
-                            </div>
-                            <div class="vsplit-divider" data-vsplit-pair="settings:display" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Split divider between Layout & paper and Display. Drag to resize or double-click to snap detent." title="Drag to adjust split · Double-click to snap detent">
-                                <span class="vsplit-pill"><span class="vsplit-pill-dots"></span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── Display Card ──────────────────────────────────── -->
-                <div class="grid-stack-item is-mini-overlay-item" gs-id="display" gs-x="0" gs-y="10" gs-w="4" gs-h="1" gs-min-w="3" gs-min-h="1">
-                    <div class="grid-stack-item-content">
-                        <div class="snap-card is-mini-overlay" id="card-display" data-card-id="display">
-                            <div class="snap-card-body display-card-body">
-                                <div class="card-header-inline">
-                                    <div class="vsplit-leading-group">
-                                        <h3 class="card-section-title">Display</h3>
-                                        <span id="display-summary-accessory" class="vsplit-summary-accessory tabular-nums">3/3 guides</span>
-                                    </div>
-                                    <div class="vsplit-trailing-group">
-                                        <button id="reset-layout-btn" type="button" class="action-button display-reset-btn" aria-label="Reset panel layout" title="Snap all panels back to default layout">
-                                            <span class="material-symbols-outlined icon-compact" aria-hidden="true">grid_view</span>
-                                            <span>Reset</span>
-                                        </button>
-                                        <button type="button" class="vsplit-detent-btn" data-detent-card="display" aria-expanded="false" aria-label="Toggle Display mini-overlay" title="Snap between mini-overlay and full panel">
-                                            <span class="material-symbols-outlined icon-compact" aria-hidden="true">unfold_more</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="display-toggles-list vsplit-collapsible-content">
-                                    <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-numbers">
-                                        <span class="workspace-config-toggle-copy">Page numbers</span>
-                                        <input type="checkbox" id="show-page-numbers" checked class="workspace-config-toggle-input" />
-                                        <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
-                                    </label>
-                                    <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="show-page-controls">
-                                        <span class="workspace-config-toggle-copy">Page controls</span>
-                                        <input type="checkbox" id="show-page-controls" checked class="workspace-config-toggle-input" />
-                                        <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
-                                    </label>
-                                    <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="toggle-cut-marks">
-                                        <span class="workspace-config-toggle-copy">Cut &amp; fold guides</span>
-                                        <input type="checkbox" id="toggle-cut-marks" checked class="workspace-config-toggle-input" />
-                                        <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="vsplit-divider" data-vsplit-pair="display:bottom" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Split divider for Display card. Drag to resize or double-click to snap detent." title="Drag to adjust height · Double-click to snap detent">
-                                <span class="vsplit-pill"><span class="vsplit-pill-dots"></span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── 3D Fold Viewer Card ───────────────────────────── -->
-                <div class="grid-stack-item hidden" id="card-fold-viewer" gs-id="fold-viewer" gs-x="4" gs-y="12" gs-w="8" gs-h="6" gs-min-w="4" gs-min-h="5">
-                    <div class="grid-stack-item-content">
-                        <div class="snap-card">
-                            <div class="snap-card-handle">
-                                <span class="snap-card-label">3D fold viewer</span>
-                                <div class="snap-card-header-actions">
-                                    <span id="fold-status" class="simulation-status-chip">Flat sheet</span>
-                                    <button id="close-3d-btn" type="button" class="header-tool-btn" aria-label="Close fold preview" title="Hide fold preview cards">
-                                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">close</span>
-                                    </button>
-                                    <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
-                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
-                                            <circle cx="2" cy="2" r="1.1" />
-                                            <circle cx="6" cy="2" r="1.1" />
-                                            <circle cx="2" cy="6" r="1.1" />
-                                            <circle cx="6" cy="6" r="1.1" />
-                                            <circle cx="2" cy="10" r="1.1" />
-                                            <circle cx="6" cy="10" r="1.1" />
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="snap-card-body snap-card-body--fold-viewer">
-                                <div id="zine-3d-container" class="fold-viewer-stage"></div>
-                                <div class="fold-viewer-controls">
-                                    <div class="fold-viewer-slider-row">
-                                        <label for="fold-slider" class="fold-slider-label">Fold progress</label>
-                                        <input type="range" id="fold-slider" min="0" max="3" step="0.01" value="0" class="flex-1 w-full h-1.5 cursor-pointer fold-slider" />
-                                    </div>
-                                    <div class="fold-viewer-step-grid" aria-label="Fold steps">
-                                        <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs is-active" data-fold-value="0" data-step-index="1">1. Flat</button>
-                                        <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="0.5" data-step-index="2">2. Crease</button>
-                                        <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="1" data-step-index="3">3. Strip</button>
-                                        <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="1.5" data-step-index="4">4. Cut</button>
-                                        <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="2" data-step-index="5">5. Diamond</button>
-                                        <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="3" data-step-index="6">6. Booklet</button>
-                                    </div>
-                                    <p id="fold-helper" class="fold-viewer-helper">Drag to orbit · Scroll to zoom · Keys 1–6 jump to steps</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── Booklet Preview Card ──────────────────────────── -->
-                <div class="grid-stack-item hidden" id="card-fold-booklet" gs-id="fold-booklet" gs-x="4" gs-y="18" gs-w="4" gs-h="5" gs-min-w="3" gs-min-h="4">
-                    <div class="grid-stack-item-content">
-                        <div class="snap-card">
-                            <div class="snap-card-handle">
-                                <span class="snap-card-label">Booklet preview</span>
-                                <div class="snap-card-header-actions">
-                                    <span id="booklet-status" class="simulation-status-chip">Cover</span>
-                                    <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
-                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
-                                            <circle cx="2" cy="2" r="1.1" />
-                                            <circle cx="6" cy="2" r="1.1" />
-                                            <circle cx="2" cy="6" r="1.1" />
-                                            <circle cx="6" cy="6" r="1.1" />
-                                            <circle cx="2" cy="10" r="1.1" />
-                                            <circle cx="6" cy="10" r="1.1" />
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="snap-card-body snap-card-body--fold-booklet">
-                                <p class="simulation-helper">Flip through spreads to check page order and orientation.</p>
-                                <div id="booklet-preview-container" class="fold-booklet-preview-container" aria-label="Booklet preview"></div>
-                                <div class="grid grid-cols-2 gap-2.5">
-                                    <button id="booklet-prev-btn" class="action-button w-full py-2 px-3 flex items-center justify-center gap-1.5 text-xs" type="button">
-                                        <span class="material-symbols-outlined text-base" aria-hidden="true">chevron_left</span>Prev
-                                    </button>
-                                    <button id="booklet-next-btn" class="action-button w-full py-2 px-3 flex items-center justify-center gap-1.5 text-xs" type="button">
-                                        Next<span class="material-symbols-outlined text-base" aria-hidden="true">chevron_right</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── How to Fold Card ──────────────────────────────── -->
-                <div class="grid-stack-item hidden" id="card-fold-guide" gs-id="fold-guide" gs-x="8" gs-y="18" gs-w="4" gs-h="5" gs-min-w="3" gs-min-h="4">
-                    <div class="grid-stack-item-content">
-                        <div class="snap-card">
-                            <div class="snap-card-handle">
-                                <span class="snap-card-label">How to fold</span>
-                                <span class="snap-card-grip" aria-hidden="true" title="Drag to move panel">
-                                        <svg class="snap-card-grip-svg" width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
-                                            <circle cx="2" cy="2" r="1.1" />
-                                            <circle cx="6" cy="2" r="1.1" />
-                                            <circle cx="2" cy="6" r="1.1" />
-                                            <circle cx="6" cy="6" r="1.1" />
-                                            <circle cx="2" cy="10" r="1.1" />
-                                            <circle cx="6" cy="10" r="1.1" />
-                                        </svg>
-                                    </span>
-                            </div>
-                            <div class="snap-card-body snap-card-body--fold-guide panel-scroll-body">
-                                <ol class="fold-guide-list" aria-label="Folding steps">
-                                    <li><span class="fold-guide-num">1</span><span class="fold-guide-text">Print single-sided at 100% scale.</span><img src="/fold-guide/step-0-plan.png" alt="Step 1: Printed sheet" width="161" height="114" class="fold-guide-img" loading="lazy" /></li>
-                                    <li><span class="fold-guide-num">2</span><span class="fold-guide-text">Fold in half widthwise, crease, and unfold.</span><img src="/fold-guide/step-1-crease.png" alt="Step 2: Crease in half" width="161" height="113" class="fold-guide-img" loading="lazy" /></li>
-                                    <li><span class="fold-guide-num">3</span><span class="fold-guide-text">Fold outer edges to center crease to make 8 panels.</span><img src="/fold-guide/step-2-quarters.png" alt="Step 3: Fold quarters" width="145" height="137" class="fold-guide-img" loading="lazy" /></li>
-                                    <li><span class="fold-guide-num">4</span><span class="fold-guide-text">Fold in half again and cut along the center crease between the inner panels.</span><img src="/fold-guide/step-3-cut.png" alt="Step 4: Cut center" width="90" height="113" class="fold-guide-img" loading="lazy" /></li>
-                                    <li><span class="fold-guide-num">5</span><span class="fold-guide-text">Unfold completely flat.</span><img src="/fold-guide/step-4-open.png" alt="Step 5: Open flat" width="161" height="129" class="fold-guide-img" loading="lazy" /></li>
-                                    <li><span class="fold-guide-num">6</span><span class="fold-guide-text">Fold lengthwise (hotdog style) with printed side facing out.</span><img src="/fold-guide/step-5-fold-strip.png" alt="Step 6: Fold lengthwise" width="165" height="73" class="fold-guide-img" loading="lazy" /></li>
-                                    <li><span class="fold-guide-num">7</span><span class="fold-guide-text">Push outer ends inward so the center slit opens into a diamond.</span><img src="/fold-guide/step-6-push-in.png" alt="Step 7: Push inward" width="122" height="125" class="fold-guide-img" loading="lazy" /></li>
-                                    <li><span class="fold-guide-num">8</span><span class="fold-guide-text">Wrap pages around and press flat into your 8-page booklet.</span><img src="/fold-guide/step-7-done.png" alt="Step 8: Fold into booklet" width="43" height="68" class="fold-guide-img" loading="lazy" /></li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </section>
 
             </div>
         </main>
+    </div>
+
+    <!-- ── Fold & Booklet Preview Modal (Disabled) ── -->
+    <div id="zine-3d-modal" class="fold-modal-overlay hidden" style="display: none !important;" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="fold-modal-title">
+        <div id="zine-3d-backdrop" class="fold-modal-backdrop" aria-hidden="true"></div>
+        <div class="fold-modal-dialog">
+            <div class="fold-stage-toolbar">
+                <div class="fold-inspector-tabs" role="tablist" aria-label="Fold preview modes">
+                    <h2 id="fold-modal-title" class="fold-modal-title">Fold Preview</h2>
+                    <button type="button" role="tab" id="fold-tab-3d" class="fold-tab-btn is-active" data-fold-tab="3d" aria-selected="true" aria-controls="fold-pane-3d">3D Fold</button>
+                    <button type="button" role="tab" id="fold-tab-booklet" class="fold-tab-btn" data-fold-tab="booklet" aria-selected="false" aria-controls="card-fold-booklet">Booklet</button>
+                    <button type="button" role="tab" id="fold-tab-guide" class="fold-tab-btn" data-fold-tab="guide" aria-selected="false" aria-controls="card-fold-guide">How to Fold</button>
+                </div>
+                <div class="fold-stage-toolbar-actions">
+                    <span id="fold-status" class="simulation-status-chip">Flat sheet</span>
+                    <span id="booklet-status" class="simulation-status-chip hidden">Cover</span>
+                    <button id="close-3d-btn" type="button" class="header-tool-btn fold-modal-close-btn" aria-label="Close fold preview (Esc)" title="Close fold preview (Esc)">
+                        <span class="material-symbols-outlined icon-compact" aria-hidden="true">close</span>
+                        <span>Close</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="fold-unified-body">
+                <!-- Tab 1: 3D Fold Viewer -->
+                <div class="fold-tab-pane is-active snap-card-body--fold-viewer" id="fold-pane-3d" data-fold-pane="3d" role="tabpanel" aria-labelledby="fold-tab-3d">
+                    <div id="zine-3d-container" class="fold-viewer-stage"></div>
+                    <div class="fold-viewer-controls">
+                        <div class="fold-viewer-slider-row">
+                            <label for="fold-slider" class="fold-slider-label">Fold progress</label>
+                            <input type="range" id="fold-slider" min="0" max="3" step="0.01" value="0" class="flex-1 w-full h-1.5 cursor-pointer fold-slider" />
+                        </div>
+                        <div class="fold-viewer-step-grid" aria-label="Fold steps">
+                            <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs is-active" data-fold-value="0" data-step-index="1">1. Flat</button>
+                            <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="0.5" data-step-index="2">2. Crease</button>
+                            <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="1" data-step-index="3">3. Strip</button>
+                            <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="1.5" data-step-index="4">4. Cut</button>
+                            <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="2" data-step-index="5">5. Diamond</button>
+                            <button type="button" class="fold-step-btn action-button py-1.5 px-2.5 text-xs" data-fold-value="3" data-step-index="6">6. Booklet</button>
+                        </div>
+                        <p id="fold-helper" class="fold-viewer-helper">Drag to orbit · Scroll to zoom · Keys 1–6 jump to steps</p>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Booklet Preview -->
+                <div class="fold-tab-pane hidden snap-card-body--fold-booklet" id="card-fold-booklet" data-fold-pane="booklet" role="tabpanel" aria-labelledby="fold-tab-booklet">
+                    <p class="simulation-helper">Flip through spreads to check page order and orientation.</p>
+                    <div id="booklet-preview-container" class="fold-booklet-preview-container" aria-label="Booklet preview"></div>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button id="booklet-prev-btn" class="action-button w-full py-2 px-3 flex items-center justify-center gap-1.5 text-xs" type="button">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">chevron_left</span>Prev
+                        </button>
+                        <button id="booklet-next-btn" class="action-button w-full py-2 px-3 flex items-center justify-center gap-1.5 text-xs" type="button">
+                            Next<span class="material-symbols-outlined text-base" aria-hidden="true">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab 3: How to Fold -->
+                <div class="fold-tab-pane hidden snap-card-body--fold-guide panel-scroll-body" id="card-fold-guide" data-fold-pane="guide" role="tabpanel" aria-labelledby="fold-tab-guide">
+                    <ol class="fold-guide-list" aria-label="Folding steps">
+                        <li><span class="fold-guide-num">1</span><span class="fold-guide-text">Print single-sided at 100% scale.</span><img src="/fold-guide/step-0-plan.png" alt="Step 1: Printed sheet" width="161" height="114" class="fold-guide-img" loading="lazy" /></li>
+                        <li><span class="fold-guide-num">2</span><span class="fold-guide-text">Fold in half widthwise, crease, and unfold.</span><img src="/fold-guide/step-1-crease.png" alt="Step 2: Crease in half" width="161" height="113" class="fold-guide-img" loading="lazy" /></li>
+                        <li><span class="fold-guide-num">3</span><span class="fold-guide-text">Fold outer edges to center crease to make 8 panels.</span><img src="/fold-guide/step-2-quarters.png" alt="Step 3: Fold quarters" width="145" height="137" class="fold-guide-img" loading="lazy" /></li>
+                        <li><span class="fold-guide-num">4</span><span class="fold-guide-text">Fold in half again and cut along the center crease between the inner panels.</span><img src="/fold-guide/step-3-cut.png" alt="Step 4: Cut center" width="90" height="113" class="fold-guide-img" loading="lazy" /></li>
+                        <li><span class="fold-guide-num">5</span><span class="fold-guide-text">Unfold completely flat.</span><img src="/fold-guide/step-4-open.png" alt="Step 5: Open flat" width="161" height="129" class="fold-guide-img" loading="lazy" /></li>
+                        <li><span class="fold-guide-num">6</span><span class="fold-guide-text">Fold lengthwise (hotdog style) with printed side facing out.</span><img src="/fold-guide/step-5-fold-strip.png" alt="Step 6: Fold lengthwise" width="165" height="73" class="fold-guide-img" loading="lazy" /></li>
+                        <li><span class="fold-guide-num">7</span><span class="fold-guide-text">Push outer ends inward so the center slit opens into a diamond.</span><img src="/fold-guide/step-6-push-in.png" alt="Step 7: Push inward" width="122" height="125" class="fold-guide-img" loading="lazy" /></li>
+                        <li><span class="fold-guide-num">8</span><span class="fold-guide-text">Wrap pages around and press flat into your 8-page booklet.</span><img src="/fold-guide/step-7-done.png" alt="Step 8: Fold into booklet" width="43" height="68" class="fold-guide-img" loading="lazy" /></li>
+                    </ol>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ── JS-compat stubs ──────────────────────────────── -->

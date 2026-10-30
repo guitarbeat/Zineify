@@ -1,30 +1,41 @@
-# Workspace Layout Redesign & Pasteboard Integration Plan
+# Implementation Plan: Dedicated 8-Page Mini Zine & 2-Panel Redesign
 
-## 1. Visual & Spatial Architecture
-- **Redesigned Default Workspace Grid (`12×12` Desktop Matrix)**:
-  - **Top-Left (`Add pages` / `upload`)**: Positioned at `x: 0, y: 0, w: 6, h: 6` so the dropzone (`Drop PDF or images`) occupies a generous upper-left quadrant while leaving the upper-right quadrant (`x: 6..12, y: 0..6`) open to showcase the **Zine-ify** sticker artwork and pasteboard texture.
-  - **Bottom-Left (`Layout & paper` / `settings` + `Display` / `display`)**:
-    - `Layout & paper` positioned at `x: 0, y: 6, w: 4, h: 4`.
-    - `Display` positioned directly beneath at `x: 0, y: 10, w: 4, h: 1` (collapsed into its compact mini-overlay bar showing `Display · 3/3 guides`, `Reset`, and the detent toggle button, leaving breathing room below).
-  - **Bottom-Right (`Zine layout` / `canvas`)**: Positioned at `x: 4, y: 6, w: 8, h: 6` with `gs-min-h="4"`, framing the lower-right workspace while letting the Zine-ify artwork peek through from behind.
-- **Pasteboard & Empty Canvas Behavior (`0/8` State)**:
-  - When `0/8` pages are loaded (`#preview-area.is-empty`), hide the `.print-sheet` 8-slot grid (`opacity: 0; pointer-events: none; visibility: hidden`) so the `Zine layout` card displays a clean, translucent geometric diamond-and-dot pasteboard surface over the background logo.
-  - Clicking or dropping files anywhere on the empty `Zine layout` pasteboard area (`#unified-drop-zone`) triggers file browse or imports dropped PDFs/images, and immediately reveals the 8-slot sheet once pages are added.
+Refactor Zine-ify from a multi-preset grid generator into a streamlined, high-usability creator dedicated solely to single-sheet 8-page mini zines. Eliminate unnecessary grid/preset switcher complexity and unify the fragmented cards into a balanced two-panel workspace.
 
-## 2. Interactive Mechanics & Independent Card Resizing
-- **Independent Card Resizing & Detent Snapping**:
-  - Remove the forced `restackSidebarColumn()` behavior so resizing or collapsing any card (`Add pages`, `Layout & paper`, `Display`, or `Zine layout`) adjusts only that card (or the directly coupled pair when dragging a shared split divider where both cards share the same `x` and `w`), without snapping or moving unrelated cards across the column.
-  - Update `syncMiniOverlayStates()` and `DEFAULT_CARD_HEIGHTS` (`upload: 6`, `settings: 4`, `display: 4` when expanded; `1` when collapsed to mini-overlay) so `Display` starts in its sleek mini-overlay state (`h: 1`) by default and expands to `h: 4` when toggled.
-  - Bump the GridStack storage version key (`STORAGE_KEY_DESKTOP = 'zine-grid-fit-v6'`) so the redesigned layout applies cleanly on load and when clicking `Reset`.
+## Proposed Changes
 
-## 3. Files to Modify
-- **`/index.html`**:
-  - Update default GridStack attributes (`gs-x`, `gs-y`, `gs-w`, `gs-h`, `gs-min-h`) on `canvas`, `upload`, `settings`, and `display` to match the redesigned layout.
-- **`/src/utils/gridStack.js`**:
-  - Update `DEFAULT_LAYOUT`, `DEFAULT_CARD_HEIGHTS`, and `STORAGE_KEY_DESKTOP` (`zine-grid-fit-v6`).
-  - Remove forced full-column `restackSidebarColumn()` calls on resize/detent toggles so cards resize independently while preserving direct split-handle resizing.
-- **`/src/components/UI/UIManager.js`**:
-  - Allow clicking the empty `#unified-drop-zone` pasteboard surface when `#preview-area.is-empty` is active to open the file picker.
-- **`/src/styles/layout.css` & `/src/styles/zine-editor.css`**:
-  - Add the subtle diagonal crosshatch + dot pasteboard pattern to `.workspace-back-logo` and `.snap-card-body--canvas`.
-  - Hide `.print-sheet` inside `#preview-area.is-empty` so the `0/8` state matches the clean translucent pasteboard design in the screenshot.
+### 1. Workspace Layout: Unified Two-Panel Architecture
+- Replace the 4 fragmented GridStack cards (`upload`, `settings`, `display`, `canvas`) with a responsive two-panel layout:
+  - **Left Panel (Controls Sidebar)**:
+    - **Page Management**: Drop zone for PDF/images, "Browse" button, and quick-slot actions ("Sample Zine", "+ Blank", "Fill Empty", "Start Over").
+    - **Paper & Margins**: Retain the complete paper size dropdown (Letter, A4, Tabloid, Legal, A3, A5, Custom) with the unit toggle (`in` / `mm`) and margin slider.
+    - **Display Toggles**: Clean switches for "Page numbers" and "Cut & fold guides".
+  - **Right Panel (Zine Canvas)**:
+    - Dedicated, full-height stage for the 8-page imposition sheet (2×4 grid).
+    - Top bar streamlined to just the two essential actions: **Preview Fold** (opens the 3D/booklet modal) and **Export PDF** (plus subtle Theme toggle).
+    - Remove the Print/Upright view toggle (locks to standard print imposition view for folding) and remove redundant direct print button.
+
+### 2. Feature Removal & 8-Page Mini Specialization
+- **Remove Multi-Format Presets**:
+  - Remove `16-Page (4×4)`, `Quarter (2×2)`, and `Custom` buttons from `SmartSheetConfig.js`.
+  - Remove manual row/column steppers and custom grid size pickers.
+  - Fix grid size permanently to 2 rows × 4 columns (8 pages) in `StateStore.js` and `AppController.js`.
+- **Remove Redundant Controls & Headers**:
+  - Remove duplicated headers and collapsible accordion clutter that caused extra empty space at the bottom of the screen.
+  - Simplify summary badges to accurately reflect the 8-page zine state.
+
+### 3. Canvas & CSS Optimization
+- Update `src/styles/layout.css` and `src/styles/components.css` to remove legacy GridStack card styling and adopt a flex/grid two-panel container that stretches to 100% of the viewport with no awkward dead space.
+- Ensure the 8-page sheet auto-scales crisply with margins and fold lines clearly visible.
+
+## Verification Plan
+
+### Automated Tests & Checks
+1. Run `lint_applet` to ensure zero ESLint errors or unresolved imports.
+2. Run `compile_applet` to confirm the Vite build completes without errors.
+
+### Manual Verification
+1. Load sample zine: Verify 8 pages populate in correct 2×4 mini-zine imposition (pages 5, 4, 3, 2 inverted on top row; pages 6, 7, 8, 1 upright on bottom row).
+2. Paper options: Switch paper between Letter and A4; adjust margin slider; verify live updates to sheet.
+3. Canvas actions: Click "Preview Fold" to verify 3D/booklet modal opens; click "Export PDF" to test single-sheet export.
+4. Responsiveness: Verify two-panel split fits the screen cleanly with no bottom whitespace gap.

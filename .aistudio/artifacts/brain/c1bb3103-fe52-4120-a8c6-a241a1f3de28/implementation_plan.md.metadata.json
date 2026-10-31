@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan for fixing the 3D Cut view so the slit stays pinned closed at the two stop points (x = -w and x = +w), arches open smoothly in the center, keeps all 8 panels aligned along the sheet perimeter, removes vertical red borders so only the horizontal slit is red, and uses a compact scissors icon.",
-  "updatedAt":  "2026-10-31T19:45:34.909954030Z",
+  "summary":  "Implementation plan for per-page Fit/Fill crop & zoom-pan adjustments, interactive 3D & 2D booklet page-flipping through all 8 pages, print-ready cut-slit and fold registration marks on exported PDFs, and full Undo/Redo history with local session recovery.",
+  "updatedAt":  "2026-10-31T21:21:10.335548835Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

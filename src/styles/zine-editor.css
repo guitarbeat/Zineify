@@ -50,7 +50,7 @@
     width: 100% !important;
     height: 100% !important;
   }
-  .rotate-btn, .flip-btn, .crop-btn, .duplicate-btn, .page-label, .page-rotation-badge, .page-placeholder, .page-orientation-tag {
+  .rotate-btn, .flip-btn, .crop-btn, .duplicate-btn, .page-framing-bar, .page-label, .page-rotation-badge, .page-placeholder, .page-orientation-tag {
     display: none !important;
   }
   .page-cell { border: none !important; }
@@ -60,6 +60,7 @@
 .is-exporting .flip-btn,
 .is-exporting .crop-btn,
 .is-exporting .duplicate-btn,
+.is-exporting .page-framing-bar,
 .is-exporting .page-label,
 .is-exporting .page-rotation-badge,
 .is-exporting .page-placeholder,
@@ -87,6 +88,10 @@
   min-height: 0;
   height: 100%;
   width: 100%;
+  --page-image-rotation: 0deg;
+  --page-image-scale: 1;
+  --page-pan-x: 0%;
+  --page-pan-y: 0%;
   transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   background: rgba(250, 247, 240, 0.46);
   background-image: var(--texture-paper);
@@ -245,6 +250,7 @@
 }
 
 .hide-page-controls .page-toolbar,
+.hide-page-controls .page-framing-bar,
 .hide-page-controls .page-cell-remove-hint {
   display: none !important;
 }
@@ -290,7 +296,8 @@
   white-space: nowrap;
 }
 
-.page-tool-btn:hover {
+.page-tool-btn:hover,
+.page-tool-btn.is-active {
   background: var(--primary-vibrant);
 }
 
@@ -303,15 +310,94 @@
   display: none;
 }
 
+/* ── Per-Page Framing HUD Bar (Zoom / Pan / Reset) ── */
+.page-framing-bar {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  padding: 0.16rem 0.24rem;
+  background: rgba(15, 15, 18, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+.page-cell:not(.has-page) .page-framing-bar {
+  display: none !important;
+}
+
+.page-cell.has-page.active .page-framing-bar,
+.page-cell.has-page.is-selected .page-framing-bar,
+.page-cell.has-page:hover .page-framing-bar,
+.page-cell.has-page.has-custom-framing .page-framing-bar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.is-template-upside-down .page-framing-bar {
+  transform: translate(-50%, 0) rotate(180deg);
+  bottom: auto;
+  top: 0.35rem;
+}
+
+#preview-area.reading-view-mode:not(.is-exporting) .is-template-upside-down .page-framing-bar {
+  transform: translate(-50%, 0) rotate(0deg);
+  top: auto;
+  bottom: 0.35rem;
+}
+
+.page-framing-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #18181b;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.12s ease;
+}
+
+.page-framing-btn:hover {
+  background: var(--primary-vibrant);
+}
+
+.page-pan-handle {
+  cursor: move;
+  touch-action: none;
+}
+
+.page-framing-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.zoom-level-readout {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 0 0.28rem;
+  min-width: 2.3rem;
+  text-align: center;
+  user-select: none;
+}
+
 .page-content-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   pointer-events: none;
-  --page-image-rotation: 0deg;
-  --page-image-scale: 1;
-  transform: rotate(var(--page-image-rotation)) scale(var(--page-image-scale));
-  transition: transform 0.2s ease;
+  transform: translate(var(--page-pan-x, 0%), var(--page-pan-y, 0%)) rotate(var(--page-image-rotation, 0deg)) scale(var(--page-image-scale, 1));
+  transition: transform 0.16s ease;
+}
+
+.page-cell.is-panning-page .page-content-img {
+  transition: none;
 }
 
 .page-placeholder {
@@ -364,10 +450,9 @@
 
 .page-zoomed .page-content-img {
   object-fit: cover;
-  --page-image-scale: 1.1;
 }
 
-.page-cell.is-flipped .page-content-img {
+.page-cell.is-flipped {
   --page-image-rotation: 180deg;
 }
 

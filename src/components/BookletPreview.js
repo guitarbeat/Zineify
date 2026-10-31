@@ -2,14 +2,16 @@ import { buildMiniZineBookletStates, MINI_ZINE_LAYOUT } from '../utils/miniZineL
 import { normalizePreviewPage, getPageLabel } from '../utils/previewHelpers.js';
 
 export class BookletPreview {
-  constructor({ container, prevButton, nextButton, statusElement }) {
+  constructor({ container, prevButton, nextButton, statusElement, onSpreadChange }) {
     this.container = container;
     this.prevButton = prevButton;
     this.nextButton = nextButton;
     this.statusElement = statusElement;
+    this.onSpreadChange = typeof onSpreadChange === 'function' ? onSpreadChange : null;
     this.pages = [];
     this.spreadIndex = 0;
     this.isAnimating = false;
+    this.spreadJumpButtons = [];
 
     if (!this.container) {
       return;
@@ -109,6 +111,31 @@ export class BookletPreview {
     stage.appendChild(shadow);
     stage.appendChild(this.spread);
     this.shell.appendChild(stage);
+
+    this.spreadNav = document.createElement('div');
+    this.spreadNav.className = 'booklet-spread-dots';
+    this.spreadNav.setAttribute('role', 'tablist');
+    this.spreadNav.setAttribute('aria-label', 'Booklet spreads');
+    const spreadLabels = [
+      { index: 0, text: 'Cover 1', title: 'Front Cover (Page 1)' },
+      { index: 1, text: '2–3', title: 'Spread Pages 2 & 3' },
+      { index: 2, text: '4–5', title: 'Spread Pages 4 & 5' },
+      { index: 3, text: '6–7', title: 'Spread Pages 6 & 7' },
+      { index: 4, text: 'Back 8', title: 'Back Cover (Page 8)' }
+    ];
+    this.spreadJumpButtons = spreadLabels.map(({ index, text, title }) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'booklet-spread-dot';
+      btn.dataset.spreadIndex = String(index);
+      btn.textContent = text;
+      btn.title = title;
+      btn.setAttribute('aria-label', title);
+      btn.addEventListener('click', () => this.jumpToSpread(index));
+      this.spreadNav.appendChild(btn);
+      return btn;
+    });
+    this.shell.appendChild(this.spreadNav);
 
     this.container.textContent = '';
     this.container.appendChild(this.shell);
@@ -243,6 +270,7 @@ export class BookletPreview {
 
   updateControls() {
     const stateCount = this.states?.length ?? 0;
+    const activeIdx = this.pendingSpreadIndex ?? this.spreadIndex;
     const disablePrev = this.isAnimating || this.spreadIndex === 0;
     const disableNext = this.isAnimating || this.spreadIndex === (stateCount - 1);
 
@@ -259,6 +287,38 @@ export class BookletPreview {
       this.nextButton.classList.toggle('opacity-50', disableNext);
       this.nextButton.classList.toggle('cursor-not-allowed', disableNext);
     }
+
+    if (Array.isArray(this.spreadJumpButtons)) {
+      this.spreadJumpButtons.forEach((btn, idx) => {
+        const isActive = idx === activeIdx;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-selected', String(isActive));
+      });
+    }
+  }
+
+  jumpToSpread(targetIndex, { emitChange = true } = {}) {
+    const stateCount = this.states?.length ?? 0;
+    if (!stateCount) {
+      return;
+    }
+    const clamped = Math.max(0, Math.min(stateCount - 1, Number(targetIndex) || 0));
+    if (clamped === this.spreadIndex && !this.isAnimating) {
+      return;
+    }
+    if (!this.isAnimating && Math.abs(clamped - this.spreadIndex) === 1) {
+      this.startTurn(clamped - this.spreadIndex, { emitChange });
+      return;
+    }
+    this.pendingSpreadIndex = null;
+    this.isAnimating = false;
+    this.spreadIndex = clamped;
+    this.hideTurnLayer();
+    this.updateStaticSpread();
+    this.updateControls();
+    if (emitChange) {
+      this.onSpreadChange?.(this.spreadIndex);
+    }
   }
 
   goNext() {
@@ -269,7 +329,7 @@ export class BookletPreview {
     this.startTurn(-1);
   }
 
-  startTurn(direction) {
+  startTurn(direction, { emitChange = true } = {}) {
     if (this.isAnimating) {
       return;
     }
@@ -285,6 +345,9 @@ export class BookletPreview {
     this.updateSpreadMode(null);
     if (this.statusElement) {
       this.statusElement.textContent = nextState.label;
+    }
+    if (emitChange) {
+      this.onSpreadChange?.(this.pendingSpreadIndex);
     }
 
     if (direction > 0) {

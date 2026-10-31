@@ -21,6 +21,7 @@ export class StateStore {
       arrows: false,
       safeArea: false,
       margins: true,
+      includeInExport: true,
     };
     this.printSettings = { duplex: true, scale: 'fit', bleed: 0, trim: 0 };
     this.projectMeta = { name: 'Untitled zine', createdAt: Date.now(), updatedAt: Date.now() };
@@ -123,9 +124,58 @@ export class StateStore {
     this.projectMeta.updatedAt = Date.now();
   }
 
+  getPageTransform(pageIndex) {
+    const existing = this.pageTransforms?.[pageIndex] || {};
+    const isZoomed = Boolean(this.pageZooms?.[pageIndex]);
+    const fit = existing.fit === 'cover' || existing.fit === 'fill' || (!existing.fit && isZoomed)
+      ? 'fill'
+      : 'fit';
+    const zoom = Number.isFinite(existing.zoom) ? Math.max(1, Math.min(2.5, existing.zoom)) : 1;
+    const panX = Number.isFinite(existing.pan?.x) ? Math.max(-100, Math.min(100, existing.pan.x)) : 0;
+    const panY = Number.isFinite(existing.pan?.y) ? Math.max(-100, Math.min(100, existing.pan.y)) : 0;
+    return {
+      rotation: this.getPageRotation(pageIndex),
+      fit,
+      crop: existing.crop || null,
+      pan: { x: panX, y: panY },
+      zoom
+    };
+  }
+
   setPageTransform(pageIndex, patch = {}) {
-    this.pageTransforms[pageIndex] = { rotation: 0, fit: 'fit', crop: null, pan: { x: 0, y: 0 }, zoom: 1, ...this.pageTransforms[pageIndex], ...patch };
+    const current = this.getPageTransform(pageIndex);
+    const nextFit = patch.fit !== undefined
+      ? (patch.fit === 'fill' || patch.fit === 'cover' ? 'fill' : 'fit')
+      : current.fit;
+    const nextZoom = patch.zoom !== undefined
+      ? Math.round(Math.max(1, Math.min(2.5, Number(patch.zoom) || 1)) * 100) / 100
+      : current.zoom;
+    const nextPanX = patch.pan?.x !== undefined
+      ? Math.round(Math.max(-100, Math.min(100, Number(patch.pan.x) || 0)))
+      : current.pan.x;
+    const nextPanY = patch.pan?.y !== undefined
+      ? Math.round(Math.max(-100, Math.min(100, Number(patch.pan.y) || 0)))
+      : current.pan.y;
+
+    this.pageTransforms[pageIndex] = {
+      ...current,
+      ...patch,
+      fit: nextFit,
+      zoom: nextZoom,
+      pan: { x: nextPanX, y: nextPanY }
+    };
+    this.pageZooms[pageIndex] = (nextFit === 'fill');
     this.projectMeta.updatedAt = Date.now();
+    return this.pageTransforms[pageIndex];
+  }
+
+  resetPageTransform(pageIndex, { resetFit = false } = {}) {
+    const current = this.getPageTransform(pageIndex);
+    return this.setPageTransform(pageIndex, {
+      fit: resetFit ? 'fit' : current.fit,
+      zoom: 1,
+      pan: { x: 0, y: 0 }
+    });
   }
 
   toProjectJSON() {

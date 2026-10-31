@@ -57,6 +57,8 @@ export class Zine3DViewer {
     this.cameraTarget = new THREE.Vector3(0, 0, 0);
     this.debugFoldState = null;
     this.currentFoldProgress = 0;
+    this.bookletSpread = 0;
+    this.targetBookletSpread = 0;
   }
 
   _initVisualConfig() {
@@ -705,8 +707,21 @@ export class Zine3DViewer {
     this.renderer.setClearColor(0x121214, 1);
   }
 
+  setBookletSpread(spreadIndex = 0, { immediate = false } = {}) {
+    const clamped = Math.max(0, Math.min(4, Number(spreadIndex) || 0));
+    this.targetBookletSpread = clamped;
+    if (immediate || this.isFallbackMode) {
+      this.bookletSpread = clamped;
+      this.setFoldProgress(this.currentFoldProgress);
+    }
+  }
+
   setFoldProgress(progress) {
     this.currentFoldProgress = progress;
+    if (progress < 2.85 && (this.targetBookletSpread !== 0 || this.bookletSpread !== 0)) {
+      this.targetBookletSpread = 0;
+      this.bookletSpread = 0;
+    }
     if (this.isFallbackMode) {
       this.fallbackFoldProgress = progress;
       this.renderFallback();
@@ -725,7 +740,29 @@ export class Zine3DViewer {
     const horizontalFold = state.stages.horizontalFold || 0;
     const bookletClose = state.stages.bookletClose || 0;
     const stripBackZ = -this.panelThickness * 2.4 * horizontalFold * (1 - bookletClose);
-    const bookletLayerStepX = this.panelThickness * 2.4 * bookletClose;
+    const bookletLayerStepX = this.panelThickness * 2.8 * bookletClose;
+    const spreadActive = bookletClose > 0.85 ? this.bookletSpread : 0;
+
+    const computeLeafTurnPose = (basePose, pageNumber, extraZ = 0) => {
+      const leafIndex = Math.floor((pageNumber - 1) / 2);
+      const rawTurn = Math.max(0, Math.min(1, spreadActive - leafIndex));
+      const smoothTurn = rawTurn * rawTurn * (3 - 2 * rawTurn);
+      const theta = smoothTurn * Math.PI * bookletClose;
+      const layerX = (4.5 - pageNumber) * Math.cos(theta) * bookletLayerStepX;
+      const isEvenPage = pageNumber % 2 === 0;
+      const midTurnSepZ = (isEvenPage ? -1 : 1) * this.panelThickness * 2.2 * Math.sin(theta);
+      const turnX = (this.w / 2) * Math.sin(theta);
+      const turnZ = (this.w / 2) * (1 - Math.cos(theta));
+
+      return {
+        x: basePose.position.x + turnX + layerX,
+        y: basePose.position.y,
+        z: basePose.position.z + extraZ + turnZ + midTurnSepZ,
+        rotX: basePose.rotation.x,
+        rotY: basePose.rotation.y - theta,
+        rotZ: basePose.rotation.z
+      };
+    };
 
     for (let i = 0; i < this.stacks.length; i++) {
       const stack = this.stacks[i];
@@ -734,33 +771,15 @@ export class Zine3DViewer {
       const stackDef = MINI_ZINE_STACKS[stack.index];
 
       if (bottomState && stack.group) {
-        const bottomLayerX = (4.5 - stackDef.bottomPage) * bookletLayerStepX;
-        stack.group.position.set(
-          bottomState.pose.position.x + bottomLayerX,
-          bottomState.pose.position.y,
-          bottomState.pose.position.z
-        );
-        stack.group.rotation.set(
-          bottomState.pose.rotation.x,
-          bottomState.pose.rotation.y,
-          bottomState.pose.rotation.z,
-          'XYZ'
-        );
+        const pose = computeLeafTurnPose(bottomState.pose, stackDef.bottomPage, 0);
+        stack.group.position.set(pose.x, pose.y, pose.z);
+        stack.group.rotation.set(pose.rotX, pose.rotY, pose.rotZ, 'XYZ');
       }
 
       if (topState && stack.topGroup) {
-        const topLayerX = (4.5 - stackDef.topPage) * bookletLayerStepX;
-        stack.topGroup.position.set(
-          topState.pose.position.x + topLayerX,
-          topState.pose.position.y,
-          topState.pose.position.z + stripBackZ
-        );
-        stack.topGroup.rotation.set(
-          topState.pose.rotation.x,
-          topState.pose.rotation.y,
-          topState.pose.rotation.z,
-          'XYZ'
-        );
+        const pose = computeLeafTurnPose(topState.pose, stackDef.topPage, stripBackZ);
+        stack.topGroup.position.set(pose.x, pose.y, pose.z);
+        stack.topGroup.rotation.set(pose.rotX, pose.rotY, pose.rotZ, 'XYZ');
       }
     }
 
@@ -783,7 +802,7 @@ export class Zine3DViewer {
       this.stacks[i].topGroup?.updateMatrixWorld(true);
     }
 
-    this.updateSeams(cutInspection);
+    this.updateSeams(cutInspection, spreadActive);
     this.updateGuides(
       state.stages.horizontalFold,
       state.stages.diamondOpen,
@@ -791,10 +810,10 @@ export class Zine3DViewer {
       cutInspection,
       state
     );
-    this.updateCameraForProgress(progress, cutInspection);
+    this.updateCameraForProgress(progress, cutInspection, spreadActive);
   }
 
-  updateCameraForProgress(progress, cutInspection = 0) {
+  updateCameraForProgress(progress, cutInspection = 0, spreadActive = 0) {
     if (this.isFallbackMode || !this.camera || !this.controls) {
       return;
     }
@@ -821,24 +840,28 @@ export class Zine3DViewer {
       1.6
     );
 
-    // Frame flat sheet straight-on, elevate slightly on Fold Strip & Diamond to show the top diamond mouth,
-    // and orbit toward +X/+Z on Step 8 (Booklet) so Front Cover (Page 1) faces the viewer like step-7-done.png
+    const openSpreadWeight = spreadActive > 0 && spreadActive < 4
+      ? Math.min(1, spreadActive, 4 - spreadActive)
+      : 0;
+    const backCoverWeight = spreadActive > 3 ? Math.min(1, spreadActive - 3) : 0;
+    const spreadCenterZOffset = (openSpreadWeight * (this.w * 0.5)) + (backCoverWeight * this.w);
+
     const stripFocus = horizontalFold * (1 - diamondOpen * 0.4) * (1 - bookletClose);
     const yaw = (-0.08 * (1 - horizontalFold))
       + (0.18 * diamondOpen * (1 - bookletClose))
-      + (1.05 * bookletClose);
+      + ((1.05 + openSpreadWeight * 0.36 + backCoverWeight * 0.25) * bookletClose);
     const lift = (0.22 * (1 - horizontalFold) * (1 - cutInspection * 0.75))
       + (0.86 * stripFocus)
       + (1.28 * diamondOpen * (1 - bookletClose))
-      + (0.38 * bookletClose);
+      + ((0.38 - openSpreadWeight * 0.14) * bookletClose);
     const baseDistance = Math.max(3.2, span * 1.25);
-    const distance = baseDistance * (1 - cutInspection * 0.12);
+    const distance = baseDistance * (1 - cutInspection * 0.12) + (openSpreadWeight * 0.45);
 
     const targetYScale = 0.35 + (0.6 * horizontalFold);
     this.cameraTarget.set(
       center.x,
       center.y * targetYScale * (1 - cutInspection * 0.8),
-      center.z
+      center.z + spreadCenterZOffset
     );
     this.camera.position.set(
       this.cameraTarget.x + Math.sin(yaw) * distance,
@@ -1045,7 +1068,7 @@ export class Zine3DViewer {
     };
   }
 
-  updateSeams(cutInspection = 0) {
+  updateSeams(cutInspection = 0, spreadActive = 0) {
     const getAverageNormal = (pageA, pageB) => {
       const normalA = this.tmpVecC.set(0, 0, 1).applyQuaternion(pageA.group.quaternion);
       const normalB = this.tmpVecD.set(0, 0, 1).applyQuaternion(pageB.group.quaternion);
@@ -1055,6 +1078,11 @@ export class Zine3DViewer {
     this.seams.forEach((seam) => {
       const { pageA, pageB } = seam;
       if (!pageA || !pageB) { return; }
+
+      if (spreadActive > 0.01) {
+        seam.mesh.visible = false;
+        return;
+      }
 
       // Hide seams between inner parted panels during Step 4 Cut inspection so the parted gap is clean
       if (cutInspection > 0.1 && seam.orientation === 'horizontal') {
@@ -1269,6 +1297,13 @@ export class Zine3DViewer {
     }
 
     this.animationId = requestAnimationFrame(() => this.animate());
+    if (Math.abs((this.targetBookletSpread ?? 0) - (this.bookletSpread ?? 0)) > 0.002) {
+      this.bookletSpread += (this.targetBookletSpread - this.bookletSpread) * 0.16;
+      if (Math.abs(this.targetBookletSpread - this.bookletSpread) <= 0.002) {
+        this.bookletSpread = this.targetBookletSpread;
+      }
+      this.setFoldProgress(this.currentFoldProgress);
+    }
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }

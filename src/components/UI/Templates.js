@@ -30,6 +30,21 @@ const RAW_PAGE_CELL_TEMPLATE = `
       <span class="page-tool-label">Copy</span>
     </button>
   </div>
+  <div class="page-framing-bar absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 z-20" data-framing-bar>
+    <button type="button" class="zoom-out-btn page-framing-btn" aria-label="Zoom out page" title="Zoom out (-)">
+      <span class="material-symbols-outlined page-framing-icon" aria-hidden="true">remove</span>
+    </button>
+    <span class="zoom-level-readout" title="Current page zoom">100%</span>
+    <button type="button" class="zoom-in-btn page-framing-btn" aria-label="Zoom in page" title="Zoom in (+)">
+      <span class="material-symbols-outlined page-framing-icon" aria-hidden="true">add</span>
+    </button>
+    <button type="button" class="page-pan-handle page-framing-btn" aria-label="Drag to pan page framing" title="Drag to pan image within slot">
+      <span class="material-symbols-outlined page-framing-icon" aria-hidden="true">open_with</span>
+    </button>
+    <button type="button" class="framing-reset-btn page-framing-btn" aria-label="Reset page zoom and pan" title="Reset framing (100% centered)">
+      <span class="material-symbols-outlined page-framing-icon" aria-hidden="true">restart_alt</span>
+    </button>
+  </div>
   <div class="page-placeholder flex flex-col items-center justify-center gap-1.5 absolute inset-0">
      <span class="material-symbols-outlined text-2xl">add_photo_alternate</span>
      <span class="page-placeholder-role"></span>

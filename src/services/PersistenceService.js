@@ -146,6 +146,7 @@ export class PersistenceService {
         pageRotations: { ...(state.pageRotations || {}) },
         pageZooms: { ...state.pageZooms },
         pageTransforms: state.pageTransforms ? structuredClone(state.pageTransforms) : {},
+        guideToggles: state.guideToggles ? { ...state.guideToggles } : undefined,
         totalSlots: pageUrls.length,
         filledSlots
       };

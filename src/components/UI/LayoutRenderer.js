@@ -122,9 +122,13 @@ export class LayoutRenderer {
           }
         }
 
-        if (options.pageZooms && options.pageZooms[pageIndex]) {
-          cell.classList.add('page-zoomed');
-        }
+        const pageTransform = options.pageTransforms?.[pageIndex] || {};
+        const isFill = Boolean(options.pageZooms?.[pageIndex]) || pageTransform.fit === 'fill' || pageTransform.fit === 'cover';
+        const zoomVal = Number.isFinite(pageTransform.zoom) ? Math.max(1, Math.min(2.5, pageTransform.zoom)) : 1;
+        const panX = Number.isFinite(pageTransform.pan?.x) ? pageTransform.pan.x : 0;
+        const panY = Number.isFinite(pageTransform.pan?.y) ? pageTransform.pan.y : 0;
+
+        this.applyCellFramingState(cell, { isFill, zoom: zoomVal, panX, panY });
 
         grid.appendChild(cell);
       }
@@ -133,6 +137,38 @@ export class LayoutRenderer {
 
       sheetWrapper.appendChild(grid);
       this.container.appendChild(sheetWrapper);
+    }
+  }
+
+  applyCellFramingState(cell, { isFill = false, zoom = 1, panX = 0, panY = 0 } = {}) {
+    if (!cell) {
+      return;
+    }
+    const effectiveScale = zoom > 1 ? zoom : (isFill ? 1.08 : 1);
+    cell.classList.toggle('page-zoomed', Boolean(isFill));
+    cell.classList.toggle('has-custom-framing', Boolean(isFill || zoom > 1.01 || Math.abs(panX) > 0 || Math.abs(panY) > 0));
+    cell.style.setProperty('--page-image-scale', String(effectiveScale));
+    cell.style.setProperty('--page-pan-x', `${(panX * 0.35).toFixed(1)}%`);
+    cell.style.setProperty('--page-pan-y', `${(panY * 0.35).toFixed(1)}%`);
+
+    const cropBtn = cell.querySelector('.crop-btn');
+    if (cropBtn) {
+      cropBtn.classList.toggle('is-active', Boolean(isFill));
+      cropBtn.setAttribute('aria-pressed', String(Boolean(isFill)));
+      const iconEl = cropBtn.querySelector('.page-tool-icon');
+      const labelEl = cropBtn.querySelector('.page-tool-label');
+      if (iconEl) {
+        iconEl.textContent = isFill ? 'crop_free' : 'fit_screen';
+      }
+      if (labelEl) {
+        labelEl.textContent = isFill ? 'Fill' : 'Fit';
+      }
+    }
+
+    const readout = cell.querySelector('.zoom-level-readout');
+    if (readout) {
+      const displayPct = Math.round((zoom > 1 ? zoom : (isFill ? 1.08 : 1)) * 100);
+      readout.textContent = `${displayPct}%`;
     }
   }
 
@@ -370,6 +406,73 @@ export class LayoutRenderer {
 
       const duplicateBtn = toolbar.querySelector('.duplicate-btn');
       if (duplicateBtn) { duplicateBtn.onclick = (e) => { e.stopPropagation(); handlers.onDuplicate?.(pageIndex); }; }
+    }
+
+    const framingBar = cell.querySelector('.page-framing-bar');
+    if (framingBar) {
+      framingBar.addEventListener('click', (e) => e.stopPropagation());
+      const zoomInBtn = framingBar.querySelector('.zoom-in-btn');
+      if (zoomInBtn) {
+        zoomInBtn.onclick = (e) => {
+          e.stopPropagation();
+          handlers.onZoomDelta?.(pageIndex, 0.15);
+        };
+      }
+      const zoomOutBtn = framingBar.querySelector('.zoom-out-btn');
+      if (zoomOutBtn) {
+        zoomOutBtn.onclick = (e) => {
+          e.stopPropagation();
+          handlers.onZoomDelta?.(pageIndex, -0.15);
+        };
+      }
+      const resetBtn = framingBar.querySelector('.framing-reset-btn');
+      if (resetBtn) {
+        resetBtn.onclick = (e) => {
+          e.stopPropagation();
+          handlers.onFramingReset?.(pageIndex);
+        };
+      }
+      const panHandle = framingBar.querySelector('.page-pan-handle');
+      if (panHandle) {
+        panHandle.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const rect = cell.getBoundingClientRect();
+          const startX = e.clientX;
+          const startY = e.clientY;
+          const startPan = handlers.getPagePan?.(pageIndex) || { x: 0, y: 0 };
+          panHandle.setPointerCapture?.(e.pointerId);
+          cell.classList.add('is-panning-page');
+
+          const isUprightView = document.getElementById('preview-area')?.classList.contains('reading-view-mode');
+          const invertDir = upsideDown && !isUprightView ? -1 : 1;
+
+          const onMove = (moveEvt) => {
+            const dx = moveEvt.clientX - startX;
+            const dy = moveEvt.clientY - startY;
+            const pctX = Math.max(-100, Math.min(100, Math.round(startPan.x + (dx / Math.max(60, rect.width * 0.45)) * 100 * invertDir)));
+            const pctY = Math.max(-100, Math.min(100, Math.round(startPan.y + (dy / Math.max(60, rect.height * 0.45)) * 100 * invertDir)));
+            handlers.onPanChange?.(pageIndex, { x: pctX, y: pctY }, false);
+          };
+
+          const onUp = (upEvt) => {
+            panHandle.releasePointerCapture?.(upEvt.pointerId);
+            cell.classList.remove('is-panning-page');
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onUp);
+            const dx = upEvt.clientX - startX;
+            const dy = upEvt.clientY - startY;
+            const pctX = Math.max(-100, Math.min(100, Math.round(startPan.x + (dx / Math.max(60, rect.width * 0.45)) * 100 * invertDir)));
+            const pctY = Math.max(-100, Math.min(100, Math.round(startPan.y + (dy / Math.max(60, rect.height * 0.45)) * 100 * invertDir)));
+            handlers.onPanChange?.(pageIndex, { x: pctX, y: pctY }, true);
+          };
+
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+          window.addEventListener('pointercancel', onUp);
+        });
+      }
     }
 
     const removeBtn = cell.querySelector('.page-cell-remove-hint');

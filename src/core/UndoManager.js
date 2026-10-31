@@ -31,7 +31,12 @@ export class UndoManager {
   undo(currentSnapshot = null) {
     const entry = this._stack.pop() ?? null;
     if (!entry) { return null; }
-    if (currentSnapshot) { this._redoStack.push(currentSnapshot); }
+    if (currentSnapshot) {
+      this._redoStack.push({
+        ...currentSnapshot,
+        description: entry.description || currentSnapshot.description || 'Action'
+      });
+    }
     return entry;
   }
 
@@ -39,7 +44,12 @@ export class UndoManager {
   redo(currentSnapshot = null) {
     const entry = this._redoStack.pop() ?? null;
     if (!entry) { return null; }
-    if (currentSnapshot) { this._stack.push(currentSnapshot); }
+    if (currentSnapshot) {
+      this._stack.push({
+        ...currentSnapshot,
+        description: entry.description || currentSnapshot.description || 'Action'
+      });
+    }
     return entry;
   }
 
@@ -47,6 +57,14 @@ export class UndoManager {
   clear() {
     while (this._stack.length) { this._stack.pop()?.onPrune?.(); }
     while (this._redoStack.length) { this._redoStack.pop()?.onPrune?.(); }
+  }
+
+  getUndoDescription() {
+    return this._stack.length > 0 ? (this._stack[this._stack.length - 1]?.description || '') : '';
+  }
+
+  getRedoDescription() {
+    return this._redoStack.length > 0 ? (this._redoStack[this._redoStack.length - 1]?.description || '') : '';
   }
 
   get size() { return this._stack.length; }

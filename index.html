@@ -260,6 +260,11 @@
                                             <input type="checkbox" id="toggle-cut-marks" checked class="workspace-config-toggle-input" />
                                             <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
                                         </label>
+                                        <label class="workspace-config-toggle workspace-config-field workspace-config-field-wide" for="include-guides-export" title="Include cut slit, scissor mark, fold creases, and corner trim marks on exported PDFs and printouts">
+                                            <span class="workspace-config-toggle-copy">Print marks in PDF</span>
+                                            <input type="checkbox" id="include-guides-export" checked class="workspace-config-toggle-input" />
+                                            <span class="workspace-config-toggle-switch" aria-hidden="true"><span class="workspace-config-toggle-knob"></span></span>
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -295,7 +300,24 @@
             <div class="fold-unified-body">
                 <!-- Tab 1: 3D Fold Viewer with Integrated 8-Step Visual Guide -->
                 <div class="fold-tab-pane is-active snap-card-body--fold-viewer" id="fold-pane-3d" data-fold-pane="3d" role="tabpanel" aria-labelledby="fold-tab-3d">
-                    <div id="zine-3d-container" class="fold-viewer-stage"></div>
+                    <div id="zine-3d-container" class="fold-viewer-stage">
+                        <div id="fold-3d-booklet-bar" class="fold-3d-booklet-bar hidden" role="toolbar" aria-label="3D Booklet page flipper">
+                            <span class="fold-3d-booklet-label">Read 3D Booklet:</span>
+                            <button type="button" id="fold-3d-spread-prev" class="fold-3d-spread-nav-btn" title="Previous booklet spread" aria-label="Previous booklet spread">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">chevron_left</span>
+                            </button>
+                            <div class="fold-3d-spread-pills" role="group" aria-label="Booklet pages">
+                                <button type="button" class="fold-3d-spread-btn is-active" data-3d-spread="0">Cover 1</button>
+                                <button type="button" class="fold-3d-spread-btn" data-3d-spread="1">2–3</button>
+                                <button type="button" class="fold-3d-spread-btn" data-3d-spread="2">4–5</button>
+                                <button type="button" class="fold-3d-spread-btn" data-3d-spread="3">6–7</button>
+                                <button type="button" class="fold-3d-spread-btn" data-3d-spread="4">Back 8</button>
+                            </div>
+                            <button type="button" id="fold-3d-spread-next" class="fold-3d-spread-nav-btn" title="Next booklet spread" aria-label="Next booklet spread">
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="fold-viewer-controls">
                         <div class="fold-active-step-card" id="fold-active-step-card" aria-live="polite">
                             <div class="fold-active-step-diagram-wrap">

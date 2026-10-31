@@ -43,14 +43,17 @@ export class AppController {
       await this.pdfProcessor.initialize();
       this.setupEventListeners();
       if (this.persistence && typeof indexedDB !== 'undefined' && this.persistence.hasSavedSession()) {
-        await this.tryRestoreSession();
+        const restoredOk = await this.tryRestoreSession();
+        if (restoredOk) {
+          this.ui.setStatus('Restored saved session', 'info');
+        }
       }
       this.ui.syncPaperSettings({
         paperSize: this.state.paperSize,
         orientation: this.state.orientation
       });
       this.renderCurrentLayout();
-      if (!this.state.isProcessingQueue && this.state.fileQueue.length === 0) {
+      if (!this.state.isProcessingQueue && this.state.fileQueue.length === 0 && !this.persistence?.hasSavedSession?.()) {
         this.ui.setStatus('');
       }
     } catch (error) {
@@ -59,7 +62,7 @@ export class AppController {
   }
 
   async tryRestoreSession() {
-    if (!this.persistence || typeof indexedDB === 'undefined') {
+    if (!this.persistence || typeof indexedDB !== 'undefined' === false) {
       return false;
     }
     try {
@@ -92,6 +95,9 @@ export class AppController {
       }
       if (restored.customPaper) {
         this.state.customPaper = { ...this.state.customPaper, ...restored.customPaper };
+      }
+      if (restored.guideToggles && typeof restored.guideToggles === 'object') {
+        this.state.guideToggles = { ...this.state.guideToggles, ...restored.guideToggles };
       }
 
       this.state.allPageImages = restored.allPageImages;
@@ -137,6 +143,9 @@ export class AppController {
     this.ui.on('pageFlipped', (i) => this.handlePageFlipped(i));
     this.ui.on('pageRotated', (i) => this.handlePageRotated(i, 90));
     this.ui.on('pageCropToggled', (i) => this.handlePageCropToggled(i));
+    this.ui.on('pageZoomDelta', ({ index, delta }) => this.handlePageZoomDelta(index, delta));
+    this.ui.on('pagePanChanged', ({ index, pan, committed }) => this.handlePagePanChanged(index, pan, committed));
+    this.ui.on('pageFramingReset', (index) => this.handlePageFramingReset(index));
     this.ui.on('pageDuplicated', (i) => this.handlePageDuplicated(i));
     this.ui.on('pageRemoved', (i) => this.handlePageRemoved(i));
     this.ui.on('pagesSwapped', (data) => this.handlePagesSwapped(data));
@@ -148,6 +157,7 @@ export class AppController {
     this.ui.on('view3d', () => this.handleView3d());
     this.ui.on('clearAll', () => this.handleClearAll());
     this.ui.on('foldProgress', (value) => this.handleFoldProgress(value));
+    this.ui.on('bookletSpreadChanged', (spreadIndex) => this.handleBookletSpreadChanged(spreadIndex));
     this.ui.on('undo', () => this.handleUndo());
     this.ui.on('redo', () => this.handleRedo());
   }
@@ -476,16 +486,22 @@ export class AppController {
     this.ui.updateUploadedFilesList(this.state.uploadedFiles);
   }
 
-  _pushSnapshot(description, { onPrune = null } = {}) {
-    this.undoManager.push({
+  _buildCurrentSnapshot(description = 'Workspace change') {
+    return {
       description,
       allPageImages: [...this.state.allPageImages],
       pageFlips: { ...this.state.pageFlips },
       pageRotations: { ...(this.state.pageRotations || {}) },
       pageZooms: { ...this.state.pageZooms },
-      pageTransforms: structuredClone(this.state.pageTransforms),
+      pageTransforms: structuredClone(this.state.pageTransforms || {}),
       layoutPresetId: this.state.layoutPresetId,
-      gridSize: { ...this.state.gridSize },
+      gridSize: { ...this.state.gridSize }
+    };
+  }
+
+  _pushSnapshot(description, { onPrune = null } = {}) {
+    this.undoManager.push({
+      ...this._buildCurrentSnapshot(description),
       onPrune
     });
   }
@@ -496,7 +512,11 @@ export class AppController {
       return;
     }
 
-    const snapshot = this.undoManager.pop();
+    const currentSnapshot = this._buildCurrentSnapshot();
+    const snapshot = this.undoManager.undo(currentSnapshot);
+    if (!snapshot) {
+      return;
+    }
     this.state.allPageImages = snapshot.allPageImages;
     this.state.pageFlips = snapshot.pageFlips;
     this.state.pageRotations = { ...(snapshot.pageRotations || {}) };
@@ -507,21 +527,12 @@ export class AppController {
     this.state.totalPages = this.state.getFilledPageCount();
     this.state.resetWorkflowStatus();
     this.renderCurrentLayout();
-    toast.info('Undone', snapshot.description);
+    toast.info('Undone', snapshot.description || 'Action undone');
   }
 
   handleRedo() {
-    const current = {
-      description: 'Undo redo',
-      allPageImages: [...this.state.allPageImages],
-      pageFlips: { ...this.state.pageFlips },
-      pageRotations: { ...(this.state.pageRotations || {}) },
-      pageZooms: { ...this.state.pageZooms },
-      pageTransforms: structuredClone(this.state.pageTransforms),
-      layoutPresetId: this.state.layoutPresetId,
-      gridSize: { ...this.state.gridSize }
-    };
-    const snapshot = this.undoManager.redo(current);
+    const currentSnapshot = this._buildCurrentSnapshot();
+    const snapshot = this.undoManager.redo(currentSnapshot);
     if (!snapshot) {
       toast.info('Nothing to Redo', 'No undone actions are available.');
       return;
@@ -534,8 +545,9 @@ export class AppController {
     this.state.layoutPresetId = snapshot.layoutPresetId || this.state.layoutPresetId;
     this.state.gridSize = { ...this.state.gridSize, ...(snapshot.gridSize || {}) };
     this.state.totalPages = this.state.getFilledPageCount();
+    this.state.resetWorkflowStatus();
     this.renderCurrentLayout();
-    toast.info('Redone', snapshot.description);
+    toast.info('Redone', snapshot.description || 'Action redone');
   }
 
   handleLayoutPresetChanged({ layoutPresetId, rows, cols }) {
@@ -924,12 +936,14 @@ export class AppController {
     this.previewAssetUrls = [];
   }
 
-  async buildPreviewAsset(sourceUrl, { isFlipped = false, rotation = 0, isZoomed = false } = {}) {
+  async buildPreviewAsset(sourceUrl, { isFlipped = false, rotation = 0, isZoomed = false, zoom = 1, panX = 0, panY = 0 } = {}) {
     const effectiveDeg = Number.isFinite(rotation) && rotation !== 0
       ? ((rotation % 360) + 360) % 360
       : (isFlipped ? 180 : 0);
+    const effectiveZoom = Number.isFinite(zoom) && zoom > 1 ? Math.min(2.5, zoom) : (isZoomed ? 1.08 : 1);
+    const hasPan = Math.abs(panX) > 0 || Math.abs(panY) > 0;
 
-    if (!sourceUrl || (effectiveDeg === 0 && !isZoomed)) {
+    if (!sourceUrl || (effectiveDeg === 0 && !isZoomed && effectiveZoom === 1 && !hasPan)) {
       return sourceUrl;
     }
 
@@ -945,13 +959,14 @@ export class AppController {
     context.fillStyle = '#ffffff';
     context.fillRect(0, 0, width, height);
     context.save();
-    context.translate(width / 2, height / 2);
+    const offsetX = (panX / 100) * (width * 0.35);
+    const offsetY = (panY / 100) * (height * 0.35);
+    context.translate(width / 2 + offsetX, height / 2 + offsetY);
     if (effectiveDeg) {
       context.rotate((effectiveDeg * Math.PI) / 180);
     }
 
-    const scale = isZoomed ? 1.1 : 1;
-    context.scale(scale, scale);
+    context.scale(effectiveZoom, effectiveZoom);
     context.drawImage(image, -width / 2, -height / 2, width, height);
     context.restore();
 
@@ -995,6 +1010,7 @@ export class AppController {
       pageFlips: this.state.pageFlips,
       pageRotations: this.state.pageRotations,
       pageZooms: this.state.pageZooms,
+      pageTransforms: this.state.pageTransforms,
       guideToggles: this.state.guideToggles
     });
 
@@ -1018,7 +1034,9 @@ export class AppController {
       customPaper: this.state.customPaper,
       exported: this.state.workflowExported,
       canUndo: !this.undoManager.isEmpty,
-      canRedo: this.undoManager.canRedo
+      canRedo: this.undoManager.canRedo,
+      undoDescription: this.undoManager.getUndoDescription?.() || '',
+      redoDescription: this.undoManager.getRedoDescription?.() || ''
     });
   }
 
@@ -1110,10 +1128,68 @@ export class AppController {
     }
 
     const wasZoomed = Boolean(this.state.pageZooms[index]);
-    this._pushSnapshot(`Page ${index + 1} crop ${wasZoomed ? 'removed' : 'applied'}`);
+    this._pushSnapshot(`Page ${index + 1} crop ${wasZoomed ? 'fit' : 'fill'}`);
+    const nextFit = wasZoomed ? 'fit' : 'fill';
+    const updated = typeof this.state.setPageTransform === 'function'
+      ? this.state.setPageTransform(index, { fit: nextFit })
+      : { fit: nextFit, zoom: 1, pan: { x: 0, y: 0 } };
     this.state.pageZooms[index] = !wasZoomed;
     this.state.resetWorkflowStatus();
-    this.ui.setPageZoom(index, this.state.pageZooms[index]);
+    this.ui.setPageZoom(index, this.state.pageZooms[index], updated);
+    this.updateWorkspaceUi();
+    this.scheduleSessionSave();
+  }
+
+  handlePageZoomDelta(index, delta = 0.15) {
+    if (!this.state.allPageImages[index]) {
+      return;
+    }
+    const current = typeof this.state.getPageTransform === 'function'
+      ? this.state.getPageTransform(index)
+      : (this.state.pageTransforms?.[index] || { fit: 'fit', zoom: 1, pan: { x: 0, y: 0 } });
+    const nextZoom = Math.round(Math.max(1, Math.min(2.5, (current.zoom || 1) + delta)) * 100) / 100;
+    if (nextZoom === (current.zoom || 1)) {
+      return;
+    }
+    this._pushSnapshot(`Page ${index + 1} zoom ${Math.round(nextZoom * 100)}%`);
+    const updated = typeof this.state.setPageTransform === 'function'
+      ? this.state.setPageTransform(index, { zoom: nextZoom })
+      : { ...current, zoom: nextZoom };
+    this.state.resetWorkflowStatus();
+    this.ui.setPageFraming?.(index, updated);
+    this.updateWorkspaceUi();
+    this.scheduleSessionSave();
+  }
+
+  handlePagePanChanged(index, pan = { x: 0, y: 0 }, committed = false) {
+    if (!this.state.allPageImages[index]) {
+      return;
+    }
+    if (committed) {
+      this._pushSnapshot(`Page ${index + 1} pan adjusted`);
+    }
+    const updated = typeof this.state.setPageTransform === 'function'
+      ? this.state.setPageTransform(index, { pan })
+      : { fit: this.state.pageZooms[index] ? 'fill' : 'fit', zoom: 1, pan };
+    this.ui.setPageFraming?.(index, updated);
+    if (committed) {
+      this.state.resetWorkflowStatus();
+      this.updateWorkspaceUi();
+      this.scheduleSessionSave();
+    }
+  }
+
+  handlePageFramingReset(index) {
+    if (!this.state.allPageImages[index]) {
+      return;
+    }
+    this._pushSnapshot(`Page ${index + 1} framing reset`);
+    const updated = typeof this.state.resetPageTransform === 'function'
+      ? this.state.resetPageTransform(index, { resetFit: true })
+      : { fit: 'fit', zoom: 1, pan: { x: 0, y: 0 } };
+    this.state.pageZooms[index] = false;
+    this.state.resetWorkflowStatus();
+    this.ui.setPageFraming?.(index, updated);
     this.updateWorkspaceUi();
     this.scheduleSessionSave();
   }
@@ -1160,6 +1236,7 @@ export class AppController {
       this.state.pageRotations[index] = 0;
     }
     this.state.pageZooms[index] = false;
+    delete this.state.pageTransforms[index];
     this.state.totalPages = this.state.getFilledPageCount();
     this.state.resetWorkflowStatus();
 
@@ -1190,6 +1267,12 @@ export class AppController {
     const tempZoom = this.state.pageZooms[fromIndex];
     this.state.pageZooms[fromIndex] = this.state.pageZooms[toIndex];
     this.state.pageZooms[toIndex] = tempZoom;
+
+    if (this.state.pageTransforms) {
+      const tempTransform = this.state.pageTransforms[fromIndex];
+      this.state.pageTransforms[fromIndex] = this.state.pageTransforms[toIndex];
+      this.state.pageTransforms[toIndex] = tempTransform;
+    }
 
     this.state.resetWorkflowStatus();
     this.renderCurrentLayout();
@@ -1223,6 +1306,7 @@ export class AppController {
       }
       this.state.pageZooms[index] = false;
     }
+    this.state.pageTransforms = {};
 
     this.state.totalPages = 0;
     this.state.uploadedFiles = [];
@@ -1264,7 +1348,11 @@ export class AppController {
         container: this.ui.elements.bookletPreviewContainer,
         prevButton: this.ui.elements.bookletPrevBtn,
         nextButton: this.ui.elements.bookletNextBtn,
-        statusElement: this.ui.elements.bookletStatus
+        statusElement: this.ui.elements.bookletStatus,
+        onSpreadChange: (spreadIndex) => {
+          this.ui.set3DBookletSpread?.(spreadIndex);
+          this.viewer3d?.setBookletSpread?.(spreadIndex);
+        }
       });
     }
   }
@@ -1340,13 +1428,19 @@ export class AppController {
         const rotation = typeof this.state.getPageRotation === 'function'
           ? this.state.getPageRotation(index)
           : (isFlipped ? 180 : 0);
-        const isZoomed = Boolean(this.state.pageZooms?.[index]);
+        const transform = typeof this.state.getPageTransform === 'function'
+          ? this.state.getPageTransform(index)
+          : (this.state.pageTransforms?.[index] || {});
+        const isZoomed = Boolean(this.state.pageZooms?.[index]) || transform.fit === 'fill' || transform.fit === 'cover';
+        const zoom = Number.isFinite(transform.zoom) ? transform.zoom : 1;
+        const panX = Number.isFinite(transform.pan?.x) ? transform.pan.x : 0;
+        const panY = Number.isFinite(transform.pan?.y) ? transform.pan.y : 0;
 
         asyncPromises.push((async () => {
           const sourceUrl = url || (await this.ensurePlaceholderPageUrl(pageNumber));
           let previewUrl = sourceUrl;
-          if (url && (isFlipped || rotation || isZoomed)) {
-            previewUrl = await this.buildPreviewAsset(sourceUrl, { isFlipped, rotation, isZoomed });
+          if (url && (isFlipped || rotation || isZoomed || zoom > 1 || panX !== 0 || panY !== 0)) {
+            previewUrl = await this.buildPreviewAsset(sourceUrl, { isFlipped, rotation, isZoomed, zoom, panX, panY });
           }
           imageUrls[index] = {
             sourceUrl,
@@ -1379,6 +1473,7 @@ export class AppController {
       this.viewer3d?.loadPages(imageUrls);
       this.viewer3d?.refreshLayout?.();
       this.bookletPreview?.loadPages(imageUrls);
+      this.ui.set3DBookletSpread?.(0);
       this.ui.setFoldProgressControl(0);
       this.state.markPreviewed();
       this.updateWorkspaceUi();
@@ -1391,6 +1486,11 @@ export class AppController {
 
   handleFoldProgress(value) {
     this.viewer3d?.setFoldProgress(value);
+  }
+
+  handleBookletSpreadChanged(spreadIndex) {
+    this.viewer3d?.setBookletSpread?.(spreadIndex);
+    this.bookletPreview?.jumpToSpread?.(spreadIndex, { emitChange: false });
   }
 
   async handleExport() {

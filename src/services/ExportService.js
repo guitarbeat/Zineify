@@ -119,23 +119,29 @@ export class ExportService {
       const userRotation = Number.isFinite(this.state.pageRotations?.[pageIndex])
         ? this.state.pageRotations[pageIndex]
         : (isFlipped ? 180 : 0);
-      const isZoomed = Boolean(this.state.pageZooms[pageIndex]);
+      const transform = typeof this.state.getPageTransform === 'function'
+        ? this.state.getPageTransform(pageIndex)
+        : (this.state.pageTransforms?.[pageIndex] || {});
+      const isZoomed = Boolean(this.state.pageZooms[pageIndex]) || transform.fit === 'fill' || transform.fit === 'cover';
       const rotateDeg = (((upsideDown ? 180 : 0) + userRotation) % 360 + 360) % 360;
-      const scale = isZoomed ? 1.1 : 1;
+      const userZoom = Number.isFinite(transform.zoom) ? Math.max(1, Math.min(2.5, transform.zoom)) : 1;
+      const scale = userZoom > 1 ? userZoom : (isZoomed ? 1.08 : 1);
       const objectFit = isZoomed ? 'cover' : 'contain';
+      const panX = Number.isFinite(transform.pan?.x) ? transform.pan.x : 0;
+      const panY = Number.isFinite(transform.pan?.y) ? transform.pan.y : 0;
 
       const row = Math.floor(slot / cols);
       const col = slot % cols;
       const cellX = marginPx + col * cellW;
       const cellY = marginPx + row * cellH;
 
-      draws.push({ url, cellX, cellY, rotateDeg, scale, objectFit });
+      draws.push({ url, cellX, cellY, rotateDeg, scale, objectFit, panX, panY, upsideDown });
     }
 
-    for (const { url, cellX, cellY, rotateDeg, scale, objectFit } of draws) {
+    for (const { url, cellX, cellY, rotateDeg, scale, objectFit, panX, panY, upsideDown } of draws) {
       const img = imageCache.get(url);
       if (img) {
-        this._drawCell({ ctx, img, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit });
+        this._drawCell({ ctx, img, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit, panX, panY, upsideDown });
       }
     }
 
@@ -145,7 +151,7 @@ export class ExportService {
   _drawPressMarksToCanvas(ctx, rows, cols, metrics, template) {
     const { canvasW, canvasH, marginPx, cellW, cellH } = metrics;
     const guides = this.state.guideToggles || {};
-    const allowMarks = Boolean(guides.includeInExport);
+    const allowMarks = guides.includeInExport !== false;
     if (!allowMarks) {
       return;
     }
@@ -158,9 +164,9 @@ export class ExportService {
 
     // 1. Fold lines
     if (shouldBakeFold) {
-      ctx.strokeStyle = 'rgba(15, 15, 15, 0.36)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([14, 10]);
+      ctx.strokeStyle = 'rgba(20, 18, 16, 0.42)';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([16, 11]);
 
       for (let c = 1; c < cols; c++) {
         const x = marginPx + c * cellW;
@@ -179,36 +185,62 @@ export class ExportService {
       }
     }
 
-    // 2. Center slit cut line
+    // 2. Center slit cut line with stop ticks and scissor badge
     if (shouldBakeCut && template?.cutLines?.horizontal) {
       const { afterRow = 1, fromPct = 25, toPct = 75 } = template.cutLines.horizontal;
       const gridW = canvasW - 2 * marginPx;
       const cutY = marginPx + afterRow * cellH;
       const startX = marginPx + (fromPct / 100) * gridW;
       const endX = marginPx + (toPct / 100) * gridW;
+      const midX = (startX + endX) / 2;
 
-      ctx.setLineDash([]);
-      ctx.strokeStyle = '#e63946';
-      ctx.lineWidth = 5;
+      // Dashed crimson cut slit
+      ctx.setLineDash([20, 10]);
+      ctx.strokeStyle = '#e02424';
+      ctx.lineWidth = 5.5;
       ctx.beginPath();
       ctx.moveTo(startX, cutY);
       ctx.lineTo(endX, cutY);
       ctx.stroke();
 
-      // End stop ticks
-      const tickHalf = 18;
+      // Solid stop ticks & stop dots at inner creases
+      ctx.setLineDash([]);
+      const tickHalf = 22;
+      ctx.lineWidth = 4.5;
       ctx.beginPath();
       ctx.moveTo(startX, cutY - tickHalf);
       ctx.lineTo(startX, cutY + tickHalf);
       ctx.moveTo(endX, cutY - tickHalf);
       ctx.lineTo(endX, cutY + tickHalf);
       ctx.stroke();
+
+      ctx.fillStyle = '#e02424';
+      ctx.beginPath();
+      ctx.arc(startX, cutY, 7, 0, Math.PI * 2);
+      ctx.arc(endX, cutY, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Compact circular scissor badge at center of slit
+      const badgeRadius = 22;
+      ctx.fillStyle = '#e02424';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(midX, cutY, badgeRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✂', midX, cutY + 1);
     }
 
     // 3. Corner crop marks
     if (shouldBakeCrop) {
       ctx.setLineDash([]);
-      ctx.strokeStyle = 'rgba(15, 15, 15, 0.75)';
+      ctx.strokeStyle = 'rgba(15, 15, 15, 0.78)';
       ctx.lineWidth = 2.5;
       const tickLen = 28;
       const inset = Math.max(12, marginPx);
@@ -253,7 +285,7 @@ export class ExportService {
     return imagePromise;
   }
 
-  _drawCell({ ctx, img, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit }) {
+  _drawCell({ ctx, img, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit, panX = 0, panY = 0, upsideDown = false }) {
     ctx.save();
     ctx.beginPath();
     ctx.rect(cellX, cellY, cellW, cellH);
@@ -261,7 +293,10 @@ export class ExportService {
 
     const cx = cellX + cellW / 2;
     const cy = cellY + cellH / 2;
-    ctx.translate(cx, cy);
+    const panSign = upsideDown ? -1 : 1;
+    const offsetX = panSign * (panX / 100) * (cellW * 0.35);
+    const offsetY = panSign * (panY / 100) * (cellH * 0.35);
+    ctx.translate(cx + offsetX, cy + offsetY);
 
     if (rotateDeg) {
       ctx.rotate((rotateDeg * Math.PI) / 180);
@@ -316,8 +351,9 @@ export class ExportService {
     const gridW = dims.width - 2 * marginMm;
     const gridH = dims.height - 2 * marginMm;
     const guides = this.state.guideToggles || {};
-    const allowMarks = Boolean(guides.includeInExport);
+    const allowMarks = guides.includeInExport !== false;
     const showFold = allowMarks && guides.bakeFoldGuides !== false && guides.fold !== false;
+    const showCut = allowMarks && guides.bakeCutMarks !== false && guides.cut !== false && Boolean(template?.cutLines?.horizontal);
 
     const gridStyle = template?.gridAreas
       ? `display:grid;grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr);grid-template-areas:${template.gridAreas.trim().split('\n').map((l) => l.trim()).join(' ')};width:${gridW}mm;height:${gridH}mm;position:relative;`
@@ -349,25 +385,36 @@ export class ExportService {
         const userRotation = Number.isFinite(this.state.pageRotations?.[pageIndex])
           ? this.state.pageRotations[pageIndex]
           : (isFlipped ? 180 : 0);
-        const isZoomed = Boolean(this.state.pageZooms[pageIndex]);
+        const transform = typeof this.state.getPageTransform === 'function'
+          ? this.state.getPageTransform(pageIndex)
+          : (this.state.pageTransforms?.[pageIndex] || {});
+        const isZoomed = Boolean(this.state.pageZooms[pageIndex]) || transform.fit === 'fill' || transform.fit === 'cover';
+        const userZoom = Number.isFinite(transform.zoom) ? Math.max(1, Math.min(2.5, transform.zoom)) : 1;
 
         const rotateDeg = (((upsideDown ? 180 : 0) + userRotation) % 360 + 360) % 360;
-        const scale = isZoomed ? '1.1' : '1';
+        const scale = userZoom > 1 ? String(userZoom) : (isZoomed ? '1.08' : '1');
         const objectFit = isZoomed ? 'cover' : 'contain';
+        const panSign = upsideDown ? -1 : 1;
+        const panX = Math.round((Number(transform.pan?.x) || 0) * 0.35 * panSign);
+        const panY = Math.round((Number(transform.pan?.y) || 0) * 0.35 * panSign);
 
         const areaStyle = template?.gridAreas ? `grid-area:page${pageNum};` : '';
         const borderStyle = showFold
           ? 'border:0.5pt dashed rgba(0,0,0,0.28);'
           : '';
         const cellStyle = `position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;${borderStyle}${areaStyle}`;
-        const imgStyle = `width:100%;height:100%;object-fit:${objectFit};transform:rotate(${rotateDeg}deg) scale(${scale});`;
+        const imgStyle = `width:100%;height:100%;object-fit:${objectFit};transform:translate(${panX}%,${panY}%) rotate(${rotateDeg}deg) scale(${scale});`;
 
         cells.push(url
           ? `<div style="${cellStyle}"><img src="${url}" style="${imgStyle}" alt="Page ${pageNum}"></div>`
           : `<div style="${cellStyle};background:#f0f0f0;"></div>`);
       }
 
-      sheets.push(`<div class="sheet" style="width:${dims.width}mm;height:${dims.height}mm;overflow:hidden;page-break-after:always;display:flex;align-items:center;justify-content:center;"><div style="${gridStyle}">${cells.join('')}</div></div>`);
+      const cutOverlayHtml = showCut
+        ? '<div style="position:absolute;top:50%;left:25%;width:50%;height:0;border-top:2pt dashed #e02424;z-index:10;pointer-events:none;"><span style="position:absolute;left:50%;top:0;transform:translate(-50%,-50%);background:#e02424;color:#fff;font:700 8pt sans-serif;padding:1pt 4pt;border-radius:999px;">✂</span></div>'
+        : '';
+
+      sheets.push(`<div class="sheet" style="width:${dims.width}mm;height:${dims.height}mm;overflow:hidden;page-break-after:always;display:flex;align-items:center;justify-content:center;"><div style="${gridStyle}">${cells.join('')}${cutOverlayHtml}</div></div>`);
     }
 
     return sheets.join('');

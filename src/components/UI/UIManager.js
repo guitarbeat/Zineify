@@ -253,9 +253,37 @@ export class UIManager {
     }
   }
 
-  setPageZoom(index, enabled) {
+  setPageZoom(index, enabled, transform = null) {
     const cell = this._getPageCell(index);
-    cell?.classList.toggle('page-zoomed', Boolean(enabled));
+    if (!cell) {
+      return;
+    }
+    const zoom = Number.isFinite(transform?.zoom) ? transform.zoom : 1;
+    const panX = Number.isFinite(transform?.pan?.x) ? transform.pan.x : 0;
+    const panY = Number.isFinite(transform?.pan?.y) ? transform.pan.y : 0;
+    this.renderer?.applyCellFramingState?.(cell, {
+      isFill: Boolean(enabled),
+      zoom,
+      panX,
+      panY
+    });
+  }
+
+  setPageFraming(index, transform = {}) {
+    const cell = this._getPageCell(index);
+    if (!cell) {
+      return;
+    }
+    const isFill = transform.fit === 'fill' || transform.fit === 'cover';
+    const zoom = Number.isFinite(transform.zoom) ? transform.zoom : 1;
+    const panX = Number.isFinite(transform.pan?.x) ? transform.pan.x : 0;
+    const panY = Number.isFinite(transform.pan?.y) ? transform.pan.y : 0;
+    this.renderer?.applyCellFramingState?.(cell, {
+      isFill,
+      zoom,
+      panX,
+      panY
+    });
   }
 
   toggle3DModal(show) {
@@ -274,15 +302,47 @@ export class UIManager {
     this.syncFoldStepUi(progress);
   }
 
+  set3DBookletSpread(spreadIndex = 0) {
+    const clamped = Math.max(0, Math.min(4, Number(spreadIndex) || 0));
+    this.current3DBookletSpread = clamped;
+    const spreadNames = ['Cover (Page 1)', 'Spread 2–3', 'Spread 4–5', 'Spread 6–7', 'Back Cover (Page 8)'];
+    this.elements.fold3dSpreadButtons?.forEach((btn) => {
+      const idx = parseInt(btn.getAttribute('data-3d-spread') || '0', 10);
+      const isMatch = idx === clamped;
+      btn.classList.toggle('is-active', isMatch);
+      btn.setAttribute('aria-pressed', String(isMatch));
+    });
+    if (this.elements.fold3dSpreadPrev) {
+      this.elements.fold3dSpreadPrev.disabled = clamped <= 0;
+    }
+    if (this.elements.fold3dSpreadNext) {
+      this.elements.fold3dSpreadNext.disabled = clamped >= 4;
+    }
+    if (this.currentFoldStepIndex === 8 && this.elements.foldStatus) {
+      this.elements.foldStatus.textContent = `Booklet · ${spreadNames[clamped] || 'Cover'}`;
+    }
+  }
+
   syncFoldStepUi(progress) {
     const currentStep = FOLD_STEPS.reduce((closest, step) => (
       Math.abs(step.value - progress) < Math.abs(closest.value - progress) ? step : closest
     ), FOLD_STEPS[0]);
 
     this.currentFoldStepIndex = currentStep.stepIndex;
+    const isBookletStep = currentStep.stepIndex === 8 || progress >= 2.85;
+
+    if (this.elements.fold3dBookletBar) {
+      this.elements.fold3dBookletBar.classList.toggle('hidden', !isBookletStep);
+    }
+    if (!isBookletStep && this.current3DBookletSpread) {
+      this.set3DBookletSpread(0);
+    }
 
     if (this.elements.foldStatus) {
       this.elements.foldStatus.textContent = currentStep.status;
+    }
+    if (isBookletStep) {
+      this.set3DBookletSpread(this.current3DBookletSpread || 0);
     }
     if (this.elements.foldHelper) {
       this.elements.foldHelper.textContent = currentStep.helper;
@@ -413,7 +473,9 @@ export class UIManager {
     _isMiniLayout = (rows === 2 && cols === 4),
     paperSize = 'letter',
     canUndo = false,
-    canRedo = false
+    canRedo = false,
+    undoDescription = '',
+    redoDescription = ''
   } = {}) {
     const hasAnySlotContent = nonEmptySlotCount > 0 || placedCount > 0;
 
@@ -458,9 +520,19 @@ export class UIManager {
     }
     if (this.elements.undoBtn) {
       this.elements.undoBtn.disabled = !canUndo;
+      const undoTitle = canUndo && undoDescription
+        ? `Undo: ${undoDescription} (Ctrl+Z)`
+        : 'Undo last action (Ctrl+Z)';
+      this.elements.undoBtn.title = undoTitle;
+      this.elements.undoBtn.setAttribute('aria-label', undoTitle);
     }
     if (this.elements.redoBtn) {
       this.elements.redoBtn.disabled = !canRedo;
+      const redoTitle = canRedo && redoDescription
+        ? `Redo: ${redoDescription} (Ctrl+Y)`
+        : 'Redo (Ctrl+Y)';
+      this.elements.redoBtn.title = redoTitle;
+      this.elements.redoBtn.setAttribute('aria-label', redoTitle);
     }
 
     this.syncFormatPresetUi(layoutPresetId, rows, cols);
@@ -604,6 +676,7 @@ export class UIManager {
       pageNumbersCheckbox: $('#show-page-numbers'),
       pageControlsCheckbox: $('#show-page-controls'),
       toggleCutMarks: $('#toggle-cut-marks'),
+      includeGuidesExport: $('#include-guides-export'),
       resetLayoutBtn: $('#reset-layout-btn'),
       gridRows: $('#grid-rows'),
       gridCols: $('#grid-cols'),
@@ -620,6 +693,10 @@ export class UIManager {
       progressSubtext: $('#progress-subtext'),
       zine3dModal: $('#zine-3d-modal'),
       zine3dContainer: $('#zine-3d-container'),
+      fold3dBookletBar: $('#fold-3d-booklet-bar'),
+      fold3dSpreadPrev: $('#fold-3d-spread-prev'),
+      fold3dSpreadNext: $('#fold-3d-spread-next'),
+      fold3dSpreadButtons: document.querySelectorAll('[data-3d-spread]'),
       close3dBtn: $('#close-3d-btn'),
       foldSlider: $('#fold-slider'),
       foldStatus: $('#fold-status'),
@@ -706,6 +783,13 @@ export class UIManager {
       this._syncDisplaySummaryAccessory();
       this.emitter.emit('guideToggleChanged', { key: 'cut', enabled: checked });
       this.emitter.emit('guideToggleChanged', { key: 'fold', enabled: checked });
+    });
+
+    this.elements.includeGuidesExport?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      this.guideToggles.includeInExport = checked;
+      this._syncDisplaySummaryAccessory();
+      this.emitter.emit('guideToggleChanged', { key: 'includeInExport', enabled: checked });
     });
 
     this.elements.pageNumbersCheckbox?.addEventListener('change', () => {
@@ -1109,6 +1193,22 @@ export class UIManager {
         this.selectPageCell(index);
         this.emitter.emit('pageCropToggled', index);
       },
+      onZoomDelta: (index, delta) => {
+        this.selectPageCell(index);
+        this.emitter.emit('pageZoomDelta', { index, delta });
+      },
+      onPanChange: (index, pan, committed = false) => {
+        this.selectPageCell(index);
+        this.emitter.emit('pagePanChanged', { index, pan, committed });
+      },
+      onFramingReset: (index) => {
+        this.selectPageCell(index);
+        this.emitter.emit('pageFramingReset', index);
+      },
+      getPagePan: (index) => {
+        const t = paperSettings.pageTransforms?.[index];
+        return t?.pan ? { ...t.pan } : { x: 0, y: 0 };
+      },
       onDuplicate: (index) => {
         this.selectPageCell(index);
         this.emitter.emit('pageDuplicated', index);
@@ -1141,6 +1241,7 @@ export class UIManager {
         pageFlips: paperSettings.pageFlips,
         pageRotations: paperSettings.pageRotations,
         pageZooms: paperSettings.pageZooms,
+        pageTransforms: paperSettings.pageTransforms,
         guideToggles: paperSettings.guideToggles || this.guideToggles
       },
       handlers,

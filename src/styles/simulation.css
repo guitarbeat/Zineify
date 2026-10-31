@@ -648,11 +648,123 @@
   transform: rotateY(180deg);
 }
 
+/* ── 3D Booklet Page-Flipper Bar (Step 8) & 2D Spread Jump Pills ── */
+.fold-3d-booklet-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 0.75rem;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.5rem;
+  background: rgba(18, 18, 22, 0.92);
+  border: 1.5px solid var(--primary-vibrant);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+}
+
+.fold-3d-booklet-bar.hidden {
+  display: none !important;
+}
+
+.fold-3d-booklet-label {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #f4f4f5;
+  white-space: nowrap;
+  margin-right: 0.15rem;
+}
+
+.fold-3d-spread-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+}
+
+.fold-3d-spread-btn,
+.fold-3d-spread-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.22rem 0.5rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(39, 39, 42, 0.85);
+  color: #f4f4f5;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.fold-3d-spread-nav-btn {
+  padding: 0.18rem 0.3rem;
+}
+
+.fold-3d-spread-nav-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.fold-3d-spread-btn:hover:not(.is-active),
+.fold-3d-spread-nav-btn:hover:not(:disabled) {
+  border-color: var(--primary-vibrant);
+  background: rgba(230, 57, 70, 0.24);
+}
+
+.fold-3d-spread-btn.is-active {
+  background: var(--primary-vibrant);
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.booklet-spread-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.booklet-spread-dot {
+  padding: 0.2rem 0.52rem;
+  border-radius: 0.3rem;
+  border: 1.5px solid var(--border-color);
+  background: var(--surface-bg);
+  color: var(--accent-dark);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.67rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.booklet-spread-dot:hover:not(.is-active) {
+  border-color: var(--primary-vibrant);
+}
+
+.booklet-spread-dot.is-active {
+  background: var(--primary-vibrant);
+  border-color: var(--primary-vibrant);
+  color: #ffffff;
+}
+
 @media (max-width: 639px) {
   .fold-viewer-step-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .fold-guide-list {
     grid-template-columns: 1fr;
+  }
+  .fold-3d-booklet-label {
+    display: none;
   }
 }

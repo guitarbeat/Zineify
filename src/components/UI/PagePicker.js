@@ -25,6 +25,12 @@ export class PagePicker {
     pagePickerSelectEven?.addEventListener('click', () => this.applyPreset('even'));
     pagePickerSelectOdd?.addEventListener('click', () => this.applyPreset('odd'));
     pagePickerClear?.addEventListener('click', () => this.applyPreset('clear'));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.state) {
+        this.close(null);
+      }
+    });
   }
 
   open({ fileName, totalPages, selectionLimit, thumbnails }) {

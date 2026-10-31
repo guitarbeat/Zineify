@@ -97,6 +97,7 @@ export class Zine3DViewer {
     this.guideDefinitions = [
       { type: 'fold', orientation: 'vertical', x: -this.w, y: 0, length: this.h * 2 },
       { type: 'fold', orientation: 'vertical', x: 0, y: 0, length: this.h * 2 },
+      { type: 'fold', orientation: 'vertical', x: 0, y: 0, length: this.h * 2, isBackCenter: true },
       { type: 'fold', orientation: 'vertical', x: this.w, y: 0, length: this.h * 2 },
       { type: 'fold', orientation: 'horizontal', x: -1.5 * this.w, y: 0, length: this.w },
       { type: 'fold', orientation: 'horizontal', x: 1.5 * this.w, y: 0, length: this.w },
@@ -244,12 +245,13 @@ export class Zine3DViewer {
       stackDepthStep: this.stackDepthStep
     });
     const bounds = state.bounds;
-    const useFlatAxis = this.fallbackFoldProgress < 0.95;
+    const cutInspection = state.stages.cutInspection || 0;
+    const useFlatAxis = this.fallbackFoldProgress < 0.95 || cutInspection > 0.35;
     const modelWidth = Math.max(0.1, bounds.max.x - bounds.min.x);
     const modelHeight = useFlatAxis
       ? Math.max(0.1, bounds.max.y - bounds.min.y)
       : Math.max(0.1, bounds.max.z - bounds.min.z + this.h * 0.75);
-    const scale = Math.min((width * 0.72) / modelWidth, (height * 0.62) / modelHeight);
+    const scale = Math.min((width * 0.76) / modelWidth, (height * 0.66) / modelHeight);
     const centerX = (bounds.min.x + bounds.max.x) / 2;
     const centerY = useFlatAxis
       ? (bounds.min.y + bounds.max.y) / 2
@@ -295,6 +297,65 @@ export class Zine3DViewer {
       context.fillText(pageId === 1 ? 'Cover' : `P${pageId}`, 0, 0);
       context.restore();
     });
+
+    if (useFlatAxis) {
+      const slitHalfWidth = this.w * scale;
+      const maxOpenPx = cutInspection * (this.h * 0.115) * scale;
+      context.save();
+
+      if (maxOpenPx > 0.5) {
+        context.fillStyle = '#0b0b0e';
+        context.beginPath();
+        context.moveTo(-slitHalfWidth, 0);
+        context.quadraticCurveTo(0, -maxOpenPx * 1.35, slitHalfWidth, 0);
+        context.quadraticCurveTo(0, maxOpenPx * 1.35, -slitHalfWidth, 0);
+        context.closePath();
+        context.fill();
+      }
+
+      context.strokeStyle = '#e63946';
+      context.lineWidth = Math.max(2.5, scale * 0.024);
+      context.setLineDash([Math.max(6, scale * 0.08), Math.max(4, scale * 0.05)]);
+      if (maxOpenPx > 0.5) {
+        context.beginPath();
+        context.moveTo(-slitHalfWidth, 0);
+        context.quadraticCurveTo(0, -maxOpenPx * 1.35, slitHalfWidth, 0);
+        context.stroke();
+
+        context.beginPath();
+        context.moveTo(-slitHalfWidth, 0);
+        context.quadraticCurveTo(0, maxOpenPx * 1.35, slitHalfWidth, 0);
+        context.stroke();
+      } else {
+        context.beginPath();
+        context.moveTo(-slitHalfWidth, 0);
+        context.lineTo(slitHalfWidth, 0);
+        context.stroke();
+      }
+      context.setLineDash([]);
+
+      // Pinned stop-point dots at x = -w and x = +w
+      const dotR = Math.max(3.5, scale * 0.036);
+      context.fillStyle = '#e63946';
+      context.beginPath();
+      context.arc(-slitHalfWidth, 0, dotR, 0, Math.PI * 2);
+      context.arc(slitHalfWidth, 0, dotR, 0, Math.PI * 2);
+      context.fill();
+
+      if (cutInspection > 0.1) {
+        const badgeR = Math.max(11, scale * 0.13);
+        context.fillStyle = '#e63946';
+        context.beginPath();
+        context.arc(0, 0, badgeR, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = '#ffffff';
+        context.font = `700 ${Math.max(11, scale * 0.15)}px sans-serif`;
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText('✂', 0, 1);
+      }
+      context.restore();
+    }
     context.restore();
 
     const loadedPages = this.fallbackPages.reduce((count, page) => (page?.previewUrl || page?.sourceUrl ? count + 1 : count), 0);
@@ -305,14 +366,14 @@ export class Zine3DViewer {
   }
 
   createStageEnvironment() {
-    const floorGeometry = new THREE.PlaneGeometry(7.2, 5.2);
+    const floorGeometry = new THREE.PlaneGeometry(28, 28);
     const floorMaterial = new THREE.MeshStandardMaterial({
       color: 0x161618,
-      roughness: 0.94,
-      metalness: 0.02
+      roughness: 0.96,
+      metalness: 0.01
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.position.z = -0.08;
+    floor.position.z = -1.45;
     floor.receiveShadow = true;
     this.scene.add(floor);
     this.environmentMeshes.push({ mesh: floor, geometry: floorGeometry, material: floorMaterial });
@@ -325,7 +386,10 @@ export class Zine3DViewer {
       frontMat.map?.dispose?.();
       frontMat.dispose();
     }
-    page.backMaterial?.dispose?.();
+    if (page.backMaterial) {
+      page.backMaterial.map?.dispose?.();
+      page.backMaterial.dispose();
+    }
     page.frontGeometry?.dispose?.();
     page.backGeometry?.dispose?.();
   }
@@ -343,6 +407,10 @@ export class Zine3DViewer {
       const group = stacks[i]?.group;
       if (group) {
         objectsToRemove.push(group);
+      }
+      const topGroup = stacks[i]?.topGroup;
+      if (topGroup) {
+        objectsToRemove.push(topGroup);
       }
     }
 
@@ -367,9 +435,11 @@ export class Zine3DViewer {
       const materials = guide.materials;
       if (materials) {
         for (let j = 0; j < materials.length; j++) {
+          materials[j]?. map?.dispose?.();
           materials[j]?.dispose?.();
         }
       } else {
+        guide.material?.map?.dispose?.();
         guide.material?.dispose?.();
       }
       const geometries = guide.geometries;
@@ -419,7 +489,27 @@ export class Zine3DViewer {
     });
   }
 
-  _createPageBackMaterial() {
+  _createPageBackMaterial(url, isTop, textureLoader) {
+    if (url) {
+      const backTexture = textureLoader.load(url);
+      backTexture.colorSpace = THREE.SRGBColorSpace;
+      if (this.renderer?.capabilities?.getMaxAnisotropy) {
+        backTexture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+      }
+      // When top row folds 180 deg behind bottom row, upright orientation is preserved
+      if (!isTop) {
+        backTexture.center.set(0.5, 0.5);
+        backTexture.rotation = Math.PI;
+      }
+      return new THREE.MeshStandardMaterial({
+        map: backTexture,
+        color: 0xfaf7f0,
+        side: THREE.DoubleSide,
+        roughness: 0.88,
+        metalness: 0.01
+      });
+    }
+
     return new THREE.MeshStandardMaterial({
       color: this.sheetMaterialColor,
       side: THREE.DoubleSide,
@@ -431,7 +521,7 @@ export class Zine3DViewer {
   _createSinglePageMesh(index, config, pageData, frontGeometry, backGeometry, textureLoader) {
     const url = pageData?.previewUrl || pageData?.sourceUrl || null;
     const frontMaterial = this._createPageFrontMaterial(url, config.isTop, textureLoader);
-    const backMaterial = this._createPageBackMaterial();
+    const backMaterial = this._createPageBackMaterial(url, config.isTop, textureLoader);
 
     const yPosition = config.isTop ? this.h / 2 : -this.h / 2;
 
@@ -452,15 +542,83 @@ export class Zine3DViewer {
     group.add(frontMesh);
     group.add(backMesh);
 
+    const isInnerPanel = config.stackIndex === 1 || config.stackIndex === 2;
+    const frontBasePositions = new Float32Array(frontGeometry.attributes.position.array);
+    const backBasePositions = new Float32Array(backGeometry.attributes.position.array);
+
     return {
       id: index,
       group,
       config,
+      isInnerPanel,
       frontMaterial,
       backMaterial,
       frontGeometry,
-      backGeometry
+      backGeometry,
+      frontBasePositions,
+      backBasePositions,
+      lastSlitDeform: -1
     };
+  }
+
+  _updateInnerPanelSlitDeformation(page, cutInspection) {
+    if (!page?.isInnerPanel || !page.frontGeometry || !page.backGeometry) {
+      return;
+    }
+    if (Math.abs((page.lastSlitDeform ?? -1) - cutInspection) < 1e-4) {
+      return;
+    }
+    page.lastSlitDeform = cutInspection;
+
+    const maxOpenY = this.h * 0.115;
+    const stackCenterX = page.config.stackIndex === 1 ? -this.w / 2 : this.w / 2;
+    const isTop = page.config.isTop;
+
+    const deformGeometry = (geometry, basePositions, isBack) => {
+      const posAttr = geometry.attributes.position;
+      const arr = posAttr.array;
+      const count = posAttr.count;
+
+      for (let v = 0; v < count; v++) {
+        const idx = v * 3;
+        const baseX = basePositions[idx];
+        const baseY = basePositions[idx + 1];
+        const baseZ = basePositions[idx + 2];
+
+        if (cutInspection <= 1e-4) {
+          arr[idx] = baseX;
+          arr[idx + 1] = baseY;
+          arr[idx + 2] = baseZ;
+          continue;
+        }
+
+        const stackLocalX = isBack ? -baseX : baseX;
+        const sheetX = stackCenterX + stackLocalX;
+        const normalizedX = Math.min(1, Math.abs(sheetX) / this.w);
+        // Pinned strictly to 0 at |sheetX| = w (stop points), peaking at 1 at sheetX = 0
+        const arch = Math.cos(normalizedX * (Math.PI / 2));
+
+        // Distance from y = 0 slit edge: 0 at slit edge, 1 at outer top/bottom sheet edge
+        const distFromSlit = isTop
+          ? (baseY + this.h / 2) / this.h
+          : (this.h / 2 - baseY) / this.h;
+        // Strictly 0 at outer top/bottom sheet edge so the sheet perimeter stays 100% straight
+        const falloff = Math.pow(Math.max(0, 1 - distFromSlit), 2.2);
+
+        const dy = (isTop ? 1 : -1) * cutInspection * maxOpenY * arch * falloff;
+
+        arr[idx] = baseX;
+        arr[idx + 1] = baseY + dy;
+        // Keep Z strictly at baseZ (0) so rotating stacks around Y never splits the x = 0 hinge!
+        arr[idx + 2] = baseZ;
+      }
+
+      posAttr.needsUpdate = true;
+      geometry.computeVertexNormals();
+    };
+
+    deformGeometry(page.frontGeometry, page.frontBasePositions, false);
+    deformGeometry(page.backGeometry, page.backBasePositions, true);
   }
 
   createPageMeshes(previewPages) {
@@ -468,24 +626,30 @@ export class Zine3DViewer {
 
     MINI_ZINE_STACKS.forEach((stackDefinition) => {
       const group = new THREE.Group();
+      const topGroup = new THREE.Group();
       this.scene.add(group);
+      this.scene.add(topGroup);
       this.stacks.push({
         index: stackDefinition.index,
-        group
+        group,
+        topGroup
       });
     });
-
-    const frontGeometry = new THREE.PlaneGeometry(this.w, this.h, 4, 4);
-    const backGeometry = new THREE.PlaneGeometry(this.w, this.h, 1, 1);
 
     for (let i = 1; i <= 8; i++) {
       const config = this.panelDefinitions[i];
       const pageData = previewPages[i - 1];
       const stack = this.stacks[config.stackIndex];
+      const isInner = config.stackIndex === 1 || config.stackIndex === 2;
+      const segsX = isInner ? 20 : 4;
+      const segsY = isInner ? 14 : 4;
+      const frontGeometry = new THREE.PlaneGeometry(this.w, this.h, segsX, segsY);
+      const backGeometry = new THREE.PlaneGeometry(this.w, this.h, segsX, segsY);
 
       const page = this._createSinglePageMesh(i, config, pageData, frontGeometry, backGeometry, textureLoader);
-      page.stackGroup = stack?.group ?? null;
-      stack?.group.add(page.group);
+      const parentGroup = config.isTop ? stack?.topGroup : stack?.group;
+      page.stackGroup = parentGroup ?? null;
+      parentGroup?.add(page.group);
 
       this.pages.push(page);
     }
@@ -556,42 +720,81 @@ export class Zine3DViewer {
       stackDepthStep: this.stackDepthStep
     });
     this.debugFoldState = state;
+    const cutInspection = state.stages.cutInspection || 0;
+
+    const horizontalFold = state.stages.horizontalFold || 0;
+    const bookletClose = state.stages.bookletClose || 0;
+    const stripBackZ = -this.panelThickness * 2.4 * horizontalFold * (1 - bookletClose);
+    const bookletLayerStepX = this.panelThickness * 2.4 * bookletClose;
 
     for (let i = 0; i < this.stacks.length; i++) {
       const stack = this.stacks[i];
-      const stackState = state.stacks[stack.index];
-      if (!stackState) {
-        continue;
+      const bottomState = (state.bottomStacks || state.stacks)?.[stack.index];
+      const topState = (state.topStacks || state.stacks)?.[stack.index];
+      const stackDef = MINI_ZINE_STACKS[stack.index];
+
+      if (bottomState && stack.group) {
+        const bottomLayerX = (4.5 - stackDef.bottomPage) * bookletLayerStepX;
+        stack.group.position.set(
+          bottomState.pose.position.x + bottomLayerX,
+          bottomState.pose.position.y,
+          bottomState.pose.position.z
+        );
+        stack.group.rotation.set(
+          bottomState.pose.rotation.x,
+          bottomState.pose.rotation.y,
+          bottomState.pose.rotation.z,
+          'XYZ'
+        );
       }
 
-      stack.group.position.set(
-        stackState.pose.position.x,
-        stackState.pose.position.y,
-        stackState.pose.position.z
-      );
-      stack.group.rotation.set(
-        stackState.pose.rotation.x,
-        stackState.pose.rotation.y,
-        stackState.pose.rotation.z,
-        'XYZ'
-      );
+      if (topState && stack.topGroup) {
+        const topLayerX = (4.5 - stackDef.topPage) * bookletLayerStepX;
+        stack.topGroup.position.set(
+          topState.pose.position.x + topLayerX,
+          topState.pose.position.y,
+          topState.pose.position.z + stripBackZ
+        );
+        stack.topGroup.rotation.set(
+          topState.pose.rotation.x,
+          topState.pose.rotation.y,
+          topState.pose.rotation.z,
+          'XYZ'
+        );
+      }
     }
 
     for (let i = 0; i < this.pages.length; i++) {
       const page = this.pages[i];
-      const pageAngle = page.config.isTop ? state.topFoldAngle : -state.topFoldAngle;
-      page.group.rotation.set(pageAngle, 0, 0, 'XYZ');
+      const pageState = state.pages[page.id];
+      const offsetY = pageState?.localOffsetY ?? 0;
+      const liftZ = pageState?.localLiftZ ?? 0;
+      const rotX = pageState?.localRotationX ?? (page.config.isTop ? state.topFoldAngle : 0);
+
+      page.group.position.set(0, offsetY, liftZ);
+      page.group.rotation.set(rotX, 0, 0, 'XYZ');
+
+      if (page.isInnerPanel) {
+        this._updateInnerPanelSlitDeformation(page, cutInspection);
+      }
     }
     for (let i = 0; i < this.stacks.length; i++) {
-      this.stacks[i].group.updateMatrixWorld(true);
+      this.stacks[i].group?.updateMatrixWorld(true);
+      this.stacks[i].topGroup?.updateMatrixWorld(true);
     }
 
-    this.updateSeams();
-    this.updateGuides(state.stages.horizontalFold, state.stages.diamondOpen, state.stages.bookletClose);
-    this.updateCameraForProgress(progress);
+    this.updateSeams(cutInspection);
+    this.updateGuides(
+      state.stages.horizontalFold,
+      state.stages.diamondOpen,
+      state.stages.bookletClose,
+      cutInspection,
+      state
+    );
+    this.updateCameraForProgress(progress, cutInspection);
   }
 
-  updateCameraForProgress(progress) {
+  updateCameraForProgress(progress, cutInspection = 0) {
     if (this.isFallbackMode || !this.camera || !this.controls) {
       return;
     }
@@ -600,6 +803,11 @@ export class Zine3DViewer {
     if (!bounds) {
       return;
     }
+
+    const stages = this.debugFoldState?.stages || {};
+    const horizontalFold = stages.horizontalFold || 0;
+    const diamondOpen = stages.diamondOpen || 0;
+    const bookletClose = stages.bookletClose || 0;
 
     const center = {
       x: (bounds.min.x + bounds.max.x) / 2,
@@ -612,16 +820,30 @@ export class Zine3DViewer {
       bounds.max.z - bounds.min.z,
       1.6
     );
-    const stage = Math.max(0, Math.min(3, progress));
-    const yaw = -0.18 + (stage / 3) * 0.32;
-    const lift = 0.25 + (stage / 3) * 0.35;
-    const distance = Math.max(3.1, span * 1.38);
 
-    this.cameraTarget.set(center.x, center.y * 0.35, center.z);
+    // Frame flat sheet straight-on, elevate slightly on Fold Strip & Diamond to show the top diamond mouth,
+    // and orbit toward +X/+Z on Step 8 (Booklet) so Front Cover (Page 1) faces the viewer like step-7-done.png
+    const stripFocus = horizontalFold * (1 - diamondOpen * 0.4) * (1 - bookletClose);
+    const yaw = (-0.08 * (1 - horizontalFold))
+      + (0.18 * diamondOpen * (1 - bookletClose))
+      + (1.05 * bookletClose);
+    const lift = (0.22 * (1 - horizontalFold) * (1 - cutInspection * 0.75))
+      + (0.86 * stripFocus)
+      + (1.28 * diamondOpen * (1 - bookletClose))
+      + (0.38 * bookletClose);
+    const baseDistance = Math.max(3.2, span * 1.25);
+    const distance = baseDistance * (1 - cutInspection * 0.12);
+
+    const targetYScale = 0.35 + (0.6 * horizontalFold);
+    this.cameraTarget.set(
+      center.x,
+      center.y * targetYScale * (1 - cutInspection * 0.8),
+      center.z
+    );
     this.camera.position.set(
-      this.cameraTarget.x + Math.sin(yaw) * 0.7,
+      this.cameraTarget.x + Math.sin(yaw) * distance,
       this.cameraTarget.y + lift,
-      this.cameraTarget.z + distance
+      this.cameraTarget.z + Math.cos(yaw) * distance
     );
     this.controls.target.copy(this.cameraTarget);
     this.controls.update();
@@ -661,10 +883,10 @@ export class Zine3DViewer {
         isHorizontal ? this.guideWidth : guide.length
       );
       const material = new THREE.MeshBasicMaterial({
-        color: guide.type === 'slit' ? this.slitGuideColor : this.foldGuideColor,
+        color: this.foldGuideColor,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: guide.type === 'slit' ? 0.8 : 0.45
+        opacity: 0.45
       });
 
       const mesh = new THREE.Mesh(geometry, material);
@@ -681,45 +903,149 @@ export class Zine3DViewer {
     });
   }
 
+  _createScissorsIconTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Compact circular crimson badge with crisp white ring
+    ctx.fillStyle = '#e63946';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(128, 128, 108, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 116px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('✂', 128, 134);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
   createSlitGuide(guide) {
     const group = new THREE.Group();
-    const lineGeometry = new THREE.PlaneGeometry(guide.length, this.cutGuideWidth);
-    const capGeometry = new THREE.PlaneGeometry(this.cutGuideWidth * 1.15, this.cutGuideCapHeight);
-    const lineMaterial = new THREE.MeshBasicMaterial({
+    const geometries = [];
+    const materials = [];
+
+    // 1. Lens-shaped dark slit interior (pinned to 0 height at x = ±w, arched open in center)
+    const gapSegmentsX = 32;
+    const gapGeometry = new THREE.PlaneGeometry(guide.length, 1, gapSegmentsX, 1);
+    const gapBasePositions = new Float32Array(gapGeometry.attributes.position.array);
+    const gapMaterial = new THREE.MeshBasicMaterial({
+      color: 0x0b0b0e,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0
+    });
+    const gapMesh = new THREE.Mesh(gapGeometry, gapMaterial);
+    gapMesh.position.set(0, 0, this.panelThickness * 1.2);
+    gapMesh.visible = false;
+    group.add(gapMesh);
+    geometries.push(gapGeometry);
+    materials.push(gapMaterial);
+
+    // 2. Arched Upper & Lower Dashed Crimson Cut Lines (13 dashes across the 2 inner panels)
+    const dashCount = 13;
+    const dashRatio = 0.62;
+    const stepSpan = guide.length / dashCount;
+    const dashWidth = stepSpan * dashRatio;
+    const dashGeometry = new THREE.PlaneGeometry(dashWidth, this.cutGuideWidth * 1.05);
+    const dashMaterial = new THREE.MeshBasicMaterial({
       color: this.slitGuideColor,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.95
+      opacity: 0.96
     });
-    const capMaterial = new THREE.MeshBasicMaterial({
+    geometries.push(dashGeometry);
+    materials.push(dashMaterial);
+
+    const topDashGroup = new THREE.Group();
+    const bottomDashGroup = new THREE.Group();
+    const topDashes = [];
+    const bottomDashes = [];
+    for (let i = 0; i < dashCount; i++) {
+      const xPos = -guide.length / 2 + (i + 0.5) * stepSpan;
+      const topDash = new THREE.Mesh(dashGeometry, dashMaterial);
+      topDash.position.x = xPos;
+      topDash.userData.baseX = xPos;
+      topDashGroup.add(topDash);
+      topDashes.push(topDash);
+
+      const bottomDash = new THREE.Mesh(dashGeometry, dashMaterial);
+      bottomDash.position.x = xPos;
+      bottomDash.userData.baseX = xPos;
+      bottomDashGroup.add(bottomDash);
+      bottomDashes.push(bottomDash);
+    }
+    group.add(topDashGroup);
+    group.add(bottomDashGroup);
+
+    // 3. Subtle circular stop dots at x = -w and x = +w (no vertical red lines!)
+    const dotGeometry = new THREE.CircleGeometry(0.036, 24);
+    const dotMaterial = new THREE.MeshBasicMaterial({
       color: this.slitGuideColor,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.95
+      opacity: 0.98
     });
+    geometries.push(dotGeometry);
+    materials.push(dotMaterial);
 
-    const lineMesh = new THREE.Mesh(lineGeometry, lineMaterial);
-    const leftCap = new THREE.Mesh(capGeometry, capMaterial);
-    const rightCap = new THREE.Mesh(capGeometry, capMaterial);
-    leftCap.position.x = -guide.length / 2;
-    rightCap.position.x = guide.length / 2;
+    const leftDot = new THREE.Mesh(dotGeometry, dotMaterial);
+    const rightDot = new THREE.Mesh(dotGeometry, dotMaterial);
+    leftDot.position.set(-guide.length / 2, 0, 0.004);
+    rightDot.position.set(guide.length / 2, 0, 0.004);
+    group.add(leftDot);
+    group.add(rightDot);
 
-    group.add(lineMesh);
-    group.add(leftCap);
-    group.add(rightCap);
-    group.position.set(guide.x, guide.y, this.panelThickness * 2.5);
+    // 4. Compact Circular Scissors Icon Badge centered on the slit
+    const calloutGeo = new THREE.PlaneGeometry(0.26, 0.26);
+    const calloutTex = this._createScissorsIconTexture();
+    const calloutMat = new THREE.MeshBasicMaterial({
+      map: calloutTex,
+      transparent: true,
+      opacity: 0.96,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    geometries.push(calloutGeo);
+    materials.push(calloutMat);
+
+    const calloutMesh = new THREE.Mesh(calloutGeo, calloutMat);
+    calloutMesh.position.set(0, 0, 0.09);
+    group.add(calloutMesh);
+
+    group.position.set(guide.x, guide.y, this.panelThickness * 2.6);
 
     return {
       ...guide,
       mesh: group,
-      lineMesh,
-      endCaps: [leftCap, rightCap],
-      geometries: [lineGeometry, capGeometry],
-      materials: [lineMaterial, capMaterial]
+      gapMesh,
+      gapGeometry,
+      gapBasePositions,
+      gapMaterial,
+      topDashGroup,
+      bottomDashGroup,
+      topDashes,
+      bottomDashes,
+      endCaps: [leftDot, rightDot],
+      calloutMesh,
+      calloutMat,
+      geometries,
+      materials
     };
   }
 
-  updateSeams() {
+  updateSeams(cutInspection = 0) {
     const getAverageNormal = (pageA, pageB) => {
       const normalA = this.tmpVecC.set(0, 0, 1).applyQuaternion(pageA.group.quaternion);
       const normalB = this.tmpVecD.set(0, 0, 1).applyQuaternion(pageB.group.quaternion);
@@ -729,6 +1055,15 @@ export class Zine3DViewer {
     this.seams.forEach((seam) => {
       const { pageA, pageB } = seam;
       if (!pageA || !pageB) { return; }
+
+      // Hide seams between inner parted panels during Step 4 Cut inspection so the parted gap is clean
+      if (cutInspection > 0.1 && seam.orientation === 'horizontal') {
+        const involvesInner = pageA.isInnerPanel || pageB.isInnerPanel;
+        if (involvesInner) {
+          seam.mesh.visible = false;
+          return;
+        }
+      }
 
       if (seam.orientation === 'horizontal') {
         this.tmpStartLocal.set(this.w / 2, 0, 0);
@@ -766,26 +1101,164 @@ export class Zine3DViewer {
     });
   }
 
-  updateGuides(horizontalFold, diamondOpen, bookletClose) {
-    const foldFade = Math.max(0, 1 - Math.max(horizontalFold * 0.7, diamondOpen * 0.8, bookletClose));
-    const slitFade = Math.max(0.12, 1 - (bookletClose * 0.88));
+  updateGuides(horizontalFold, diamondOpen, bookletClose, cutInspection = 0, state = null) {
+    const foldFade = Math.max(0, 1 - Math.max(horizontalFold * 0.45, diamondOpen * 0.65, bookletClose));
+    const slitFade = Math.max(0, 1 - (bookletClose * 1.15));
+    const maxOpenY = this.h * 0.115;
+    const partedOffset = cutInspection * maxOpenY;
+
+    const halfCrease = state?.stages?.halfCrease || 0;
+    const quarterCrease = state?.stages?.quarterCrease || 0;
+
+    // Front inner stack (Page 7, stackIndex 1) & Back inner stack (Page 4, stackIndex 1)
+    const bottomStack1 = (state?.bottomStacks || state?.stacks)?.[1];
+    const bottomStack2 = (state?.bottomStacks || state?.stacks)?.[2];
+    const topStack1 = (state?.topStacks || state?.stacks)?.[1];
+    const topStack2 = (state?.topStacks || state?.stacks)?.[2];
+
+    const frontRotY1 = bottomStack1?.pose?.rotation?.y || 0;
+    const frontRotY2 = bottomStack2?.pose?.rotation?.y || 0;
+    const backRotY1 = topStack1?.pose?.rotation?.y || 0;
+    const backRotY2 = topStack2?.pose?.rotation?.y || 0;
+
+    const frontStack1Z = bottomStack1?.pose?.position?.z || 0;
+    const backStack1Z = topStack1?.pose?.position?.z || 0;
+
+    const frontCenterHingeZ = frontStack1Z - (this.w / 2) * Math.sin(frontRotY1);
+    const frontStopPointZ = frontStack1Z + (this.w / 2) * Math.sin(frontRotY1);
+    const backCenterHingeZ = backStack1Z - (this.w / 2) * Math.sin(backRotY1);
+    const backStopPointZ = backStack1Z + (this.w / 2) * Math.sin(backRotY1);
+
+    const cosInner = Math.max(0, Math.cos(frontRotY1));
 
     this.guides.forEach((guide) => {
       if (guide.type === 'slit') {
         guide.mesh.visible = slitFade > 0.02;
-        guide.materials?.forEach((material) => {
-          material.opacity = 0.95 * slitFade;
-        });
 
-        const slitSpread = 1 + (diamondOpen * 0.12);
-        guide.lineMesh.scale.set(slitSpread, 1 + (horizontalFold * 0.08), 1);
-        const endOffset = (guide.length * slitSpread) / 2;
-        guide.endCaps?.[0]?.position.setX(-endOffset);
-        guide.endCaps?.[1]?.position.setX(endOffset);
+        // Update each dash along both the front cut edge (Pages 7 & 8) and back cut edge (Pages 4 & 3)
+        if (guide.topDashes && guide.bottomDashes) {
+          for (let i = 0; i < guide.topDashes.length; i++) {
+            const topDash = guide.topDashes[i];
+            const bottomDash = guide.bottomDashes[i];
+            const baseX = topDash.userData.baseX || 0;
+            const normX = Math.min(1, Math.abs(baseX) / this.w);
+            const arch = Math.cos(normX * (Math.PI / 2));
+            const slope = -(Math.PI / (2 * this.w)) * Math.sin((baseX / this.w) * (Math.PI / 2)) * partedOffset;
+            const angle = Math.atan(slope);
+            const yOff = partedOffset * arch;
+
+            // Back cut edge (Pages 4 & 3) bows to backCenterHingeZ; Front cut edge (Pages 7 & 8) bows to frontCenterHingeZ
+            const zBack = backCenterHingeZ + (backStopPointZ - backCenterHingeZ) * normX + 0.003;
+            const zFront = frontCenterHingeZ + (frontStopPointZ - frontCenterHingeZ) * normX + 0.003;
+
+            topDash.position.set(baseX * cosInner, yOff, zBack);
+            topDash.rotation.set(0, baseX < 0 ? backRotY1 : backRotY2, angle);
+
+            bottomDash.position.set(baseX * cosInner, -yOff, zFront);
+            bottomDash.rotation.set(0, baseX < 0 ? frontRotY1 : frontRotY2, -angle);
+          }
+        }
+
+        // Update lens-shaped dark slit interior vertices (pinned to 0 at x = ±w) during flat cut inspection
+        if (guide.gapMesh && guide.gapGeometry && guide.gapBasePositions && guide.gapMaterial) {
+          const showGap = cutInspection > 0.02 && horizontalFold < 0.2;
+          guide.gapMesh.visible = showGap;
+          if (showGap) {
+            const posAttr = guide.gapGeometry.attributes.position;
+            const arr = posAttr.array;
+            const baseArr = guide.gapBasePositions;
+            for (let v = 0; v < posAttr.count; v++) {
+              const idx = v * 3;
+              const bx = baseArr[idx];
+              const by = baseArr[idx + 1];
+              const normX = Math.min(1, Math.abs(bx) / this.w);
+              const arch = Math.cos(normX * (Math.PI / 2));
+              const signY = by >= 0 ? 1 : -1;
+              const zOff = frontCenterHingeZ + (frontStopPointZ - frontCenterHingeZ) * normX;
+              arr[idx] = bx * cosInner;
+              arr[idx + 1] = signY * partedOffset * arch;
+              arr[idx + 2] = zOff;
+            }
+            posAttr.needsUpdate = true;
+            guide.gapMaterial.opacity = Math.min(0.95, cutInspection * 0.95);
+          }
+        }
+
+        // Pinned circular endpoint stop dots at (-w * cosInner, 0) and (+w * cosInner, 0)
+        const endOffset = (guide.length * cosInner) / 2;
+        const dotScale = (1 + (cutInspection * 0.35)) * Math.max(0.01, slitFade);
+        guide.endCaps?.[0]?.position.set(-endOffset, 0, frontStopPointZ + 0.005);
+        guide.endCaps?.[1]?.position.set(endOffset, 0, frontStopPointZ + 0.005);
+        guide.endCaps?.[0]?.scale.set(dotScale, dotScale, 1);
+        guide.endCaps?.[1]?.scale.set(dotScale, dotScale, 1);
+
+        // Compact circular scissors badge centered on the slit (only when sheet is flat/cutting)
+        if (guide.calloutMesh && guide.calloutMat) {
+          const showCallout = (cutInspection > 0.04 || (horizontalFold < 0.2 && diamondOpen < 0.05)) && bookletClose < 0.05;
+          guide.calloutMesh.visible = showCallout;
+          const baseOpacity = cutInspection > 0.04
+            ? Math.min(1, 0.5 + cutInspection * 0.6)
+            : 0.78 * Math.max(0, 1 - horizontalFold * 5);
+          guide.calloutMat.opacity = Math.max(0, baseOpacity * slitFade);
+          const scale = 0.85 + (cutInspection * 0.22);
+          guide.calloutMesh.scale.set(scale, scale, 1);
+          guide.calloutMesh.position.set(0, 0, frontCenterHingeZ + 0.06);
+        }
       } else {
-        guide.mesh.visible = foldFade > 0.02;
-        guide.material.opacity = 0.45 * foldFade;
-        guide.mesh.scale.set(1, 1, 1);
+        const isHorizontalGuide = guide.orientation === 'horizontal';
+        const isCenterVertical = guide.orientation === 'vertical' && Math.abs(guide.x) < 0.01;
+        const isOuterVertical = guide.orientation === 'vertical' && Math.abs(Math.abs(guide.x) - this.w) < 0.05;
+        const isHighlightedCenter = isCenterVertical && halfCrease > 0.08;
+        const isHighlightedOuter = isOuterVertical && quarterCrease > 0.08;
+
+        if (isHorizontalGuide) {
+          // Hide outer horizontal fold guides once the sheet folds lengthwise along y = 0
+          const horizFade = Math.max(0, 1 - horizontalFold * 2.5) * foldFade;
+          guide.mesh.visible = horizFade > 0.02;
+          guide.material.color.setHex(this.foldGuideColor);
+          guide.material.opacity = 0.45 * horizFade;
+          guide.mesh.position.set(guide.x, guide.y, this.panelThickness * 2);
+          return;
+        }
+
+        // Vertical crease guides shrink from height 2h (y in [-h, +h]) to height h (y in [-h, 0])
+        // as the top half of the sheet folds down behind the bottom half, so they NEVER stick up into empty air!
+        const verticalScaleY = 1 - (0.5 * horizontalFold);
+        const verticalCenterY = -this.h * 0.5 * horizontalFold;
+
+        if (guide.isBackCenter) {
+          const showBackCrease = horizontalFold > 0.85 && bookletClose < 0.85;
+          guide.mesh.visible = showBackCrease;
+          if (showBackCrease) {
+            guide.material.color.setHex(this.foldGuideColor);
+            guide.material.opacity = 0.52 * foldFade;
+            guide.mesh.scale.set(1, verticalScaleY, 1);
+            guide.mesh.position.set(0, verticalCenterY, backCenterHingeZ + this.panelThickness * 2.5);
+          }
+          return;
+        }
+
+        guide.mesh.visible = foldFade > 0.02 && bookletClose < 0.85;
+        if (isHighlightedCenter) {
+          guide.material.color.setHex(0xf59e0b);
+          guide.material.opacity = Math.min(0.95, 0.45 + halfCrease * 0.55);
+          guide.mesh.scale.set(2.2, verticalScaleY, 1);
+          guide.mesh.position.set(0, verticalCenterY, frontCenterHingeZ + this.panelThickness * 2.5);
+        } else if (isHighlightedOuter) {
+          guide.material.color.setHex(0xf59e0b);
+          guide.material.opacity = Math.min(0.95, 0.45 + quarterCrease * 0.55);
+          guide.mesh.scale.set(2.2, verticalScaleY, 1);
+          guide.mesh.position.set(guide.x * cosInner, verticalCenterY, frontStopPointZ + this.panelThickness * 2.5);
+        } else {
+          guide.material.color.setHex(this.foldGuideColor);
+          guide.material.opacity = 0.45 * foldFade;
+          guide.mesh.scale.set(1, verticalScaleY, 1);
+          const zPos = isCenterVertical
+            ? frontCenterHingeZ + this.panelThickness * 2.5
+            : (isOuterVertical ? frontStopPointZ + this.panelThickness * 2.5 : this.panelThickness * 2.5);
+          const xPos = isOuterVertical ? guide.x * cosInner : guide.x;
+          guide.mesh.position.set(xPos, verticalCenterY, zPos);
+        }
       }
     });
   }

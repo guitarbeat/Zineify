@@ -166,6 +166,12 @@ export class LayoutRenderer {
       cutLine.style.top = `${(afterRow / template.grid.rows) * 100}%`;
       cutLine.style.left = `${fromPct}%`;
       cutLine.style.right = `${100 - toPct}%`;
+
+      const cutLabel = document.createElement('span');
+      cutLabel.className = 'sheet-cut-line-label';
+      cutLabel.textContent = '✂ Cut slit';
+      cutLine.appendChild(cutLabel);
+
       grid.appendChild(cutLine);
     }
 
@@ -255,7 +261,15 @@ export class LayoutRenderer {
       grid.style.width = 'auto';
       grid.style.height = 'auto';
     } else {
-      grid.style.position = 'relative';
+      sheetWrapper.removeAttribute('data-has-margin');
+      grid.style.position = 'absolute';
+      grid.style.inset = '0';
+      grid.style.left = '0';
+      grid.style.right = '0';
+      grid.style.top = '0';
+      grid.style.bottom = '0';
+      grid.style.width = '100%';
+      grid.style.height = '100%';
     }
 
     return { sheetWrapper, grid };

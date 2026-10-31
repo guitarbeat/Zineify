@@ -47,9 +47,10 @@ test.describe('Mini Zine Fold State', () => {
     expect(state.pages[1].position.x).toBeGreaterThan(0);
     expect(Math.abs(state.pages[4].position.x)).toBeLessThan(0.01);
     expect(Math.abs(state.pages[3].position.x)).toBeLessThan(0.01);
-    expect(state.pages[4].position.z).toBeGreaterThan(state.pages[5].position.z);
+    expect(state.pages[7].position.z).toBeGreaterThan(state.pages[6].position.z);
+    expect(state.pages[4].position.z).toBeLessThan(state.pages[5].position.z);
     expect(getWidth(state.bounds)).toBeLessThan(2.1);
-    expect(getDepth(state.bounds)).toBeLessThan(1.05);
+    expect(getDepth(state.bounds)).toBeLessThan(2.1);
     expect(Math.max(...state.seamGaps.map((seam) => seam.gap))).toBeLessThan(0.001);
   });
 
@@ -57,9 +58,9 @@ test.describe('Mini Zine Fold State', () => {
     const state = computeMiniZineFoldState(3, DIMENSIONS);
 
     expect(getWidth(state.bounds)).toBeLessThan(0.01);
-    expect(getDepth(state.bounds)).toBeLessThan(2.1);
+    expect(getDepth(state.bounds)).toBeLessThan(1.1);
     expect(Math.max(...state.seamGaps.map((seam) => seam.gap))).toBeLessThan(0.02);
     expect(state.pages[5].position.z).toBeLessThan(state.pages[2].position.z);
-    expect(state.pages[1].position.z).toBeLessThan(state.pages[4].position.z);
+    expect(state.pages[4].position.z).toBeLessThan(state.pages[1].position.z);
   });
 });

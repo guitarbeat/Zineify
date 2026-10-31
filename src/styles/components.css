@@ -97,9 +97,11 @@
 
 .upload-quick-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.3rem;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 0.36rem;
   width: 100%;
+  height: 100%;
 }
 
 .quick-slot-action-btn {
@@ -715,32 +717,150 @@ select:focus, input:focus {
   transition: width 0.25s ease;
 }
 
-.toast-container { pointer-events: none; }
-.toast {
-  background-color: var(--newsprint-bg);
-  background-image: var(--texture-halftone), var(--texture-paper);
-  background-size: 8px 8px, 160px 160px;
-  clip-path: var(--clip-deckle-panel);
-  filter: var(--deckle-filter);
-  border: none;
-  border-left: 4px solid var(--primary-vibrant);
-  box-shadow: inset 0 0 0 1.5px var(--deckle-inner-rim);
-  border-radius: 0;
-  padding: 0.9rem 1.1rem;
-  width: 300px;
-  pointer-events: none;
+/* ── Divider Toast Notification Pill ── */
+.vsplit-toast-container,
+.toast-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  transform: translateX(120%);
-  transition: transform 0.25s ease, opacity 0.25s ease;
-  position: relative;
-  opacity: 0;
-  color: var(--accent-dark);
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 45;
+  max-width: calc(100% - 22rem);
 }
-.toast-visible {
-  transform: translateX(0);
+
+.toast {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.85rem;
+  max-height: 1.85rem;
+  padding: 0.15rem 0.55rem 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background-color: #1e1b19;
+  border: 1.5px solid var(--border-strong);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1), transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  white-space: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.toast.toast-visible {
   opacity: 1;
+  transform: scale(1);
+}
+
+.toast-info {
+  border-color: rgba(224, 36, 36, 0.85);
+  box-shadow: 0 4px 14px rgba(224, 36, 36, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.toast-success {
+  border-color: rgba(22, 163, 74, 0.85);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.toast-error {
+  border-color: rgba(220, 38, 38, 0.95);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.toast-warning {
+  border-color: rgba(217, 119, 6, 0.85);
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toast-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.toast-info .toast-icon svg {
+  color: var(--primary-vibrant);
+}
+
+.toast-success .toast-icon svg {
+  color: #22c55e;
+}
+
+.toast-error .toast-icon svg {
+  color: #ef4444;
+}
+
+.toast-warning .toast-icon svg {
+  color: #f59e0b;
+}
+
+.toast-content {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.32rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toast-title {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.toast-message {
+  font-family: var(--font-sans);
+  font-size: 0.69rem;
+  font-weight: 500;
+  color: #c9c2b5;
+  white-space: nowrap;
+}
+
+.toast-message::before {
+  content: "·";
+  margin-right: 0.32rem;
+  opacity: 0.65;
+}
+
+.toast-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  padding: 0;
+  margin-left: 0.25rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 0.82rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.toast-close:hover {
+  background: var(--primary-vibrant);
+  border-color: #ffffff;
 }
 
 /* Page Picker Modal Layout */

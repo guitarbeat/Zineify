@@ -2,6 +2,7 @@ import { GridStack } from '#gridStackImports';
 
 const STORAGE_KEY_DESKTOP = 'zine-grid-fit-v10';
 const STORAGE_KEY_MOBILE = 'zine-grid-mobile-fit-v10';
+const VSPLIT_STORAGE_KEY = 'zine-vsplit-state-v2';
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_CELL_HEIGHT = 24;
 
@@ -29,9 +30,26 @@ export const MOBILE_DEFAULT_LAYOUT = [
   { id: 'canvas', x: 0, y: 12, w: 12, h: 8 }
 ];
 
+export const VSPLIT_DETENTS = [
+  { id: 'max', fraction: 0.92, label: 'Min' },
+  { id: 'studio', fraction: 0.76, label: 'Sheet' },
+  { id: 'half', fraction: 0.50, label: 'Half' },
+  { id: 'controls', fraction: 0.35, label: 'Controls' },
+  { id: 'min-canvas', fraction: 0.08, label: 'Min' }
+];
+
+const vsplitState = {
+  axis: 'vertical', // 'vertical' (Top Sheet / Bottom Controls) | 'horizontal' (Left Controls / Right Sheet)
+  fraction: 0.76,
+  lastExpandedFraction: 0.76,
+  activeTab: 'upload',
+  isPeeking: false
+};
+
 let grid = null;
 let gridEl = null;
 let isRelayouting = false;
+let vsplitInitialized = false;
 const expandedHeightsMemory = { ...DEFAULT_CARD_HEIGHTS };
 
 function isMobile() {
@@ -83,6 +101,352 @@ function saveLayout() {
   }
 }
 
+function saveVSplitState() {
+  try {
+    localStorage.setItem(VSPLIT_STORAGE_KEY, JSON.stringify({
+      axis: vsplitState.axis,
+      fraction: vsplitState.fraction,
+      lastExpandedFraction: vsplitState.lastExpandedFraction,
+      activeTab: vsplitState.activeTab
+    }));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function loadVSplitState() {
+  try {
+    const raw = localStorage.getItem(VSPLIT_STORAGE_KEY);
+    if (!raw) { return; }
+    const parsed = JSON.parse(raw);
+    if (parsed && (parsed.axis === 'vertical' || parsed.axis === 'horizontal')) {
+      vsplitState.axis = parsed.axis;
+    }
+    if (parsed && typeof parsed.fraction === 'number' && Number.isFinite(parsed.fraction)) {
+      vsplitState.fraction = Math.min(0.94, Math.max(0.06, parsed.fraction));
+    }
+    if (parsed && typeof parsed.lastExpandedFraction === 'number' && Number.isFinite(parsed.lastExpandedFraction)) {
+      vsplitState.lastExpandedFraction = Math.min(0.85, Math.max(0.25, parsed.lastExpandedFraction));
+    }
+    if (parsed && ['upload', 'settings', 'display'].includes(parsed.activeTab)) {
+      vsplitState.activeTab = parsed.activeTab;
+    }
+  } catch {
+    // Ignore corrupt state
+  }
+}
+
+function applyRubberBandFraction(rawFraction) {
+  const minBound = 0.08;
+  const maxBound = 0.92;
+  if (rawFraction < minBound) {
+    const excess = minBound - rawFraction;
+    return Math.max(0.03, minBound - Math.tanh(excess * 5) * 0.05);
+  }
+  if (rawFraction > maxBound) {
+    const excess = rawFraction - maxBound;
+    return Math.min(0.97, maxBound + Math.tanh(excess * 5) * 0.05);
+  }
+  return rawFraction;
+}
+
+function findNearestDetent(fraction) {
+  if (fraction >= 0.86) {
+    return 0.92; // Controls collapsed into mini-overlay pill
+  }
+  if (fraction <= 0.16) {
+    return 0.08; // Canvas collapsed into mini-overlay pill
+  }
+  const snapTargets = [0.35, 0.50, 0.76];
+  for (const target of snapTargets) {
+    if (Math.abs(fraction - target) < 0.045) {
+      return target;
+    }
+  }
+  return Math.min(0.84, Math.max(0.22, Number(fraction.toFixed(3))));
+}
+
+export function setActiveControlTab(tabId) {
+  if (['upload', 'settings', 'display'].includes(tabId)) {
+    vsplitState.activeTab = tabId;
+  }
+
+  // All three control sections are visible simultaneously in the bottom panel
+  const panes = document.querySelectorAll('.vsplit-control-pane');
+  panes.forEach((pane) => {
+    pane.classList.add('is-active');
+    pane.removeAttribute('hidden');
+  });
+
+  if (vsplitState.fraction >= 0.85) {
+    setVSplitFraction(vsplitState.lastExpandedFraction || 0.76, { animate: true });
+  }
+
+  saveVSplitState();
+}
+
+export function setVSplitAxis(axis) {
+  const nextAxis = axis === 'horizontal' ? 'horizontal' : 'vertical';
+  vsplitState.axis = nextAxis;
+  applyVSplitUI({ animate: true });
+  saveVSplitState();
+  requestAnimationFrame(() => {
+    window.dispatchEvent(new Event('resize'));
+  });
+}
+
+export function setVSplitFraction(fraction, { animate = false, isDragging = false } = {}) {
+  const workspaceEl = document.getElementById('vsplit-workspace');
+  if (!workspaceEl) { return; }
+
+  const clamped = isDragging
+    ? applyRubberBandFraction(fraction)
+    : Math.min(0.92, Math.max(0.08, fraction));
+
+  vsplitState.fraction = clamped;
+  if (clamped > 0.2 && clamped < 0.82) {
+    vsplitState.lastExpandedFraction = clamped;
+  }
+
+  workspaceEl.classList.toggle('is-vsplit-animating', Boolean(animate));
+  applyVSplitUI({ isDragging });
+
+  if (!isDragging) {
+    saveVSplitState();
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+  }
+}
+
+function applyVSplitUI({ isDragging = false } = {}) {
+  const workspaceEl = document.getElementById('vsplit-workspace');
+  const canvasPane = document.getElementById('workspace-canvas-panel');
+  const controlsPane = document.getElementById('workspace-sidebar');
+  const barEl = document.getElementById('vsplit-bar');
+  const readoutEl = document.getElementById('vsplit-detent-readout');
+  const axisIconEl = document.getElementById('vsplit-axis-icon');
+
+  if (!workspaceEl) { return; }
+
+  const { axis, fraction } = vsplitState;
+  workspaceEl.setAttribute('data-vsplit-axis', axis);
+  workspaceEl.style.setProperty('--vsplit-fraction', String(fraction));
+
+  document.body.classList.toggle('vsplit-axis-vertical', axis === 'vertical');
+  document.body.classList.toggle('vsplit-axis-columns', axis === 'horizontal');
+
+  if (barEl) {
+    barEl.setAttribute('aria-orientation', axis === 'vertical' ? 'horizontal' : 'vertical');
+  }
+  if (axisIconEl) {
+    axisIconEl.textContent = axis === 'vertical' ? 'vertical_split' : 'horizontal_split';
+  }
+
+  const isControlsCollapsed = fraction >= 0.85;
+  const isCanvasCollapsed = fraction <= 0.15;
+
+  workspaceEl.classList.toggle('is-controls-mini', isControlsCollapsed);
+  workspaceEl.classList.toggle('is-canvas-mini', isCanvasCollapsed);
+  controlsPane?.classList.toggle('is-mini-overlay', isControlsCollapsed);
+  canvasPane?.classList.toggle('is-mini-overlay', isCanvasCollapsed);
+
+  // Overshoot peek-behind feedback when dragging past bounds
+  const isOvershooting = isDragging && (fraction < 0.085 || fraction > 0.915);
+  document.body.classList.toggle('is-peeking-bg', vsplitState.isPeeking || isOvershooting);
+
+  if (readoutEl) {
+    if (isControlsCollapsed) {
+      readoutEl.textContent = 'Min';
+    } else if (isCanvasCollapsed) {
+      readoutEl.textContent = 'Min';
+    } else if (Math.abs(fraction - 0.76) < 0.04) {
+      readoutEl.textContent = 'Sheet';
+    } else if (Math.abs(fraction - 0.50) < 0.04) {
+      readoutEl.textContent = 'Half';
+    } else if (Math.abs(fraction - 0.35) < 0.04) {
+      readoutEl.textContent = 'Controls';
+    } else {
+      readoutEl.textContent = fraction > 0.62 ? 'Sheet' : (fraction < 0.42 ? 'Controls' : 'Half');
+    }
+  }
+
+  // Highlight matching preset chip
+  document.querySelectorAll('[data-vsplit-detent]').forEach((chip) => {
+    const val = chip.dataset.vsplitDetent;
+    const active = val === 'min'
+      ? isControlsCollapsed
+      : (!isControlsCollapsed && !isCanvasCollapsed && Math.abs(fraction - parseFloat(val)) < 0.04);
+    chip.classList.toggle('is-active', active);
+    chip.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function initVSplitController() {
+  if (vsplitInitialized) { return; }
+  const workspaceEl = document.getElementById('vsplit-workspace');
+  const barEl = document.getElementById('vsplit-bar');
+  if (!workspaceEl || !barEl) { return; }
+
+  vsplitInitialized = true;
+  loadVSplitState();
+  setActiveControlTab(vsplitState.activeTab);
+  applyVSplitUI();
+
+  let dragging = false;
+
+  const startDrag = (e) => {
+    if (e.target.closest('button, a, input, select, .vsplit-trailing-group, .vsplit-leading-group, .vsplit-toast-container, .toast')) {
+      return;
+    }
+    if (isMobile()) { return; }
+    e.preventDefault();
+    dragging = true;
+    barEl.classList.add('is-dragging');
+    document.body.classList.add('is-vsplit-dragging');
+    workspaceEl.classList.remove('is-vsplit-animating');
+    if (barEl.setPointerCapture && e.pointerId !== undefined) {
+      try { barEl.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+    }
+  };
+
+  const onMove = (e) => {
+    if (!dragging) { return; }
+    const rect = workspaceEl.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) { return; }
+
+    let rawFraction;
+    if (vsplitState.axis === 'vertical') {
+      rawFraction = (e.clientY - rect.top) / rect.height;
+    } else {
+      // In horizontal mode, Controls are on Left and Canvas is on Right, or Canvas fraction is (1 - leftRatio)
+      const pointerRatio = (e.clientX - rect.left) / rect.width;
+      rawFraction = 1 - pointerRatio;
+    }
+    setVSplitFraction(rawFraction, { animate: false, isDragging: true });
+  };
+
+  const endDrag = () => {
+    if (!dragging) { return; }
+    dragging = false;
+    barEl.classList.remove('is-dragging');
+    document.body.classList.remove('is-vsplit-dragging');
+    const snapped = findNearestDetent(vsplitState.fraction);
+    setVSplitFraction(snapped, { animate: true, isDragging: false });
+  };
+
+  barEl.addEventListener('pointerdown', startDrag);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+
+  // Double-click grabber to toggle between collapsed controls and restored split
+  const grabberEl = document.getElementById('vsplit-grabber');
+  grabberEl?.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    if (vsplitState.fraction >= 0.85 || vsplitState.fraction <= 0.15) {
+      setVSplitFraction(vsplitState.lastExpandedFraction || 0.68, { animate: true });
+    } else {
+      setVSplitFraction(0.92, { animate: true });
+    }
+  });
+
+  // Keyboard accessibility on separator
+  barEl.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      setVSplitFraction(vsplitState.fraction - 0.05, { animate: true });
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      setVSplitFraction(vsplitState.fraction + 0.05, { animate: true });
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (vsplitState.fraction >= 0.85) {
+        setVSplitFraction(vsplitState.lastExpandedFraction || 0.68, { animate: true });
+      } else {
+        setVSplitFraction(0.92, { animate: true });
+      }
+    }
+  });
+
+  // Delegated click handler for Detent presets, Axis toggle, Peek toggle, Mini-Overlay restore, and Control Tabs
+  document.addEventListener('click', (e) => {
+    const detentBtn = e.target.closest('[data-vsplit-detent]');
+    if (detentBtn) {
+      e.preventDefault();
+      const val = detentBtn.dataset.vsplitDetent;
+      if (val === 'min') {
+        if (vsplitState.fraction >= 0.85) {
+          setVSplitFraction(vsplitState.lastExpandedFraction || 0.68, { animate: true });
+        } else {
+          setVSplitFraction(0.92, { animate: true });
+        }
+      } else {
+        const num = parseFloat(val);
+        if (Number.isFinite(num)) {
+          setVSplitFraction(num, { animate: true });
+        }
+      }
+      return;
+    }
+
+    const restoreBtn = e.target.closest('[data-vsplit-restore]');
+    if (restoreBtn) {
+      e.preventDefault();
+      setVSplitFraction(vsplitState.lastExpandedFraction || 0.68, { animate: true });
+      return;
+    }
+
+    const quickSampleBtn = e.target.closest('[data-vsplit-quick="sample"]');
+    if (quickSampleBtn) {
+      e.preventDefault();
+      document.getElementById('load-sample-zine-btn')?.click();
+      return;
+    }
+
+    const axisBtn = e.target.closest('#vsplit-axis-toggle');
+    if (axisBtn) {
+      e.preventDefault();
+      setVSplitAxis(vsplitState.axis === 'vertical' ? 'horizontal' : 'vertical');
+      return;
+    }
+
+    const peekBtn = e.target.closest('#vsplit-peek-toggle');
+    if (peekBtn) {
+      e.preventDefault();
+      vsplitState.isPeeking = !vsplitState.isPeeking;
+      peekBtn.classList.toggle('is-active', vsplitState.isPeeking);
+      peekBtn.setAttribute('aria-pressed', String(vsplitState.isPeeking));
+      document.body.classList.toggle('is-peeking-bg', vsplitState.isPeeking);
+      return;
+    }
+
+    const tabBtn = e.target.closest('[data-control-tab]');
+    if (tabBtn) {
+      e.preventDefault();
+      setActiveControlTab(tabBtn.dataset.controlTab);
+    }
+  });
+
+  // Arrow key navigation on segmented tablist
+  const tabList = document.querySelector('.vsplit-segmented-bar');
+  tabList?.addEventListener('keydown', (e) => {
+    const order = ['upload', 'settings', 'display'];
+    const idx = order.indexOf(vsplitState.activeTab);
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const next = order[(idx + 1) % order.length];
+      setActiveControlTab(next);
+      document.getElementById(`vsplit-tab-${next}`)?.focus();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prev = order[(idx - 1 + order.length) % order.length];
+      setActiveControlTab(prev);
+      document.getElementById(`vsplit-tab-${prev}`)?.focus();
+    }
+  });
+}
+
 export function syncCardCollapseUI() {
   if (!gridEl) { return; }
 
@@ -108,6 +472,9 @@ export function syncCardCollapseUI() {
 }
 
 export function toggleCardCollapse(cardId) {
+  if (['upload', 'settings', 'display'].includes(cardId)) {
+    setActiveControlTab(cardId);
+  }
   const cardEl = document.getElementById(`card-${cardId}`) || document.querySelector(`[data-card-id="${cardId}"]`);
   if (!cardEl) { return; }
 
@@ -144,7 +511,22 @@ export function toggleCardCollapse(cardId) {
 }
 
 export function resetToDefaults() {
-  if (!grid) { return; }
+  vsplitState.axis = 'vertical';
+  vsplitState.fraction = 0.68;
+  vsplitState.lastExpandedFraction = 0.68;
+  vsplitState.activeTab = 'upload';
+  vsplitState.isPeeking = false;
+  document.body.classList.remove('is-peeking-bg');
+  setActiveControlTab('upload');
+  applyVSplitUI({ animate: true });
+  saveVSplitState();
+
+  if (!grid) {
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    return;
+  }
   try {
     localStorage.removeItem(STORAGE_KEY_DESKTOP);
     localStorage.removeItem(STORAGE_KEY_MOBILE);
@@ -221,7 +603,6 @@ function loadLayout() {
     }
 
     if (savedItems.length === 0 || savedItems.length < VALID_IDS.size) {
-      // Missing items or legacy layout, add missing items from defaults
       const baseLayout = getDefaultLayout();
       baseLayout.forEach((layoutItem) => {
         if (!savedIds.has(layoutItem.id)) {
@@ -287,7 +668,6 @@ function setInteractionMode() {
 }
 
 function initCardListeners() {
-  // Collapse toggle button clicks
   document.addEventListener('click', (e) => {
     const collapseBtn = e.target.closest('[data-collapse-card]');
     if (collapseBtn) {
@@ -307,21 +687,6 @@ function initCardListeners() {
       resetToDefaults();
     }
   });
-
-  // Double click header to toggle collapse
-  document.addEventListener('dblclick', (e) => {
-    if (e.target.closest('button, input, select, label, a, .canvas-view-seg')) {
-      return;
-    }
-    const headerEl = e.target.closest('.snap-card-handle');
-    if (headerEl) {
-      e.preventDefault();
-      const cardId = headerEl.dataset.headbarCard || headerEl.closest('.snap-card')?.dataset.cardId;
-      if (cardId) {
-        toggleCardCollapse(cardId);
-      }
-    }
-  });
 }
 
 export function syncFoldPreviewGrid(_show) {
@@ -330,7 +695,6 @@ export function syncFoldPreviewGrid(_show) {
   });
 }
 
-// Backwards-compatible stubs
 export function toggleCardDetent(cardId) {
   toggleCardCollapse(cardId);
 }
@@ -340,7 +704,19 @@ export function setStudioSectionCollapsed(sectionId, _collapsed) {
 }
 
 export function initGridStack() {
+  initVSplitController();
   initCardListeners();
+
+  window.__toggleCardCollapse = toggleCardCollapse;
+  window.__toggleCardDetent = toggleCardDetent;
+  window.__resetPanelLayout = resetToDefaults;
+  window.__syncFoldPreviewGrid = syncFoldPreviewGrid;
+  window.__layoutHasOverlaps = layoutHasOverlaps;
+  window.__initGridStack = initGridStack;
+  window.__setVSplitAxis = setVSplitAxis;
+  window.__setVSplitFraction = setVSplitFraction;
+  window.__setActiveControlTab = setActiveControlTab;
+
   gridEl = document.querySelector('.grid-stack');
   if (!gridEl || gridEl.children.length === 0) { return; }
 
@@ -376,7 +752,6 @@ export function initGridStack() {
   });
 
   setInteractionMode();
-  initCardListeners();
   syncCardCollapseUI();
 
   window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).addEventListener('change', setInteractionMode);
@@ -400,15 +775,7 @@ export function initGridStack() {
     }
   }
 
-  // Ensure initial metrics settle cleanly after layout paint
   requestAnimationFrame(() => {
     syncGridMetrics();
   });
-
-  window.__toggleCardCollapse = toggleCardCollapse;
-  window.__toggleCardDetent = toggleCardDetent;
-  window.__resetPanelLayout = resetToDefaults;
-  window.__syncFoldPreviewGrid = syncFoldPreviewGrid;
-  window.__layoutHasOverlaps = layoutHasOverlaps;
-  window.__initGridStack = initGridStack;
 }

@@ -4,8 +4,8 @@
  * Metadata is stored in localStorage; binary page Blobs are stored in IndexedDB.
  */
 
-const STORAGE_META_KEY = 'zine-ify-session-v1';
-const IDB_NAME = 'zine-ify-session-db';
+const STORAGE_META_KEY = 'zine-ify-session-v2';
+const IDB_NAME = 'zine-ify-session-db-v2';
 const IDB_VERSION = 1;
 const IDB_STORE = 'pageBlobs';
 
@@ -14,6 +14,13 @@ export class PersistenceService {
     this._dbPromise = null;
     this._saveTimer = null;
     this._disabled = false;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('zine-ify-session-v1');
+      }
+    } catch {
+      // ignore
+    }
   }
 
   _openDb() {

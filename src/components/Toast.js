@@ -82,9 +82,16 @@ class Toast {
    * @param {string} type - Toast type: 'success', 'error', 'warning', 'info'
    * @param {string} title - Toast title
    * @param {string} message - Toast message (optional)
-   * @param {number} duration - Duration in milliseconds (default: 5000)
+   * @param {number} duration - Duration in milliseconds (default: 3500)
    */
-  show(type, title, message = '', duration = 5000) {
+  show(type, title, message = '', duration = 3500) {
+    if (!this.container || !document.body.contains(this.container)) {
+      this.init();
+    }
+    // Remove any currently displayed toast so the divider stays clean
+    const existing = this.container.querySelectorAll('.toast');
+    existing.forEach((el) => this.remove(el));
+
     const toast = this._buildToastElement(type, title, message);
     this.container.appendChild(toast);
     this._setupAutoClose(toast, duration);
@@ -118,7 +125,10 @@ class Toast {
     }
 
     const closeBtn = toast.querySelector('.toast-close');
-    closeBtn.addEventListener('click', () => this.remove(toast));
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.remove(toast);
+    });
 
     return toast;
   }
@@ -138,17 +148,12 @@ class Toast {
   }
 
   /**
-   * Animate the toast appearance
+   * Animate the toast appearance on divider
    * @private
    */
   _animateIn(toast) {
     requestAnimationFrame(() => {
       toast.classList.add('toast-visible');
-      const randomArray = new Uint32Array(1);
-      crypto.getRandomValues(randomArray);
-      const randomValue = randomArray[0] / 4294967296;
-      const rotation = randomValue * 4 - 2;
-      toast.style.transform = `translateX(0) rotate(${rotation}deg)`;
     });
   }
 

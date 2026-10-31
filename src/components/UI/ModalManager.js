@@ -49,19 +49,6 @@ export class ModalManager {
       }
     }
 
-    const foldViewerCard = document.getElementById('card-fold-viewer');
-    if (foldViewerCard) {
-      foldViewerCard.classList.toggle('hidden', !isShow);
-    }
-    const bookletCard = document.getElementById('card-fold-booklet');
-    if (bookletCard) {
-      bookletCard.classList.toggle('hidden', !isShow);
-    }
-    const guideCard = document.getElementById('card-fold-guide');
-    if (guideCard) {
-      guideCard.classList.toggle('hidden', !isShow);
-    }
-
     const view3dBtn = document.getElementById('view3dBtn');
     if (view3dBtn) {
       view3dBtn.classList.toggle('is-active', isShow);

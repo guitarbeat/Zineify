@@ -1,25 +1,27 @@
 .print-sheet {
-  --sheet-width: 210;
-  --sheet-height: 297;
+  --sheet-width: 279.4;
+  --sheet-height: 215.9;
+  --sheet-ratio: calc(var(--sheet-width, 279.4) / var(--sheet-height, 215.9));
   --sheet-scale: 1;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: none;
-  border: none;
-  border-radius: 0;
   position: relative;
   flex-shrink: 0;
-  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-  scroll-margin-top: 1rem;
+  margin: auto;
   padding: 0;
   overflow: visible;
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: var(--sheet-width, 210) / var(--sheet-height, 297);
-  width: min(100%, calc((100cqh - 0.5rem) * (var(--sheet-width, 210) / var(--sheet-height, 297))));
-  height: auto;
-  margin: auto;
+  aspect-ratio: var(--sheet-width, 279.4) / var(--sheet-height, 215.9);
+  width: min(calc(100cqw - 1.5rem), calc((100cqh - 1.5rem) * var(--sheet-ratio)));
+  height: min(calc(100cqh - 1.5rem), calc((100cqw - 1.5rem) / var(--sheet-ratio)));
+  max-width: calc(100cqw - 1.5rem);
+  max-height: calc(100cqh - 1.5rem);
+  background: #ffffff;
+  border: 1px solid rgba(35, 28, 20, 0.16);
+  border-radius: 2px;
+  box-shadow:
+    0 12px 36px -4px rgba(24, 18, 12, 0.15),
+    0 3px 8px rgba(24, 18, 12, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  scroll-margin-top: 1rem;
 }
 
 #preview-area.is-empty .print-sheet {
@@ -30,9 +32,11 @@
 }
 
 [data-theme="dark"] .print-sheet {
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  background: #19191e;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 14px 40px -4px rgba(0, 0, 0, 0.58),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 @media print {
@@ -66,9 +70,10 @@
 
 .zine-grid {
   display: grid;
+  position: absolute;
+  inset: 0;
   height: 100%;
   width: 100%;
-  position: relative;
 }
 
 .page-cell {
@@ -478,7 +483,10 @@
 }
 
 .sheet-crop-overlay {
-  display: none !important;
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  z-index: 22;
 }
 
 .print-sheet[data-guide-fold="false"] .sheet-fold-overlay {

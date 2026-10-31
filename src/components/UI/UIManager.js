@@ -19,12 +19,70 @@ const DEFAULT_GRID_ROWS = 2;
 const DEFAULT_GRID_COLS = 4;
 
 const FOLD_STEPS = [
-  { value: 0, status: 'Flat Sheet', helper: 'Drag to orbit · Scroll to zoom · Keys 1–6 jump to steps' },
-  { value: 0.5, status: 'Creasing', helper: 'Step 2: Crease sheet in half and into quarters' },
-  { value: 1, status: 'Folded Strip', helper: 'Step 3: Fold lengthwise (hotdog style)' },
-  { value: 1.5, status: 'Center Slit', helper: 'Step 4: Cut center crease between inner panels' },
-  { value: 2, status: 'Diamond Open', helper: 'Step 5: Push outer ends inward into a diamond' },
-  { value: 3, status: 'Booklet', helper: 'Step 6: Wrap pages around into finished 8-page zine' }
+  {
+    value: 0,
+    stepIndex: 1,
+    status: 'Flat Sheet',
+    title: 'Print single-sided at 100% scale.',
+    helper: 'Check all 8 panels on the flat sheet · Keys 1–8 jump to steps',
+    img: '/fold-guide/step-0-plan.png'
+  },
+  {
+    value: 0.2,
+    stepIndex: 2,
+    status: 'Half Crease',
+    title: 'Fold in half widthwise, crease, and unfold.',
+    helper: 'Score the highlighted center vertical crease line and unfold',
+    img: '/fold-guide/step-1-crease.png'
+  },
+  {
+    value: 0.4,
+    stepIndex: 3,
+    status: 'Quarter Creases',
+    title: 'Fold outer edges to center crease to make 8 panels.',
+    helper: 'Fold left and right outer columns inward to the center crease',
+    img: '/fold-guide/step-2-quarters.png'
+  },
+  {
+    value: 0.6,
+    stepIndex: 4,
+    status: 'Center Slit Cut',
+    title: 'Fold in half again and cut along the center crease between the inner panels.',
+    helper: 'Cut ONLY along the horizontal red slit between the inner panels (Pages 4–3 & 7–8)',
+    img: '/fold-guide/step-3-cut.png'
+  },
+  {
+    value: 0.8,
+    stepIndex: 5,
+    status: 'Unfold Flat',
+    title: 'Unfold completely flat.',
+    helper: 'Only the horizontal center slit opens; all vertical creases remain uncut',
+    img: '/fold-guide/step-4-open.png'
+  },
+  {
+    value: 1,
+    stepIndex: 6,
+    status: 'Folded Strip',
+    title: 'Fold lengthwise (hotdog style) with printed side facing out.',
+    helper: 'Fold in half lengthwise so all printed pages face outward',
+    img: '/fold-guide/step-5-fold-strip.png'
+  },
+  {
+    value: 2,
+    stepIndex: 7,
+    status: 'Diamond Open',
+    title: 'Push outer ends inward so the center slit opens into a diamond.',
+    helper: 'Push outer panels together so the center slit opens into a diamond',
+    img: '/fold-guide/step-6-push-in.png'
+  },
+  {
+    value: 3,
+    stepIndex: 8,
+    status: 'Booklet',
+    title: 'Wrap pages around and press flat into your 8-page booklet.',
+    helper: 'Wrap pages around into your finished 8-page zine booklet',
+    img: '/fold-guide/step-7-done.png'
+  }
 ];
 
 export class UIManager {
@@ -201,6 +259,9 @@ export class UIManager {
   }
 
   toggle3DModal(show) {
+    if (show) {
+      this.setActiveFoldTab('3d');
+    }
     this.modal.toggle3DModal(show);
   }
 
@@ -218,17 +279,34 @@ export class UIManager {
       Math.abs(step.value - progress) < Math.abs(closest.value - progress) ? step : closest
     ), FOLD_STEPS[0]);
 
+    this.currentFoldStepIndex = currentStep.stepIndex;
+
     if (this.elements.foldStatus) {
       this.elements.foldStatus.textContent = currentStep.status;
     }
     if (this.elements.foldHelper) {
       this.elements.foldHelper.textContent = currentStep.helper;
     }
+    if (this.elements.foldActiveStepBadge) {
+      this.elements.foldActiveStepBadge.textContent = `STEP ${currentStep.stepIndex} OF ${FOLD_STEPS.length}`;
+    }
+    if (this.elements.foldActiveStepTitle) {
+      this.elements.foldActiveStepTitle.textContent = currentStep.title;
+    }
+    if (this.elements.foldActiveStepImg) {
+      this.elements.foldActiveStepImg.src = currentStep.img;
+      this.elements.foldActiveStepImg.alt = `Step ${currentStep.stepIndex}: ${currentStep.title}`;
+    }
 
     this.elements.foldStepButtons?.forEach((button) => {
       const isActive = Number(button.dataset.foldValue) === currentStep.value;
       button.classList.toggle('is-active', isActive);
       button.setAttribute('aria-pressed', String(isActive));
+    });
+
+    this.elements.foldGuideItems?.forEach((item) => {
+      const isActive = Number(item.dataset.stepIndex) === currentStep.stepIndex;
+      item.classList.toggle('is-active', isActive);
     });
   }
 
@@ -332,6 +410,7 @@ export class UIManager {
     rows = 2,
     cols = 4,
     layoutPresetId = 'mini-8',
+    _isMiniLayout = (rows === 2 && cols === 4),
     paperSize = 'letter',
     canUndo = false,
     canRedo = false
@@ -350,16 +429,23 @@ export class UIManager {
       if (uploadSummary) {
         uploadSummary.textContent = `${filled}/${cap} pages`;
       }
+      const paperLabel = paperSize ? (paperSize.charAt(0).toUpperCase() + paperSize.slice(1)) : 'Letter';
       const settingsSummary = document.getElementById('settings-summary-accessory');
       if (settingsSummary) {
-        const paperLabel = paperSize ? (paperSize.charAt(0).toUpperCase() + paperSize.slice(1)) : 'Letter';
         settingsSummary.textContent = `${paperLabel} • 8-Page Mini`;
+      }
+      const canvasMiniSummary = document.getElementById('canvas-mini-summary');
+      if (canvasMiniSummary) {
+        canvasMiniSummary.textContent = `${filled}/${cap} pages`;
+      }
+      const controlsMiniSummary = document.getElementById('controls-mini-summary');
+      if (controlsMiniSummary) {
+        controlsMiniSummary.textContent = `${filled}/${cap} pages · ${paperLabel}`;
       }
     }
 
     if (this.elements.clearAllBtn) {
-      this.elements.clearAllBtn.style.display = hasAnySlotContent ? '' : 'none';
-      this.elements.clearAllBtn.classList.toggle('is-hidden', !hasAnySlotContent);
+      this.elements.clearAllBtn.disabled = !hasAnySlotContent;
     }
     if (this.elements.exportPdfBtn) {
       this.elements.exportPdfBtn.disabled = !hasAnySlotContent;
@@ -368,7 +454,7 @@ export class UIManager {
       this.elements.printBtn.disabled = !hasAnySlotContent;
     }
     if (this.elements.view3dBtn) {
-      this.elements.view3dBtn.disabled = !hasAnySlotContent;
+      this.elements.view3dBtn.disabled = false;
     }
     if (this.elements.undoBtn) {
       this.elements.undoBtn.disabled = !canUndo;
@@ -538,7 +624,13 @@ export class UIManager {
       foldSlider: $('#fold-slider'),
       foldStatus: $('#fold-status'),
       foldHelper: $('#fold-helper'),
+      foldActiveStepImg: $('#fold-active-step-img'),
+      foldActiveStepBadge: $('#fold-active-step-badge'),
+      foldActiveStepTitle: $('#fold-active-step-title'),
+      foldStepPrevBtn: $('#fold-step-prev-btn'),
+      foldStepNextBtn: $('#fold-step-next-btn'),
       foldStepButtons: document.querySelectorAll('.fold-step-btn'),
+      foldGuideItems: document.querySelectorAll('.fold-guide-list li'),
       pagePickerGrid: $('#page-picker-grid'),
       pagePickerCount: $('#page-picker-count'),
       pagePickerClose: $('#page-picker-close'),
@@ -739,7 +831,31 @@ export class UIManager {
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) {
+      const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+
+      // Global keyboard shortcuts (Undo, Redo, Print)
+      if (isCtrlOrMeta && !e.altKey) {
+        const key = e.key.toLowerCase();
+        if (key === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            this.emitter.emit('redo');
+          } else {
+            this.emitter.emit('undo');
+          }
+          return;
+        } else if (key === 'y') {
+          e.preventDefault();
+          this.emitter.emit('redo');
+          return;
+        } else if (key === 'p') {
+          e.preventDefault();
+          this.emitter.emit('print');
+          return;
+        }
+      }
+
+      if (e.defaultPrevented || e.altKey || isCtrlOrMeta) {
         return;
       }
       const tag = document.activeElement?.tagName;
@@ -750,6 +866,31 @@ export class UIManager {
       const activeIdx = focusedCell
         ? parseInt(focusedCell.getAttribute('data-page-index'), 10)
         : this.selectedPageIndex;
+
+      // Keyboard arrow navigation across the 8-page imposition grid
+      if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+        const cells = Array.from(document.querySelectorAll('.page-cell'));
+        if (cells.length > 0) {
+          e.preventDefault();
+          const currentIdx = Number.isFinite(activeIdx) ? activeIdx : 0;
+          const cols = 4;
+          let nextIdx = currentIdx;
+          if (e.key === 'ArrowRight') {
+            nextIdx = (currentIdx + 1) % cells.length;
+          } else if (e.key === 'ArrowLeft') {
+            nextIdx = (currentIdx - 1 + cells.length) % cells.length;
+          } else if (e.key === 'ArrowDown') {
+            nextIdx = Math.min(cells.length - 1, currentIdx + cols);
+          } else if (e.key === 'ArrowUp') {
+            nextIdx = Math.max(0, currentIdx - cols);
+          }
+
+          this.selectPageCell(nextIdx);
+          const targetCell = this._getPageCell(nextIdx);
+          targetCell?.focus();
+          return;
+        }
+      }
 
       if (!Number.isFinite(activeIdx) || activeIdx === null) {
         return;
@@ -834,6 +975,28 @@ export class UIManager {
         const value = parseFloat(button.dataset.foldValue || '0');
         this.setFoldProgressControl(value);
         this.emitter.emit('foldProgress', value);
+      });
+    });
+
+    const stepByDelta = (delta) => {
+      const currentIdx = (this.currentFoldStepIndex || 1) - 1;
+      const nextIdx = Math.max(0, Math.min(FOLD_STEPS.length - 1, currentIdx + delta));
+      const targetStep = FOLD_STEPS[nextIdx];
+      if (targetStep) {
+        this.setFoldProgressControl(targetStep.value);
+        this.emitter.emit('foldProgress', targetStep.value);
+      }
+    };
+
+    this.elements.foldStepPrevBtn?.addEventListener('click', () => stepByDelta(-1));
+    this.elements.foldStepNextBtn?.addEventListener('click', () => stepByDelta(1));
+
+    this.elements.foldGuideItems?.forEach((item) => {
+      item.addEventListener('click', () => {
+        const value = parseFloat(item.dataset.foldValue || '0');
+        this.setFoldProgressControl(value);
+        this.emitter.emit('foldProgress', value);
+        this.setActiveFoldTab('3d');
       });
     });
 

@@ -806,6 +806,98 @@ export class AppController {
     return this.state._blankPageUrl;
   }
 
+  async ensurePlaceholderPageUrl(pageNumber) {
+    if (!this._placeholderUrls) {
+      this._placeholderUrls = {};
+    }
+    if (this._placeholderUrls[pageNumber]) {
+      return this._placeholderUrls[pageNumber];
+    }
+
+    const canvas = document.createElement('canvas');
+    const w = 800;
+    const h = 1130;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    // Warm newsprint paper background
+    ctx.fillStyle = '#faf8f4';
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle technical grid
+    ctx.strokeStyle = 'rgba(24, 21, 18, 0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 40; x < w; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 40);
+      ctx.lineTo(x, h - 40);
+      ctx.stroke();
+    }
+    for (let y = 40; y < h; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(40, y);
+      ctx.lineTo(w - 40, y);
+      ctx.stroke();
+    }
+
+    // Outer frame border
+    const isCover = (pageNumber === 1 || pageNumber === 8);
+    ctx.strokeStyle = isCover ? '#e02424' : 'rgba(24, 21, 18, 0.22)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(36, 36, w - 72, h - 72);
+
+    // Inner dashed margin guide
+    ctx.strokeStyle = 'rgba(24, 21, 18, 0.16)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 8]);
+    ctx.strokeRect(66, 66, w - 132, h - 132);
+    ctx.setLineDash([]);
+
+    // Role header
+    let roleText = `PAGE 0${pageNumber}`;
+    if (pageNumber === 1) {
+      roleText = 'FRONT COVER';
+    } else if (pageNumber === 8) {
+      roleText = 'BACK COVER';
+    }
+
+    ctx.fillStyle = isCover ? '#e02424' : '#181512';
+    ctx.font = '700 32px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(roleText, w / 2, 280);
+
+    // Big clear numeral
+    ctx.fillStyle = '#181512';
+    ctx.font = '800 150px "Fraunces", Georgia, serif';
+    ctx.fillText(`${pageNumber}`, w / 2, 530);
+
+    // Explanatory descriptor
+    ctx.fillStyle = '#524b43';
+    ctx.font = '600 24px "Plus Jakarta Sans", sans-serif';
+    if (pageNumber === 1) {
+      ctx.fillText('Title · Cover Art · Issue #', w / 2, 630);
+    } else if (pageNumber === 8) {
+      ctx.fillText('Colophon · Credits · Socials', w / 2, 630);
+    } else {
+      ctx.fillText('Story · Illustration · Text', w / 2, 630);
+    }
+
+    // Helpful slot notice
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '500 20px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('Empty Slot · Ready for Content', w / 2, 690);
+
+    // Bottom folio
+    ctx.fillStyle = '#181512';
+    ctx.font = '700 20px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(`— 8-PAGE MINI ZINE · SLOT ${pageNumber} —`, w / 2, h - 85);
+
+    const url = await this.pdfProcessor.canvasToBlob(canvas);
+    this._placeholderUrls[pageNumber] = url;
+    return url;
+  }
+
   async fillBlankSlots({ forceAllEmpty = false } = {}) {
     const blankUrl = await this.ensureBlankPageUrl();
     const startIndex = forceAllEmpty ? 0 : this.state.getFilledPageCount();
@@ -1225,67 +1317,48 @@ export class AppController {
     }
   }
 
-  async handleView3d({ autoPopulateIfEmpty = false } = {}) {
-    if (!this.state.getFilledPageCount()) {
-      if (autoPopulateIfEmpty) {
-        await this.fillBlankSlots({ forceAllEmpty: true });
-        this.renderCurrentLayout();
-      } else {
-        toast.warning('No pages yet', 'Add pages to preview the fold');
-        return;
-      }
-    }
-
+  async handleView3d() {
     if (!this.state.isMiniZineLayout()) {
-      toast.warning('Mini-Zine Only', 'Switch to 2 × 4 layout to preview the fold');
-      return;
+      this.handleGridSizeChanged({ rows: 2, cols: 4, layoutPresetId: 'mini-8' });
+      toast.info('Switched to 8-Page Mini', 'Fold preview is designed for 8-page mini zines.');
     }
 
     this.ui.set3DLoadingState?.(true);
     try {
-      const blankUrl = await this.ensureBlankPageUrl();
       this.revokePreviewAssetUrls();
-      const pages = this.state.allPageImages.slice(0, 8);
-      const imageUrls = new Array(pages.length);
-      let asyncPromises = null;
+      const pages = (this.state.allPageImages || []).slice(0, 8);
+      while (pages.length < 8) {
+        pages.push(null);
+      }
+      const imageUrls = new Array(8);
+      const asyncPromises = [];
 
-      for (let index = 0; index < pages.length; index++) {
+      for (let index = 0; index < 8; index++) {
+        const pageNumber = index + 1;
         const url = pages[index];
-        const sourceUrl = url || blankUrl;
-        const isFlipped = Boolean(this.state.pageFlips[index]);
+        const isFlipped = Boolean(this.state.pageFlips?.[index]);
         const rotation = typeof this.state.getPageRotation === 'function'
           ? this.state.getPageRotation(index)
           : (isFlipped ? 180 : 0);
-        const isZoomed = Boolean(this.state.pageZooms[index]);
-        const pageNumber = index + 1;
+        const isZoomed = Boolean(this.state.pageZooms?.[index]);
 
-        if (!isFlipped && !rotation && !isZoomed) {
+        asyncPromises.push((async () => {
+          const sourceUrl = url || (await this.ensurePlaceholderPageUrl(pageNumber));
+          let previewUrl = sourceUrl;
+          if (url && (isFlipped || rotation || isZoomed)) {
+            previewUrl = await this.buildPreviewAsset(sourceUrl, { isFlipped, rotation, isZoomed });
+          }
           imageUrls[index] = {
             sourceUrl,
-            previewUrl: sourceUrl,
+            previewUrl,
             pageNumber,
             isFlipped,
             isZoomed
           };
-        } else {
-          if (!asyncPromises) { asyncPromises = []; }
-          asyncPromises.push(
-            this.buildPreviewAsset(sourceUrl, { isFlipped, rotation, isZoomed }).then((previewUrl) => {
-              imageUrls[index] = {
-                sourceUrl,
-                previewUrl,
-                pageNumber,
-                isFlipped,
-                isZoomed
-              };
-            })
-          );
-        }
+        })());
       }
 
-      if (asyncPromises) {
-        await Promise.all(asyncPromises);
-      }
+      await Promise.all(asyncPromises);
 
       this.ensureBookletPreview();
       this.ui.toggle3DModal(true);

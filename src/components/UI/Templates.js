@@ -29,6 +29,10 @@ const RAW_PAGE_CELL_TEMPLATE = `
       <span class="material-symbols-outlined page-tool-icon" aria-hidden="true">content_copy</span>
       <span class="page-tool-label">Copy</span>
     </button>
+    <button class="add-text-btn page-tool-btn" aria-label="Edit page in single-page artboard editor" title="Open Single-Page Artboard & Text Editor for this page">
+      <span class="material-symbols-outlined page-tool-icon" aria-hidden="true">edit_square</span>
+      <span class="page-tool-label">Edit / Text</span>
+    </button>
   </div>
   <div class="page-framing-bar absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 z-20" data-framing-bar>
     <button type="button" class="zoom-out-btn page-framing-btn" aria-label="Zoom out page" title="Zoom out (-)">
@@ -57,6 +61,7 @@ const RAW_PAGE_CELL_TEMPLATE = `
     </div>
   </button>
   <img class="page-content-img w-full h-full object-contain hidden transition-transform duration-200 ease-in-out relative z-[5]" draggable="false" />
+  <div class="page-text-layer absolute inset-0 pointer-events-none z-[15] overflow-hidden" data-text-layer></div>
 `;
 
 export const PAGE_CELL_TEMPLATE = document.createElement('template');

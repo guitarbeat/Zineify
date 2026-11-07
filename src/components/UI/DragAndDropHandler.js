@@ -104,8 +104,8 @@ export class DragAndDropHandler {
       chosenClass: 'sortable-chosen',
       dragClass:   'sortable-drag',
 
-      // Don't start a sort drag when clicking toolbar or framing controls
-      filter: '.page-toolbar, .page-framing-bar, .page-pan-handle, button',
+      // Don't start a sort drag when clicking toolbar, framing, or text stickers
+      filter: '.page-toolbar, .page-framing-bar, .page-pan-handle, .page-text-layer, .page-text-sticker, [contenteditable], button',
       preventOnFilter: false,
 
       onStart: ({ item }) => {

@@ -26,7 +26,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles/index.css" />
     <script>
       (function() {
@@ -93,6 +93,7 @@
                                         <div id="command-deck" class="command-deck-container hidden"></div>
                                     </div>
                                 </div>
+                                <div id="single-page-editor" class="single-page-editor-wrap hidden" role="region" aria-label="Single Page Artboard Editor"></div>
                             </div>
                         </div>
                     </div>
@@ -451,6 +452,58 @@
                 <div class="page-picker-footer-actions">
                     <button type="button" id="page-picker-cancel" class="action-button py-2 px-4">Cancel</button>
                     <button type="button" id="page-picker-confirm" class="action-button action-button--primary py-2 px-4" disabled>Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Print Preview Modal ──────────────────────────── -->
+    <div id="print-preview-modal" class="print-preview-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="print-preview-title" aria-describedby="print-preview-spec-readout">
+        <div id="print-preview-backdrop" class="print-preview-backdrop" aria-hidden="true"></div>
+        <div class="print-preview-panel">
+            <div class="print-preview-header">
+                <div class="print-preview-title-area">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-amber-500" aria-hidden="true">print</span>
+                        <h2 id="print-preview-title" class="print-preview-title">Print Preview</h2>
+                        <span id="print-preview-paper-badge" class="print-preview-paper-badge">Letter · Landscape</span>
+                        <span id="print-preview-marks-tag" class="print-preview-marks-tag">Marks Active</span>
+                    </div>
+                    <p class="print-preview-subtitle">Exact 100% true-print imposition layout as it will feed through your printer.</p>
+                </div>
+
+                <div class="print-preview-controls-bar" role="toolbar" aria-label="Preview Zoom Controls">
+                    <div class="print-preview-zoom-group" role="group" aria-label="Zoom mode">
+                        <button type="button" id="print-preview-zoom-fit" class="preview-zoom-btn is-active" title="Fit to preview window">Fit</button>
+                        <button type="button" id="print-preview-zoom-100" class="preview-zoom-btn" title="100% True Scale (1:1)">1:1 (100%)</button>
+                    </div>
+                    <div class="print-preview-zoom-stepper" role="group" aria-label="Manual Zoom">
+                        <button type="button" id="print-preview-zoom-out" class="preview-zoom-step-btn" title="Zoom out" aria-label="Zoom out">−</button>
+                        <span id="print-preview-zoom-readout" class="preview-zoom-readout tabular-nums">100%</span>
+                        <button type="button" id="print-preview-zoom-in" class="preview-zoom-step-btn" title="Zoom in" aria-label="Zoom in">+</button>
+                    </div>
+                    <button type="button" id="print-preview-close" class="print-preview-close-btn" aria-label="Close Print Preview (Esc)">
+                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="print-preview-viewport" class="print-preview-viewport">
+                <div id="print-preview-stage" class="print-preview-stage"></div>
+            </div>
+
+            <div class="print-preview-footer">
+                <div id="print-preview-spec-readout" class="print-preview-spec-readout"></div>
+                <div class="print-preview-footer-actions">
+                    <button type="button" id="print-preview-cancel" class="action-button py-2 px-4">Close</button>
+                    <button type="button" id="print-preview-download-pdf" class="action-button py-2 px-4" title="Download printable PDF">
+                        <span class="material-symbols-outlined icon-compact mr-1" aria-hidden="true">download</span>
+                        <span>Download PDF</span>
+                    </button>
+                    <button type="button" id="print-preview-confirm-print" class="action-button action-button--primary py-2 px-5 font-semibold" title="Send to printer (Ctrl+P)">
+                        <span class="material-symbols-outlined icon-compact mr-1" aria-hidden="true">print</span>
+                        <span>Print</span>
+                    </button>
                 </div>
             </div>
         </div>

@@ -93,16 +93,23 @@ export class LayoutRenderer {
 
         if (options.pageImages && options.pageImages[pageIndex]) {
           const url = options.pageImages[pageIndex];
+          const isBlankPage = Boolean(options.blankPageUrl && url === options.blankPageUrl);
           const img = cell.querySelector('.page-content-img');
           const placeholder = cell.querySelector('.page-placeholder');
           if (img) {
-            img.src = url || '';
-            img.classList.toggle('hidden', !url);
+            if (isBlankPage) {
+              img.removeAttribute('src');
+              img.classList.add('hidden');
+            } else {
+              img.src = url || '';
+              img.classList.toggle('hidden', !url);
+            }
           }
           if (placeholder) {
             placeholder.classList.toggle('hidden', Boolean(url));
           }
           cell.classList.toggle('has-page', Boolean(url));
+          cell.classList.toggle('is-blank-page', isBlankPage);
           cell.setAttribute('aria-label', `${accessibleLabelText}, has content`);
         }
 
@@ -130,10 +137,25 @@ export class LayoutRenderer {
 
         this.applyCellFramingState(cell, { isFill, zoom: zoomVal, panX, panY });
 
+        const pageTexts = options.pageTexts?.[pageIndex] || [];
+        if (pageTexts.length > 0 && !options.pageImages?.[pageIndex]) {
+          const placeholder = cell.querySelector('.page-placeholder');
+          if (placeholder) {
+            placeholder.classList.add('hidden');
+          }
+          cell.classList.add('has-page');
+          cell.setAttribute('aria-label', `${accessibleLabelText}, has text layers`);
+        }
+        this.renderCellTextStickers(cell, pageIndex, pageTexts, handlers);
+
         grid.appendChild(cell);
       }
 
       this.appendPressOverlays(grid, sheetWrapper, template);
+
+      const resolvedPaperColor = options.paperColor || '#ffffff';
+      sheetWrapper.style.setProperty('--sheet-paper-color', resolvedPaperColor);
+      sheetWrapper.style.backgroundColor = resolvedPaperColor;
 
       sheetWrapper.appendChild(grid);
       this.container.appendChild(sheetWrapper);
@@ -170,6 +192,61 @@ export class LayoutRenderer {
       const displayPct = Math.round((zoom > 1 ? zoom : (isFill ? 1.08 : 1)) * 100);
       readout.textContent = `${displayPct}%`;
     }
+  }
+
+  renderCellTextStickers(cell, pageIndex, stickers, handlers) {
+    const textLayer = cell.querySelector('[data-text-layer]');
+    if (!textLayer) { return; }
+    textLayer.replaceChildren();
+
+    if (!Array.isArray(stickers) || stickers.length === 0) {
+      return;
+    }
+
+    const FONT_MAP = {
+      sans: 'var(--font-sans, "Plus Jakarta Sans", sans-serif)',
+      serif: 'var(--font-serif, "Fraunces", Georgia, serif)',
+      mono: '"Space Mono", monospace',
+      handwriting: '"Caveat", cursive, sans-serif'
+    };
+
+    stickers.forEach((sticker) => {
+      const stickerEl = document.createElement('div');
+      stickerEl.className = 'page-text-sticker pointer-events-auto';
+      stickerEl.setAttribute('data-sticker-id', sticker.id);
+      stickerEl.setAttribute('title', 'Click to edit text in Single-Page Artboard');
+      stickerEl.style.left = `${sticker.x}%`;
+      stickerEl.style.top = `${sticker.y}%`;
+      // Scale font size down proportionally for the 8-up imposition sheet cell
+      const previewFontPx = Math.max(9, Math.round((sticker.fontSize || 20) * 0.52));
+      stickerEl.style.fontSize = `${previewFontPx}px`;
+      stickerEl.style.color = sticker.color || '#111827';
+      const hasBg = sticker.bgEnabled !== false;
+      stickerEl.style.backgroundColor = hasBg ? (sticker.bg || 'rgba(255,255,255,0.92)') : 'transparent';
+      if (!hasBg) {
+        stickerEl.classList.add('is-transparent-bg');
+      }
+      stickerEl.style.textAlign = sticker.align || 'left';
+
+      const fontKey = sticker.fontFamily || 'sans';
+      stickerEl.style.fontFamily = FONT_MAP[fontKey] || FONT_MAP.sans;
+
+      if (sticker.isBold) {
+        stickerEl.style.fontWeight = '700';
+      }
+
+      const contentSpan = document.createElement('span');
+      contentSpan.className = 'sticker-content';
+      contentSpan.textContent = sticker.text || 'Text';
+      stickerEl.appendChild(contentSpan);
+
+      stickerEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handlers.onOpenPageEditor?.(pageIndex, sticker.id, 'select');
+      });
+
+      textLayer.appendChild(stickerEl);
+    });
   }
 
   appendPressOverlays(grid, sheetWrapper, template) {
@@ -372,6 +449,10 @@ export class LayoutRenderer {
     cell.addEventListener('drop', (e) => handlers.onDrop(e, cell));
     cell.addEventListener('dragend', () => handlers.onDragEnd(cell));
     cell.addEventListener('click', (e) => handlers.onClick(e, pageIndex));
+    cell.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      handlers.onOpenPageEditor?.(pageIndex, null, 'select');
+    });
     cell.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -406,6 +487,18 @@ export class LayoutRenderer {
 
       const duplicateBtn = toolbar.querySelector('.duplicate-btn');
       if (duplicateBtn) { duplicateBtn.onclick = (e) => { e.stopPropagation(); handlers.onDuplicate?.(pageIndex); }; }
+
+      const addTextBtn = toolbar.querySelector('.add-text-btn');
+      if (addTextBtn) {
+        addTextBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (handlers.onOpenPageEditor) {
+            handlers.onOpenPageEditor(pageIndex, null, 'text');
+          } else {
+            handlers.onAddText?.(pageIndex);
+          }
+        };
+      }
     }
 
     const framingBar = cell.querySelector('.page-framing-bar');

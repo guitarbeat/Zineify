@@ -142,11 +142,12 @@ export class UIManager {
     let prevRows = DEFAULT_GRID_ROWS;
     let prevCols = DEFAULT_GRID_COLS;
     let prevPreset = 'mini-8';
+    let prevPaperColor = '#ffffff';
 
     this.smartSheetConfig = new SmartSheetConfig(container, {
       initialRows: DEFAULT_GRID_ROWS,
       initialCols: DEFAULT_GRID_COLS,
-      onChange: ({ rows, cols, layoutPresetId, paperSize, orientation, margin, customPaper }) => {
+      onChange: ({ rows, cols, layoutPresetId, paperSize, orientation, paperColor, margin, customPaper }) => {
         if (Number.isFinite(rows) && Number.isFinite(cols)) {
           if (this.elements.gridRows) { this.elements.gridRows.value = rows; }
           if (this.elements.gridCols) { this.elements.gridCols.value = cols; }
@@ -157,6 +158,10 @@ export class UIManager {
             prevPreset = layoutPresetId || 'custom';
             this.emitter.emit('gridSizeChanged', { rows, cols, layoutPresetId });
           }
+        }
+        if (paperColor && paperColor !== prevPaperColor) {
+          prevPaperColor = paperColor;
+          this.emitter.emit('paperColorChanged', paperColor);
         }
         this.emitter.emit('paperSizeChanged', { paperSize, customPaper });
         this.emitter.emit('orientationChanged', { orientation });
@@ -567,7 +572,7 @@ export class UIManager {
     this.controller = controller;
   }
 
-  syncPaperSettings({ paperSize, orientation } = {}) {
+  syncPaperSettings({ paperSize, orientation, paperColor } = {}) {
     if (paperSize) {
       if (this.elements.paperSizeSelect?.tagName === 'SELECT') {
         this.elements.paperSizeSelect.value = paperSize;
@@ -588,6 +593,10 @@ export class UIManager {
       if (this.smartSheetConfig) {
         this.smartSheetConfig.setState({ orientation });
       }
+    }
+
+    if (paperColor && this.smartSheetConfig) {
+      this.smartSheetConfig.setState({ paperColor });
     }
   }
 
@@ -1213,6 +1222,20 @@ export class UIManager {
         this.selectPageCell(index);
         this.emitter.emit('pageDuplicated', index);
       },
+      onAddText: (index) => {
+        this.selectPageCell(index);
+        this.emitter.emit('pageAddTextRequested', index);
+      },
+      onOpenPageEditor: (pageIndex, stickerId = null, initialTool = 'select') => {
+        this.selectPageCell(pageIndex);
+        this.emitter.emit('pageEditorRequested', { pageIndex, stickerId, initialTool });
+      },
+      onUpdateText: (pageIndex, stickerId, patch) => {
+        this.emitter.emit('pageTextUpdated', { pageIndex, stickerId, patch });
+      },
+      onRemoveText: (pageIndex, stickerId) => {
+        this.emitter.emit('pageTextRemoved', { pageIndex, stickerId });
+      },
       onRemove: (index) => {
         if (this.selectedPageIndex === index) {
           this.selectedPageIndex = null;
@@ -1238,10 +1261,13 @@ export class UIManager {
       {
         pageNumbersVisible: this.pageNumbersVisible,
         pageImages: paperSettings.pageImages,
+        blankPageUrl: paperSettings.blankPageUrl || null,
         pageFlips: paperSettings.pageFlips,
         pageRotations: paperSettings.pageRotations,
         pageZooms: paperSettings.pageZooms,
         pageTransforms: paperSettings.pageTransforms,
+        pageTexts: paperSettings.pageTexts || {},
+        paperColor: paperSettings.paperColor || '#ffffff',
         guideToggles: paperSettings.guideToggles || this.guideToggles
       },
       handlers,

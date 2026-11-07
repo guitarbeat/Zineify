@@ -100,8 +100,9 @@ export class ExportService {
   _renderSheetToCanvas(ctx, sheetIndex, slotsPerSheet, template, rows, cols, metrics, imageCache) {
     const { canvasW, canvasH, marginPx, cellW, cellH } = metrics;
 
+    const paperColor = this.state.paperColor || '#ffffff';
     ctx.clearRect(0, 0, canvasW, canvasH);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = paperColor;
     ctx.fillRect(0, 0, canvasW, canvasH);
 
     const draws = [];
@@ -111,7 +112,11 @@ export class ExportService {
 
       const pageIndex = (sheetIndex * slotsPerSheet) + (pageNum - 1);
       const url = this.state.allPageImages[pageIndex];
-      if (!url) {
+      const stickers = typeof this.state.getPageTexts === 'function'
+        ? this.state.getPageTexts(pageIndex)
+        : (this.state.pageTexts?.[pageIndex] || []);
+
+      if (!url && (!stickers || stickers.length === 0)) {
         continue;
       }
 
@@ -135,14 +140,12 @@ export class ExportService {
       const cellX = marginPx + col * cellW;
       const cellY = marginPx + row * cellH;
 
-      draws.push({ url, cellX, cellY, rotateDeg, scale, objectFit, panX, panY, upsideDown });
+      draws.push({ url, stickers, cellX, cellY, rotateDeg, scale, objectFit, panX, panY, upsideDown });
     }
 
-    for (const { url, cellX, cellY, rotateDeg, scale, objectFit, panX, panY, upsideDown } of draws) {
-      const img = imageCache.get(url);
-      if (img) {
-        this._drawCell({ ctx, img, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit, panX, panY, upsideDown });
-      }
+    for (const { url, stickers, cellX, cellY, rotateDeg, scale, objectFit, panX, panY, upsideDown } of draws) {
+      const img = url ? imageCache.get(url) : null;
+      this._drawCell({ ctx, img, stickers, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit, panX, panY, upsideDown, paperColor });
     }
 
     this._drawPressMarksToCanvas(ctx, rows, cols, metrics, template);
@@ -285,50 +288,135 @@ export class ExportService {
     return imagePromise;
   }
 
-  _drawCell({ ctx, img, cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit, panX = 0, panY = 0, upsideDown = false }) {
+  _drawCell({ ctx, img, stickers = [], cellX, cellY, cellW, cellH, rotateDeg, scale, objectFit, panX = 0, panY = 0, upsideDown = false, paperColor = '#ffffff' }) {
     ctx.save();
     ctx.beginPath();
     ctx.rect(cellX, cellY, cellW, cellH);
     ctx.clip();
 
-    const cx = cellX + cellW / 2;
-    const cy = cellY + cellH / 2;
-    const panSign = upsideDown ? -1 : 1;
-    const offsetX = panSign * (panX / 100) * (cellW * 0.35);
-    const offsetY = panSign * (panY / 100) * (cellH * 0.35);
-    ctx.translate(cx + offsetX, cy + offsetY);
+    ctx.fillStyle = paperColor;
+    ctx.fillRect(cellX, cellY, cellW, cellH);
 
-    if (rotateDeg) {
-      ctx.rotate((rotateDeg * Math.PI) / 180);
+    if (img) {
+      ctx.save();
+      const cx = cellX + cellW / 2;
+      const cy = cellY + cellH / 2;
+      const panSign = upsideDown ? -1 : 1;
+      const offsetX = panSign * (panX / 100) * (cellW * 0.35);
+      const offsetY = panSign * (panY / 100) * (cellH * 0.35);
+      ctx.translate(cx + offsetX, cy + offsetY);
+
+      if (rotateDeg) {
+        ctx.rotate((rotateDeg * Math.PI) / 180);
+      }
+
+      const isQuarterTurn = rotateDeg === 90 || rotateDeg === 270;
+      const boundW = isQuarterTurn ? cellH : cellW;
+      const boundH = isQuarterTurn ? cellW : cellH;
+
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const cellAspect = boundW / boundH;
+      let drawW, drawH;
+
+      if (objectFit === 'cover') {
+        if (imgAspect > cellAspect) {
+          drawH = boundH * scale;
+          drawW = drawH * imgAspect;
+        } else {
+          drawW = boundW * scale;
+          drawH = drawW / imgAspect;
+        }
+      } else {
+        if (imgAspect > cellAspect) {
+          drawW = boundW * scale;
+          drawH = drawW / imgAspect;
+        } else {
+          drawH = boundH * scale;
+          drawW = drawH * imgAspect;
+        }
+      }
+
+      ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
     }
 
-    const isQuarterTurn = rotateDeg === 90 || rotateDeg === 270;
-    const boundW = isQuarterTurn ? cellH : cellW;
-    const boundH = isQuarterTurn ? cellW : cellH;
+    // Draw text stickers on top of the image
+    if (Array.isArray(stickers) && stickers.length > 0) {
+      for (const sticker of stickers) {
+        ctx.save();
+        const baseFontSize = (sticker.fontSize || 20) * (cellW / 360);
+        const weight = sticker.isBold ? '700' : '500';
+        let fontFace = '"Plus Jakarta Sans", sans-serif';
+        if (sticker.fontFamily === 'serif') {
+          fontFace = '"Fraunces", Georgia, serif';
+        } else if (sticker.fontFamily === 'mono') {
+          fontFace = '"Space Mono", monospace';
+        } else if (sticker.fontFamily === 'handwriting') {
+          fontFace = '"Caveat", cursive, sans-serif';
+        }
+        ctx.font = `${weight} ${baseFontSize}px ${fontFace}`;
 
-    const imgAspect = img.naturalWidth / img.naturalHeight;
-    const cellAspect = boundW / boundH;
-    let drawW, drawH;
+        const rawText = sticker.text || 'Text';
+        const lines = rawText.split('\n');
+        const lineHeight = baseFontSize * 1.22;
+        let maxLineW = 0;
+        for (const line of lines) {
+          const m = ctx.measureText(line || ' ');
+          if (m.width > maxLineW) {
+            maxLineW = m.width;
+          }
+        }
+        const textH = lines.length * lineHeight;
 
-    if (objectFit === 'cover') {
-      if (imgAspect > cellAspect) {
-        drawH = boundH * scale;
-        drawW = drawH * imgAspect;
-      } else {
-        drawW = boundW * scale;
-        drawH = drawW / imgAspect;
-      }
-    } else {
-      if (imgAspect > cellAspect) {
-        drawW = boundW * scale;
-        drawH = drawW / imgAspect;
-      } else {
-        drawH = boundH * scale;
-        drawW = drawH * imgAspect;
+        const hasBg = sticker.bgEnabled !== false;
+        const padX = hasBg ? baseFontSize * 0.45 : baseFontSize * 0.1;
+        const padY = hasBg ? baseFontSize * 0.25 : baseFontSize * 0.1;
+        const boxW = maxLineW + padX * 2;
+        const boxH = textH + padY * 2;
+
+        // Position within cell considering sheet upside-down orientation
+        let stickerX = cellX + (sticker.x / 100) * cellW;
+        let stickerY = cellY + (sticker.y / 100) * cellH;
+
+        if (upsideDown) {
+          stickerX = cellX + cellW - (sticker.x / 100) * cellW - boxW;
+          stickerY = cellY + cellH - (sticker.y / 100) * cellH - boxH;
+          ctx.translate(stickerX + boxW / 2, stickerY + boxH / 2);
+          ctx.rotate(Math.PI);
+          ctx.translate(-(stickerX + boxW / 2), -(stickerY + boxH / 2));
+        }
+
+        // Draw sticker background pill if enabled
+        if (hasBg) {
+          ctx.fillStyle = sticker.bg || 'rgba(255,255,255,0.92)';
+          ctx.beginPath();
+          const rad = 6 * (cellW / 360);
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(stickerX, stickerY, boxW, boxH, rad);
+          } else {
+            ctx.rect(stickerX, stickerY, boxW, boxH);
+          }
+          ctx.fill();
+        }
+
+        // Draw sticker text lines
+        ctx.fillStyle = sticker.color || '#111827';
+        const align = sticker.align || 'left';
+        ctx.textAlign = align;
+        ctx.textBaseline = 'top';
+        let textAnchorX = stickerX + padX;
+        if (align === 'center') {
+          textAnchorX = stickerX + boxW / 2;
+        } else if (align === 'right') {
+          textAnchorX = stickerX + boxW - padX;
+        }
+        lines.forEach((line, idx) => {
+          ctx.fillText(line, textAnchorX, stickerY + padY + idx * lineHeight + baseFontSize * 0.08);
+        });
+        ctx.restore();
       }
     }
 
-    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
     ctx.restore();
   }
 
@@ -347,6 +435,7 @@ export class ExportService {
     const totalSlots = this.state.allPageImages.length;
     const sheetCount = Math.max(1, Math.ceil(totalSlots / slotsPerSheet));
     const dims = this.getPaperDimensions();
+    const paperColor = this.state.paperColor || '#ffffff';
     const marginMm = this.state.margin || 0;
     const gridW = dims.width - 2 * marginMm;
     const gridH = dims.height - 2 * marginMm;
@@ -380,7 +469,8 @@ export class ExportService {
         }
 
         const pageIndex = (s * slotsPerSheet) + (pageNum - 1);
-        const url = this.state.allPageImages[pageIndex] || null;
+        const rawUrl = this.state.allPageImages[pageIndex] || null;
+        const url = (rawUrl && rawUrl === this.state._blankPageUrl) ? null : rawUrl;
         const isFlipped = Boolean(this.state.pageFlips[pageIndex]);
         const userRotation = Number.isFinite(this.state.pageRotations?.[pageIndex])
           ? this.state.pageRotations[pageIndex]
@@ -402,19 +492,47 @@ export class ExportService {
         const borderStyle = showFold
           ? 'border:0.5pt dashed rgba(0,0,0,0.28);'
           : '';
-        const cellStyle = `position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;${borderStyle}${areaStyle}`;
+        const cellStyle = `position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;${borderStyle}${areaStyle};background:${paperColor};`;
         const imgStyle = `width:100%;height:100%;object-fit:${objectFit};transform:translate(${panX}%,${panY}%) rotate(${rotateDeg}deg) scale(${scale});`;
 
+        const stickers = typeof this.state.getPageTexts === 'function'
+          ? this.state.getPageTexts(pageIndex)
+          : (this.state.pageTexts?.[pageIndex] || []);
+
+        const stickerHtml = stickers.map((stk) => {
+          const sX = stk.x ?? 25;
+          const sY = stk.y ?? 35;
+          const fSize = Math.max(8, Math.round((stk.fontSize || 20) * 0.45));
+          const weight = stk.isBold ? '700' : '500';
+          let fontFam = '"Plus Jakarta Sans", sans-serif';
+          if (stk.fontFamily === 'serif') {
+            fontFam = '"Fraunces", Georgia, serif';
+          } else if (stk.fontFamily === 'mono') {
+            fontFam = '"Space Mono", monospace';
+          } else if (stk.fontFamily === 'handwriting') {
+            fontFam = '"Caveat", cursive, sans-serif';
+          }
+          const hasBg = stk.bgEnabled !== false;
+          const bgStyle = hasBg ? (stk.bg || 'rgba(255,255,255,0.92)') : 'transparent';
+          const align = stk.align || 'left';
+          const dirTransform = upsideDown ? 'rotate(180deg)' : 'none';
+          const posStyle = upsideDown
+            ? `right:${sX}%;bottom:${sY}%;`
+            : `left:${sX}%;top:${sY}%;`;
+          const safeText = String(stk.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          return `<div style="position:absolute;${posStyle}background:${bgStyle};color:${stk.color || '#111827'};font-family:${fontFam};font-size:${fSize}pt;font-weight:${weight};text-align:${align};padding:${hasBg ? '1.5pt 4pt' : '0'};border-radius:2.5pt;white-space:pre;line-height:1.2;transform:${dirTransform};z-index:6;pointer-events:none;">${safeText}</div>`;
+        }).join('');
+
         cells.push(url
-          ? `<div style="${cellStyle}"><img src="${url}" style="${imgStyle}" alt="Page ${pageNum}"></div>`
-          : `<div style="${cellStyle};background:#f0f0f0;"></div>`);
+          ? `<div style="${cellStyle}"><img src="${url}" style="${imgStyle}" alt="Page ${pageNum}">${stickerHtml}</div>`
+          : `<div style="${cellStyle}">${stickerHtml}</div>`);
       }
 
       const cutOverlayHtml = showCut
         ? '<div style="position:absolute;top:50%;left:25%;width:50%;height:0;border-top:2pt dashed #e02424;z-index:10;pointer-events:none;"><span style="position:absolute;left:50%;top:0;transform:translate(-50%,-50%);background:#e02424;color:#fff;font:700 8pt sans-serif;padding:1pt 4pt;border-radius:999px;">✂</span></div>'
         : '';
 
-      sheets.push(`<div class="sheet" style="width:${dims.width}mm;height:${dims.height}mm;overflow:hidden;page-break-after:always;display:flex;align-items:center;justify-content:center;"><div style="${gridStyle}">${cells.join('')}${cutOverlayHtml}</div></div>`);
+      sheets.push(`<div class="sheet" style="width:${dims.width}mm;height:${dims.height}mm;overflow:hidden;page-break-after:always;display:flex;align-items:center;justify-content:center;background:${paperColor};"><div style="${gridStyle}">${cells.join('')}${cutOverlayHtml}</div></div>`);
     }
 
     return sheets.join('');

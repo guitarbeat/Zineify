@@ -1946,16 +1946,27 @@ select.is-valid:focus {
   color: var(--muted-ink);
 }
 
-.smart-sheet-orientation-btn.is-active .material-symbols-outlined {
-  color: var(--primary-vibrant);
-}
-
 .smart-sheet-orientation-btn .smart-sheet-dim {
   display: inline;
   font-size: 0.62rem;
+}
+
+.smart-sheet-dim-tag {
+  font-size: 0.72rem;
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted-ink);
+  color: var(--muted-ink, #6b7280);
+  background: var(--surface-muted, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-button, 4px);
+  padding: 0.2rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+[data-theme="dark"] .smart-sheet-dim-tag {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
 }
 
 /* Margin control */

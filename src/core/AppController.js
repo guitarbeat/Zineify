@@ -10,6 +10,8 @@ import { GRID_DIMENSION_MAX, GRID_DIMENSION_MIN } from '../utils/config.js';
 import { parseBoundedInteger, resizeAndFillArray, runWithConcurrencyLimit } from '../utils/helpers.js';
 import { classifyFileKind, SUPPORTED_UPLOAD_MESSAGE, UNSUPPORTED_UPLOAD_TITLE } from '../utils/fileValidation.js';
 import { BookletPreview } from '../components/BookletPreview.js';
+import { PrintPreviewModal } from '../components/PrintPreviewModal.js';
+import { SinglePageEditor } from '../components/SinglePageEditor.js';
 
 export class AppController {
   constructor() {
@@ -21,6 +23,8 @@ export class AppController {
     this.persistence = new PersistenceService();
     this.viewer3d = null;
     this.bookletPreview = null;
+    this.printPreviewModal = null;
+    this.singlePageEditor = null;
     this.zine3dViewerClassPromise = null;
     this.previewAssetUrls = [];
     this._isRestoringSession = false;
@@ -50,7 +54,8 @@ export class AppController {
       }
       this.ui.syncPaperSettings({
         paperSize: this.state.paperSize,
-        orientation: this.state.orientation
+        orientation: this.state.orientation,
+        paperColor: this.state.paperColor || '#ffffff'
       });
       this.renderCurrentLayout();
       if (!this.state.isProcessingQueue && this.state.fileQueue.length === 0 && !this.persistence?.hasSavedSession?.()) {
@@ -98,6 +103,12 @@ export class AppController {
       }
       if (restored.guideToggles && typeof restored.guideToggles === 'object') {
         this.state.guideToggles = { ...this.state.guideToggles, ...restored.guideToggles };
+      }
+      if (restored.paperColor) {
+        this.state.paperColor = restored.paperColor;
+      }
+      if (restored.pageTexts && typeof restored.pageTexts === 'object') {
+        this.state.pageTexts = structuredClone(restored.pageTexts);
       }
 
       this.state.allPageImages = restored.allPageImages;
@@ -149,6 +160,10 @@ export class AppController {
     this.ui.on('pageDuplicated', (i) => this.handlePageDuplicated(i));
     this.ui.on('pageRemoved', (i) => this.handlePageRemoved(i));
     this.ui.on('pagesSwapped', (data) => this.handlePagesSwapped(data));
+    this.ui.on('pageAddTextRequested', (index) => this.handlePageAddText(index));
+    this.ui.on('pageEditorRequested', (payload) => this.handleOpenPageEditor(payload));
+    this.ui.on('pageTextUpdated', ({ pageIndex, stickerId, patch }) => this.handlePageTextUpdated(pageIndex, stickerId, patch));
+    this.ui.on('pageTextRemoved', ({ pageIndex, stickerId }) => this.handlePageTextRemoved(pageIndex, stickerId));
   }
 
   _setupActionAndExportEvents() {
@@ -165,6 +180,14 @@ export class AppController {
   _setupPaperSettingsEvents() {
     this.ui.on('paperSizeChanged', (data) => this.handlePaperSettingsChanged(data));
     this.ui.on('orientationChanged', (data) => this.handlePaperSettingsChanged(data));
+    this.ui.on('paperColorChanged', async (color) => {
+      this.state.setPaperColor(color);
+      if (this.state._blankPageUrl) {
+        await this.ensureBlankPageUrl();
+      }
+      this.state.resetWorkflowStatus();
+      this.renderCurrentLayout();
+    });
     this.ui.on('marginChanged', (data) => {
       this.state.margin = data.margin;
       this.state.resetWorkflowStatus();
@@ -494,6 +517,7 @@ export class AppController {
       pageRotations: { ...(this.state.pageRotations || {}) },
       pageZooms: { ...this.state.pageZooms },
       pageTransforms: structuredClone(this.state.pageTransforms || {}),
+      pageTexts: structuredClone(this.state.pageTexts || {}),
       layoutPresetId: this.state.layoutPresetId,
       gridSize: { ...this.state.gridSize }
     };
@@ -522,6 +546,7 @@ export class AppController {
     this.state.pageRotations = { ...(snapshot.pageRotations || {}) };
     this.state.pageZooms = snapshot.pageZooms;
     this.state.pageTransforms = structuredClone(snapshot.pageTransforms || {});
+    this.state.pageTexts = structuredClone(snapshot.pageTexts || {});
     this.state.layoutPresetId = snapshot.layoutPresetId || this.state.layoutPresetId;
     this.state.gridSize = { ...this.state.gridSize, ...(snapshot.gridSize || {}) };
     this.state.totalPages = this.state.getFilledPageCount();
@@ -542,6 +567,7 @@ export class AppController {
     this.state.pageRotations = { ...(snapshot.pageRotations || {}) };
     this.state.pageZooms = snapshot.pageZooms;
     this.state.pageTransforms = structuredClone(snapshot.pageTransforms || {});
+    this.state.pageTexts = structuredClone(snapshot.pageTexts || {});
     this.state.layoutPresetId = snapshot.layoutPresetId || this.state.layoutPresetId;
     this.state.gridSize = { ...this.state.gridSize, ...(snapshot.gridSize || {}) };
     this.state.totalPages = this.state.getFilledPageCount();
@@ -803,18 +829,32 @@ export class AppController {
   }
 
   async ensureBlankPageUrl() {
-    if (this.state._blankPageUrl) {
+    const paperColor = this.state.paperColor || '#ffffff';
+    if (this.state._blankPageUrl && this.state._blankPageColor === paperColor) {
       return this.state._blankPageUrl;
     }
 
+    const oldBlankUrl = this.state._blankPageUrl;
     const canvas = document.createElement('canvas');
     canvas.width = 1000;
     canvas.height = 1414;
     const context = canvas.getContext('2d');
-    context.fillStyle = '#ffffff';
+    context.fillStyle = paperColor;
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    this.state._blankPageUrl = await this.pdfProcessor.canvasToBlob(canvas);
+    const newBlankUrl = await this.pdfProcessor.canvasToBlob(canvas);
+    this.state._blankPageUrl = newBlankUrl;
+    this.state._blankPageColor = paperColor;
+
+    if (oldBlankUrl && oldBlankUrl !== newBlankUrl) {
+      for (let i = 0; i < this.state.allPageImages.length; i++) {
+        if (this.state.allPageImages[i] === oldBlankUrl) {
+          this.state.allPageImages[i] = newBlankUrl;
+        }
+      }
+      this.pdfProcessor.revokeBlobUrl(oldBlankUrl);
+    }
+
     return this.state._blankPageUrl;
   }
 
@@ -822,8 +862,10 @@ export class AppController {
     if (!this._placeholderUrls) {
       this._placeholderUrls = {};
     }
-    if (this._placeholderUrls[pageNumber]) {
-      return this._placeholderUrls[pageNumber];
+    const paperColor = this.state.paperColor || '#ffffff';
+    const cacheKey = `${pageNumber}_${paperColor}`;
+    if (this._placeholderUrls[cacheKey]) {
+      return this._placeholderUrls[cacheKey];
     }
 
     const canvas = document.createElement('canvas');
@@ -833,8 +875,8 @@ export class AppController {
     canvas.height = h;
     const ctx = canvas.getContext('2d');
 
-    // Warm newsprint paper background
-    ctx.fillStyle = '#faf8f4';
+    // Default to active paper color
+    ctx.fillStyle = paperColor;
     ctx.fillRect(0, 0, w, h);
 
     // Subtle technical grid
@@ -906,7 +948,7 @@ export class AppController {
     ctx.fillText(`— 8-PAGE MINI ZINE · SLOT ${pageNumber} —`, w / 2, h - 85);
 
     const url = await this.pdfProcessor.canvasToBlob(canvas);
-    this._placeholderUrls[pageNumber] = url;
+    this._placeholderUrls[cacheKey] = url;
     return url;
   }
 
@@ -936,14 +978,16 @@ export class AppController {
     this.previewAssetUrls = [];
   }
 
-  async buildPreviewAsset(sourceUrl, { isFlipped = false, rotation = 0, isZoomed = false, zoom = 1, panX = 0, panY = 0 } = {}) {
+  async buildPreviewAsset(sourceUrl, { isFlipped = false, rotation = 0, isZoomed = false, zoom = 1, panX = 0, panY = 0, stickers = [] } = {}) {
     const effectiveDeg = Number.isFinite(rotation) && rotation !== 0
       ? ((rotation % 360) + 360) % 360
       : (isFlipped ? 180 : 0);
     const effectiveZoom = Number.isFinite(zoom) && zoom > 1 ? Math.min(2.5, zoom) : (isZoomed ? 1.08 : 1);
     const hasPan = Math.abs(panX) > 0 || Math.abs(panY) > 0;
+    const hasStickers = Array.isArray(stickers) && stickers.length > 0;
+    const paperColor = this.state.paperColor || '#ffffff';
 
-    if (!sourceUrl || (effectiveDeg === 0 && !isZoomed && effectiveZoom === 1 && !hasPan)) {
+    if (!sourceUrl || (effectiveDeg === 0 && !isZoomed && effectiveZoom === 1 && !hasPan && !hasStickers && paperColor === '#ffffff')) {
       return sourceUrl;
     }
 
@@ -956,19 +1000,86 @@ export class AppController {
     canvas.height = height;
 
     const context = canvas.getContext('2d');
-    context.fillStyle = '#ffffff';
+    context.fillStyle = paperColor;
     context.fillRect(0, 0, width, height);
-    context.save();
-    const offsetX = (panX / 100) * (width * 0.35);
-    const offsetY = (panY / 100) * (height * 0.35);
-    context.translate(width / 2 + offsetX, height / 2 + offsetY);
-    if (effectiveDeg) {
-      context.rotate((effectiveDeg * Math.PI) / 180);
+    if (sourceUrl !== this.state._blankPageUrl) {
+      context.save();
+      const offsetX = (panX / 100) * (width * 0.35);
+      const offsetY = (panY / 100) * (height * 0.35);
+      context.translate(width / 2 + offsetX, height / 2 + offsetY);
+      if (effectiveDeg) {
+        context.rotate((effectiveDeg * Math.PI) / 180);
+      }
+
+      context.scale(effectiveZoom, effectiveZoom);
+      context.drawImage(image, -width / 2, -height / 2, width, height);
+      context.restore();
     }
 
-    context.scale(effectiveZoom, effectiveZoom);
-    context.drawImage(image, -width / 2, -height / 2, width, height);
-    context.restore();
+    if (hasStickers) {
+      for (const stk of stickers) {
+        context.save();
+        const baseFontSize = (stk.fontSize || 20) * (width / 360);
+        const weight = stk.isBold ? '700' : '500';
+        let fontFace = '"Plus Jakarta Sans", sans-serif';
+        if (stk.fontFamily === 'serif') {
+          fontFace = '"Fraunces", Georgia, serif';
+        } else if (stk.fontFamily === 'mono') {
+          fontFace = '"Space Mono", monospace';
+        } else if (stk.fontFamily === 'handwriting') {
+          fontFace = '"Caveat", cursive, sans-serif';
+        }
+        context.font = `${weight} ${baseFontSize}px ${fontFace}`;
+
+        const rawText = stk.text || 'Text';
+        const lines = rawText.split('\n');
+        const lineHeight = baseFontSize * 1.22;
+        let maxLineW = 0;
+        for (const line of lines) {
+          const m = context.measureText(line || ' ');
+          if (m.width > maxLineW) {
+            maxLineW = m.width;
+          }
+        }
+        const textH = lines.length * lineHeight;
+
+        const hasBg = stk.bgEnabled !== false;
+        const padX = hasBg ? baseFontSize * 0.45 : baseFontSize * 0.1;
+        const padY = hasBg ? baseFontSize * 0.25 : baseFontSize * 0.1;
+        const boxW = maxLineW + padX * 2;
+        const boxH = textH + padY * 2;
+
+        const stickerX = (stk.x / 100) * width;
+        const stickerY = (stk.y / 100) * height;
+
+        if (hasBg) {
+          context.fillStyle = stk.bg || 'rgba(255,255,255,0.92)';
+          context.beginPath();
+          const rad = 6 * (width / 360);
+          if (typeof context.roundRect === 'function') {
+            context.roundRect(stickerX, stickerY, boxW, boxH, rad);
+          } else {
+            context.rect(stickerX, stickerY, boxW, boxH);
+          }
+          context.fill();
+        }
+
+        context.fillStyle = stk.color || '#111827';
+        const align = stk.align || 'left';
+        context.textAlign = align;
+        context.textBaseline = 'top';
+        let textAnchorX = stickerX + padX;
+        if (align === 'center') {
+          textAnchorX = stickerX + boxW / 2;
+        } else if (align === 'right') {
+          textAnchorX = stickerX + boxW - padX;
+        }
+        lines.forEach((line, idx) => {
+          context.fillText(line, textAnchorX, stickerY + padY + idx * lineHeight + baseFontSize * 0.08);
+        });
+        context.restore();
+      }
+    }
 
     const previewUrl = await this.pdfProcessor.canvasToBlob(canvas);
     this.previewAssetUrls.push(previewUrl);
@@ -1004,15 +1115,22 @@ export class AppController {
     this.ui.generateLayout(requiredLength, this.getCurrentTemplate(), {
       paperSize: this.state.paperSize,
       orientation: this.state.orientation,
+      paperColor: this.state.paperColor || '#ffffff',
       customPaper: this.state.customPaper,
       margin: this.state.margin || 0,
       pageImages: this.state.allPageImages,
+      blankPageUrl: this.state._blankPageUrl,
       pageFlips: this.state.pageFlips,
       pageRotations: this.state.pageRotations,
       pageZooms: this.state.pageZooms,
       pageTransforms: this.state.pageTransforms,
+      pageTexts: this.state.pageTexts || {},
       guideToggles: this.state.guideToggles
     });
+
+    if (this.singlePageEditor?.isOpen) {
+      this.singlePageEditor.refresh();
+    }
 
     this.updateWorkspaceUi();
     this.scheduleSessionSave();
@@ -1118,6 +1236,9 @@ export class AppController {
     this.state.resetWorkflowStatus();
     this.ui.setPageRotation?.(index, nextDeg);
     this.ui.setPageFlip?.(index, this.state.pageFlips[index]);
+    if (this.singlePageEditor?.isOpen) {
+      this.singlePageEditor.refresh();
+    }
     this.updateWorkspaceUi();
     this.scheduleSessionSave();
   }
@@ -1136,6 +1257,9 @@ export class AppController {
     this.state.pageZooms[index] = !wasZoomed;
     this.state.resetWorkflowStatus();
     this.ui.setPageZoom(index, this.state.pageZooms[index], updated);
+    if (this.singlePageEditor?.isOpen) {
+      this.singlePageEditor.refresh();
+    }
     this.updateWorkspaceUi();
     this.scheduleSessionSave();
   }
@@ -1213,6 +1337,92 @@ export class AppController {
     this.state.pageZooms[targetIndex] = Boolean(this.state.pageZooms[index]);
     this.state.pageTransforms[targetIndex] = structuredClone(this.state.pageTransforms[index] || {});
     this.state.totalPages = this.state.getFilledPageCount();
+    this.state.resetWorkflowStatus();
+    this.renderCurrentLayout();
+  }
+
+  ensureSinglePageEditor() {
+    if (!this.singlePageEditor) {
+      const container = document.getElementById('single-page-editor');
+      if (container) {
+        this.singlePageEditor = new SinglePageEditor({
+          container,
+          state: this.state,
+          onStateMutated: (description) => {
+            if (description) {
+              this._pushSnapshot(description);
+            }
+            this.state.resetWorkflowStatus();
+            this.updateWorkspaceUi();
+            this.scheduleSessionSave();
+          },
+          onPageAction: (pageIndex, op) => {
+            if (op === 'replace') {
+              this.ui.triggerFileUpload(pageIndex);
+            } else if (op === 'crop') {
+              this.handlePageCropToggled(pageIndex);
+            } else if (op === 'rotate') {
+              this.handlePageRotated(pageIndex, 90);
+            }
+          },
+          onClose: () => {
+            const previewArea = document.getElementById('preview-area');
+            previewArea?.classList.remove('hidden');
+            this.renderCurrentLayout();
+          }
+        });
+      }
+    }
+    return this.singlePageEditor;
+  }
+
+  handleOpenPageEditor({ pageIndex = 0, stickerId = null, initialTool = 'select' } = {}) {
+    const editor = this.ensureSinglePageEditor();
+    if (!editor) {
+      this.handlePageAddText(pageIndex);
+      return;
+    }
+
+    let targetSelectId = stickerId;
+    const existingStickers = this.state.getPageTexts(pageIndex);
+    if (!targetSelectId && initialTool === 'text' && existingStickers.length === 0) {
+      this._pushSnapshot(`Add text to Page ${pageIndex + 1}`);
+      const created = this.state.addPageText(pageIndex, {
+        text: 'Type here...',
+        x: 18,
+        y: 34,
+        fontSize: 22,
+        fontFamily: 'sans',
+        color: '#111827',
+        bg: 'rgba(255,255,255,0.92)',
+        bgEnabled: true,
+        isBold: true,
+        align: 'left'
+      });
+      targetSelectId = created.id;
+      this.state.resetWorkflowStatus();
+      this.updateWorkspaceUi();
+      this.scheduleSessionSave();
+    }
+
+    const previewArea = document.getElementById('preview-area');
+    previewArea?.classList.add('hidden');
+    editor.open(pageIndex, { selectId: targetSelectId, initialTool });
+  }
+
+  handlePageAddText(index) {
+    this.handleOpenPageEditor({ pageIndex: index, stickerId: null, initialTool: 'text' });
+  }
+
+  handlePageTextUpdated(pageIndex, stickerId, patch) {
+    this.state.updatePageText(pageIndex, stickerId, patch);
+    this.state.resetWorkflowStatus();
+    this.scheduleSessionSave();
+  }
+
+  handlePageTextRemoved(pageIndex, stickerId) {
+    this._pushSnapshot(`Delete text on Page ${pageIndex + 1}`);
+    this.state.removePageText(pageIndex, stickerId);
     this.state.resetWorkflowStatus();
     this.renderCurrentLayout();
   }
@@ -1322,12 +1532,42 @@ export class AppController {
     toast.info('Cleared', 'All pages have been removed.');
   }
 
+  ensurePrintPreviewModal() {
+    if (!this.printPreviewModal) {
+      const modalEl = document.getElementById('print-preview-modal');
+      if (modalEl) {
+        this.printPreviewModal = new PrintPreviewModal({
+          modalEl,
+          onPrint: () => this.executeDirectPrint(),
+          onExportPdf: () => this.handleExport()
+        });
+      }
+    }
+    return this.printPreviewModal;
+  }
+
   handlePrint() {
     if (!this.state.getFilledPageCount()) {
       toast.warning('No pages yet', 'Upload a PDF or images to get started');
       return;
     }
 
+    const previewModal = this.ensurePrintPreviewModal();
+    if (previewModal) {
+      const sheetsHtml = this.exportService.buildSheetsHtml();
+      const dimensions = this.exportService.getPaperDimensions();
+      previewModal.open({
+        sheetsHtml,
+        dimensions,
+        state: this.state
+      });
+      return;
+    }
+
+    this.executeDirectPrint();
+  }
+
+  executeDirectPrint() {
     this.exportService.handlePrint().catch((error) => {
       toast.error('Print Failed', error.message || 'Unable to print.');
     });
@@ -1436,11 +1676,15 @@ export class AppController {
         const panX = Number.isFinite(transform.pan?.x) ? transform.pan.x : 0;
         const panY = Number.isFinite(transform.pan?.y) ? transform.pan.y : 0;
 
+        const stickers = typeof this.state.getPageTexts === 'function'
+          ? this.state.getPageTexts(index)
+          : (this.state.pageTexts?.[index] || []);
+
         asyncPromises.push((async () => {
           const sourceUrl = url || (await this.ensurePlaceholderPageUrl(pageNumber));
           let previewUrl = sourceUrl;
-          if (url && (isFlipped || rotation || isZoomed || zoom > 1 || panX !== 0 || panY !== 0)) {
-            previewUrl = await this.buildPreviewAsset(sourceUrl, { isFlipped, rotation, isZoomed, zoom, panX, panY });
+          if (url || stickers.length > 0) {
+            previewUrl = await this.buildPreviewAsset(sourceUrl, { isFlipped, rotation, isZoomed, zoom, panX, panY, stickers });
           }
           imageUrls[index] = {
             sourceUrl,

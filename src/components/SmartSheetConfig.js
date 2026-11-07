@@ -16,7 +16,7 @@ const DEFAULT_ROWS = 2;
 const DEFAULT_COLS = 4;
 
 const PAPER_RECOMMENDATIONS = {
-  'a4': { best: 'portrait', reason: 'Optimal for mini-zine folding' },
+  'a4': { best: 'landscape', reason: 'Optimal for mini-zine folding' },
   'letter': { best: 'landscape', reason: 'Standard US format, good margins' },
   'a3': { best: 'landscape', reason: 'Great for double-mini format' },
   'legal': { best: 'landscape', reason: 'Extra height for longer content' },
@@ -31,6 +31,7 @@ export class SmartSheetConfig {
       initialCols: DEFAULT_COLS,
       initialPaper: 'letter',
       initialOrientation: 'landscape',
+      initialPaperColor: '#ffffff',
       initialUnit: 'in',
       onChange: () => {},
       ...options
@@ -44,6 +45,7 @@ export class SmartSheetConfig {
       layoutPresetId: 'mini-8',
       paperSize: this.options.initialPaper,
       orientation: this.options.initialOrientation,
+      paperColor: this.options.initialPaperColor || '#ffffff',
       margin: 0,
       unit: UNITS[this.options.initialUnit] ? this.options.initialUnit : 'in',
       // Custom paper dimensions stored in mm; seeded from the initial paper.
@@ -117,26 +119,11 @@ export class SmartSheetConfig {
                 </label>
                 <span class="smart-sheet-custom-unit">${unitDef.label}</span>
               </div>
-              ` : ''}
-
-              <div class="smart-sheet-orientation-seg" role="group" aria-label="Page orientation">
-                <button type="button"
-                  class="smart-sheet-orientation-btn ${orientation === 'portrait' ? 'is-active' : ''}"
-                  data-value="portrait"
-                  aria-pressed="${orientation === 'portrait'}"
-                  title="Portrait (${landscapeH}×${landscapeW}${unitDef.label})">
-                  <span class="material-symbols-outlined">portrait</span>
-                  <span>Portrait</span>
-                </button>
-                <button type="button"
-                  class="smart-sheet-orientation-btn ${orientation === 'landscape' ? 'is-active' : ''}"
-                  data-value="landscape"
-                  aria-pressed="${orientation === 'landscape'}"
-                  title="Landscape (${landscapeW}×${landscapeH}${unitDef.label})">
-                  <span class="material-symbols-outlined">landscape</span>
-                  <span>Landscape</span>
-                </button>
+              ` : `
+              <div class="smart-sheet-dim-tag" title="Landscape ${landscapeW} × ${landscapeH} ${unitDef.label}">
+                <span>${landscapeW} × ${landscapeH} ${unitDef.label} (Landscape)</span>
               </div>
+              `}
 
               <span class="smart-sheet-paper-recommend sr-only ${isRecommended && !isCustom ? 'is-visible' : ''}">
                 ${recommendation?.reason || ''}
@@ -162,6 +149,17 @@ export class SmartSheetConfig {
                   </span>
                   <button type="button" class="smart-sheet-stepper-btn" data-margin-delta="1" aria-label="Increase margin" ${margin >= MARGIN_MAX ? 'disabled' : ''}>
                     <span class="material-symbols-outlined">add</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="smart-sheet-paper-color-row">
+                <span class="smart-sheet-label">Paper color</span>
+                <div class="smart-sheet-color-picker-wrap">
+                  <input type="color" class="smart-sheet-color-input" data-field="paperColor" value="${this.state.paperColor || '#ffffff'}" aria-label="Paper color picker" />
+                  <input type="text" class="smart-sheet-color-hex" data-field="paperColorHex" value="${this.state.paperColor || '#ffffff'}" maxlength="7" spellcheck="false" aria-label="Hex color" />
+                  <button type="button" class="smart-sheet-color-reset" data-action="resetColor" title="Reset to white (#ffffff)" ${this.state.paperColor === '#ffffff' ? 'disabled' : ''}>
+                    White
                   </button>
                 </div>
               </div>
@@ -193,18 +191,17 @@ export class SmartSheetConfig {
       return;
     }
 
-    const orientBtn = e.target.closest('.smart-sheet-orientation-btn');
-    if (orientBtn) {
-      this.setOrientation(orientBtn.dataset.value);
-      return;
-    }
-
     const marginBtn = e.target.closest('[data-margin-delta]');
     if (marginBtn) {
       const sign = parseInt(marginBtn.dataset.marginDelta, 10) || 0;
       const unitDef = UNITS[this.state.unit] || UNITS.mm;
       const stepMm = toMm(unitDef.marginStep, this.state.unit);
       this.setMargin(this.state.margin + sign * stepMm);
+      return;
+    }
+
+    if (e.target.closest('[data-action="resetColor"]')) {
+      this.setPaperColor('#ffffff');
     }
   }
 
@@ -216,6 +213,21 @@ export class SmartSheetConfig {
 
     if (e.target.matches('[data-field="customWidth"], [data-field="customHeight"]')) {
       this.setCustomDimension(e.target.dataset.field, e.target.value);
+      return;
+    }
+
+    if (e.target.matches('[data-field="paperColor"]')) {
+      this.setPaperColor(e.target.value);
+      return;
+    }
+
+    if (e.target.matches('[data-field="paperColorHex"]')) {
+      const hex = e.target.value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(hex) || /^#[0-9a-fA-F]{3}$/.test(hex)) {
+        this.setPaperColor(hex);
+      } else {
+        e.target.value = this.state.paperColor || '#ffffff';
+      }
     }
   }
 
@@ -233,7 +245,32 @@ export class SmartSheetConfig {
         summaryEl.textContent = `${paperLabel} • ${this.state.rows}×${this.state.cols}`;
       }
       this.emitChange();
+      return;
     }
+
+    if (e.target.matches('[data-field="paperColor"]')) {
+      const hexInput = this.container.querySelector('[data-field="paperColorHex"]');
+      if (hexInput) { hexInput.value = e.target.value; }
+      this.setPaperColor(e.target.value, false);
+      return;
+    }
+
+    if (e.target.matches('[data-field="paperColorHex"]')) {
+      const hex = e.target.value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+        const picker = this.container.querySelector('[data-field="paperColor"]');
+        if (picker) { picker.value = hex; }
+        this.setPaperColor(hex, false);
+      }
+    }
+  }
+
+  setPaperColor(color, reRender = true) {
+    this.state.paperColor = color || '#ffffff';
+    if (reRender) {
+      this.render();
+    }
+    this.emitChange();
   }
 
   clampMargin(value) {
@@ -247,9 +284,8 @@ export class SmartSheetConfig {
     this.emitChange();
   }
 
-  setOrientation(orientation) {
-    if (orientation !== 'portrait' && orientation !== 'landscape') { return; }
-    this.state.orientation = orientation;
+  setOrientation(_orientation) {
+    this.state.orientation = 'landscape';
     this.render();
     this.emitChange();
   }
@@ -280,10 +316,7 @@ export class SmartSheetConfig {
       this.state.customPaper = { width: current.width, height: current.height };
     }
     this.state.paperSize = paperSize;
-    const recommendation = PAPER_RECOMMENDATIONS[paperSize];
-    if (recommendation) {
-      this.state.orientation = recommendation.best;
-    }
+    this.state.orientation = 'landscape';
     this.render();
     this.emitChange();
   }
@@ -296,6 +329,7 @@ export class SmartSheetConfig {
       layoutPresetId: this.state.layoutPresetId,
       paperSize: this.state.paperSize,
       orientation: this.state.orientation,
+      paperColor: this.state.paperColor,
       margin: this.state.margin,
       unit: this.state.unit,
       customPaper: { ...this.state.customPaper },

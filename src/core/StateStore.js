@@ -34,6 +34,8 @@ export class StateStore {
     this.workflowExported = false;
     this.paperSize = 'letter';
     this.orientation = 'landscape';
+    this.paperColor = '#ffffff';
+    this.pageTexts = {};
     this.margin = 0;
     this.customPaper = { width: 215.9, height: 279.4 };
   }
@@ -98,9 +100,9 @@ export class StateStore {
     this.workflowExported = false;
   }
 
-  updatePaperSettings({ paperSize, orientation, customPaper }) {
+  updatePaperSettings({ paperSize, customPaper }) {
     if (paperSize) { this.paperSize = paperSize; }
-    if (orientation) { this.orientation = orientation; }
+    this.orientation = 'landscape';
     if (customPaper && customPaper.width > 0 && customPaper.height > 0) {
       this.customPaper = { ...customPaper };
     }
@@ -178,6 +180,73 @@ export class StateStore {
     });
   }
 
+  setPaperColor(hex) {
+    if (typeof hex === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(hex)) {
+      this.paperColor = hex;
+    } else {
+      this.paperColor = '#ffffff';
+    }
+    this.projectMeta.updatedAt = Date.now();
+  }
+
+  getPageTexts(pageIndex) {
+    return Array.isArray(this.pageTexts?.[pageIndex]) ? this.pageTexts[pageIndex] : [];
+  }
+
+  addPageText(pageIndex, sticker = {}) {
+    if (!this.pageTexts) { this.pageTexts = {}; }
+    if (!Array.isArray(this.pageTexts[pageIndex])) {
+      this.pageTexts[pageIndex] = [];
+    }
+    const id = sticker.id || `txt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const bgEnabled = sticker.bgEnabled !== undefined
+      ? Boolean(sticker.bgEnabled)
+      : (sticker.bg !== 'transparent');
+    const newSticker = {
+      id,
+      text: sticker.text || 'Text',
+      x: Number.isFinite(sticker.x) ? Math.max(0, Math.min(94, sticker.x)) : 25,
+      y: Number.isFinite(sticker.y) ? Math.max(0, Math.min(94, sticker.y)) : 35,
+      fontSize: Number.isFinite(sticker.fontSize) ? Math.max(10, Math.min(84, sticker.fontSize)) : 22,
+      fontFamily: sticker.fontFamily || 'sans', // 'sans' | 'serif' | 'mono' | 'handwriting'
+      align: sticker.align || 'left', // 'left' | 'center' | 'right'
+      color: sticker.color || '#111827',
+      bg: sticker.bg || 'rgba(255,255,255,0.92)',
+      bgEnabled,
+      isBold: sticker.isBold !== undefined ? Boolean(sticker.isBold) : true
+    };
+    this.pageTexts[pageIndex].push(newSticker);
+    this.projectMeta.updatedAt = Date.now();
+    return newSticker;
+  }
+
+  updatePageText(pageIndex, stickerId, patch = {}) {
+    const list = this.pageTexts?.[pageIndex];
+    if (!Array.isArray(list)) { return null; }
+    const index = list.findIndex((item) => item.id === stickerId);
+    if (index === -1) { return null; }
+    const current = list[index];
+    const updated = {
+      ...current,
+      ...patch,
+      fontFamily: patch.fontFamily || current.fontFamily || 'sans',
+      align: patch.align || current.align || 'left',
+      x: Number.isFinite(patch.x) ? Math.max(0, Math.min(94, patch.x)) : current.x,
+      y: Number.isFinite(patch.y) ? Math.max(0, Math.min(94, patch.y)) : current.y,
+      fontSize: Number.isFinite(patch.fontSize) ? Math.max(10, Math.min(84, patch.fontSize)) : current.fontSize
+    };
+    list[index] = updated;
+    this.projectMeta.updatedAt = Date.now();
+    return updated;
+  }
+
+  removePageText(pageIndex, stickerId) {
+    const list = this.pageTexts?.[pageIndex];
+    if (!Array.isArray(list)) { return; }
+    this.pageTexts[pageIndex] = list.filter((item) => item.id !== stickerId);
+    this.projectMeta.updatedAt = Date.now();
+  }
+
   toProjectJSON() {
     return {
       version: 1,
@@ -186,12 +255,14 @@ export class StateStore {
       pageFlips: { ...this.pageFlips },
       pageZooms: { ...this.pageZooms },
       pageTransforms: structuredClone(this.pageTransforms),
+      pageTexts: structuredClone(this.pageTexts),
       pageNumberVisibility: { ...this.pageNumberVisibility },
       selectedPageIndex: this.selectedPageIndex,
       guideToggles: { ...this.guideToggles },
       printSettings: { ...this.printSettings },
       paperSize: this.paperSize,
       orientation: this.orientation,
+      paperColor: this.paperColor,
       margin: this.margin,
       projectMeta: { ...this.projectMeta },
       pageCount: this.totalPages
@@ -205,12 +276,14 @@ export class StateStore {
     this.pageRotations = { ...(project.pageRotations || {}) };
     this.pageZooms = { ...project.pageZooms };
     this.pageTransforms = structuredClone(project.pageTransforms || {});
+    this.pageTexts = structuredClone(project.pageTexts || {});
     this.pageNumberVisibility = { ...project.pageNumberVisibility };
     this.selectedPageIndex = Number.isInteger(project.selectedPageIndex) ? project.selectedPageIndex : null;
     this.guideToggles = { ...this.guideToggles, ...project.guideToggles };
     this.printSettings = { ...this.printSettings, ...project.printSettings };
     if (project.paperSize) { this.paperSize = project.paperSize; }
-    if (project.orientation) { this.orientation = project.orientation; }
+    this.orientation = 'landscape';
+    if (project.paperColor) { this.paperColor = project.paperColor; }
     if (Number.isFinite(project.margin)) { this.margin = project.margin; }
     if (project.customPaper) { this.customPaper = { ...this.customPaper, ...project.customPaper }; }
     this.projectMeta = { ...this.projectMeta, ...project.projectMeta, updatedAt: Date.now() };

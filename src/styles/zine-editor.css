@@ -1413,9 +1413,45 @@ body.print-preview-open {
 }
 
 @media (max-width: 768px) {
+  .spe-topbar {
+    padding: 0.35rem 0.5rem;
+    gap: 0.35rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+
+  .spe-topbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .spe-topbar-left,
+  .spe-page-switcher {
+    flex-shrink: 0;
+  }
+
+  .spe-tool-btn span:last-child,
+  .spe-add-text-cta span:last-child,
+  .spe-back-btn span:last-child {
+    display: none;
+  }
+
+  .spe-tool-btn,
+  .spe-add-text-cta,
+  .spe-back-btn {
+    padding: 0.25rem 0.45rem;
+  }
+
   .spe-workspace {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(220px, 1fr) auto;
+    grid-template-rows: minmax(200px, 1fr) auto;
+  }
+
+  .spe-drawer {
+    max-height: 40vh;
+    overflow-y: auto;
   }
 }
 
@@ -1897,6 +1933,180 @@ body.print-preview-open {
   background: #121318;
   border-color: rgba(255, 255, 255, 0.14);
   color: #f3f4f6;
+}
+
+/* ── Font Library Selector, Categories & Live Preview Card ── */
+.spe-font-category-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0284c7;
+  letter-spacing: 0.02em;
+}
+
+[data-theme="dark"] .spe-font-category-tag {
+  background: rgba(14, 165, 233, 0.2);
+  color: #38bdf8;
+}
+
+.spe-font-cat-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.09));
+  margin-top: 0.15rem;
+}
+
+[data-theme="dark"] .spe-font-cat-bar {
+  background: #121318;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.spe-font-cat-btn {
+  flex: 1;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--muted-ink, #4b5563);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.spe-font-cat-btn:hover {
+  color: #111827;
+}
+
+.spe-font-cat-btn.is-active {
+  background: #0ea5e9;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(14, 165, 233, 0.3);
+}
+
+[data-theme="dark"] .spe-font-cat-btn {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .spe-font-cat-btn:hover {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .spe-font-cat-btn.is-active {
+  color: #ffffff;
+}
+
+.spe-font-preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+  background: var(--surface-muted, rgba(0, 0, 0, 0.03));
+}
+
+[data-theme="dark"] .spe-font-preview-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.spe-font-preview-sample {
+  font-size: 1.05rem;
+  line-height: 1.25;
+  color: var(--ink, #111827);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .spe-font-preview-sample {
+  color: #f3f4f6;
+}
+
+.spe-font-preview-meta {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #0284c7;
+  text-transform: uppercase;
+}
+
+[data-theme="dark"] .spe-font-preview-meta {
+  color: #38bdf8;
+}
+
+/* ── Rotation Slider & Quick Degree Pills ── */
+.spe-rotation-preset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+  background: var(--surface-muted, rgba(0, 0, 0, 0.05));
+  color: var(--muted-ink, #4b5563);
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.spe-rotation-preset-btn:hover {
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .spe-rotation-preset-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .spe-rotation-preset-btn:hover {
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #ffffff;
+}
+
+.spe-rotation-quick-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.spe-quick-degree-btn {
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+  background: var(--surface-strong, #ffffff);
+  color: var(--ink, #374151);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.spe-quick-degree-btn:hover {
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+}
+
+[data-theme="dark"] .spe-quick-degree-btn {
+  background: #121318;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .spe-quick-degree-btn:hover {
+  border-color: #0ea5e9;
+  color: #38bdf8;
 }
 
 .spe-range {

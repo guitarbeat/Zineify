@@ -1,4 +1,5 @@
 import { getPageLabel } from '../../utils/previewHelpers.js';
+import { getFontCssFamily } from '../../utils/fonts.js';
 
 const TOOLBAR_BUTTONS = [
   {
@@ -203,33 +204,25 @@ export class LayoutRenderer {
       return;
     }
 
-    const FONT_MAP = {
-      sans: 'var(--font-sans, "Plus Jakarta Sans", sans-serif)',
-      serif: 'var(--font-serif, "Fraunces", Georgia, serif)',
-      mono: '"Space Mono", monospace',
-      handwriting: '"Caveat", cursive, sans-serif'
-    };
-
     stickers.forEach((sticker) => {
       const stickerEl = document.createElement('div');
-      stickerEl.className = 'page-text-sticker pointer-events-auto';
-      stickerEl.setAttribute('data-sticker-id', sticker.id);
-      stickerEl.setAttribute('title', 'Click to edit text in Single-Page Artboard');
+      const showBg = sticker.bgEnabled !== false && sticker.bg !== 'transparent';
+      stickerEl.className = `page-text-sticker ${showBg ? '' : 'is-transparent-bg'}`;
       stickerEl.style.left = `${sticker.x}%`;
       stickerEl.style.top = `${sticker.y}%`;
-      // Scale font size down proportionally for the 8-up imposition sheet cell
-      const previewFontPx = Math.max(9, Math.round((sticker.fontSize || 20) * 0.52));
-      stickerEl.style.fontSize = `${previewFontPx}px`;
+      stickerEl.style.fontSize = `${sticker.fontSize || 22}px`;
       stickerEl.style.color = sticker.color || '#111827';
-      const hasBg = sticker.bgEnabled !== false;
-      stickerEl.style.backgroundColor = hasBg ? (sticker.bg || 'rgba(255,255,255,0.92)') : 'transparent';
-      if (!hasBg) {
-        stickerEl.classList.add('is-transparent-bg');
-      }
+      stickerEl.style.backgroundColor = showBg ? (sticker.bg || 'rgba(255,255,255,0.92)') : 'transparent';
       stickerEl.style.textAlign = sticker.align || 'left';
 
       const fontKey = sticker.fontFamily || 'sans';
-      stickerEl.style.fontFamily = FONT_MAP[fontKey] || FONT_MAP.sans;
+      stickerEl.style.fontFamily = getFontCssFamily(fontKey);
+
+      const rotation = sticker.rotation || 0;
+      if (rotation) {
+        stickerEl.style.transform = `rotate(${rotation}deg)`;
+        stickerEl.style.transformOrigin = 'center center';
+      }
 
       if (sticker.isBold) {
         stickerEl.style.fontWeight = '700';

@@ -213,7 +213,8 @@ export class StateStore {
       color: sticker.color || '#111827',
       bg: sticker.bg || 'rgba(255,255,255,0.92)',
       bgEnabled,
-      isBold: sticker.isBold !== undefined ? Boolean(sticker.isBold) : true
+      isBold: sticker.isBold !== undefined ? Boolean(sticker.isBold) : true,
+      rotation: Number.isFinite(sticker.rotation) ? ((sticker.rotation % 360) + 360) % 360 : 0
     };
     this.pageTexts[pageIndex].push(newSticker);
     this.projectMeta.updatedAt = Date.now();
@@ -233,7 +234,8 @@ export class StateStore {
       align: patch.align || current.align || 'left',
       x: Number.isFinite(patch.x) ? Math.max(0, Math.min(94, patch.x)) : current.x,
       y: Number.isFinite(patch.y) ? Math.max(0, Math.min(94, patch.y)) : current.y,
-      fontSize: Number.isFinite(patch.fontSize) ? Math.max(10, Math.min(84, patch.fontSize)) : current.fontSize
+      fontSize: Number.isFinite(patch.fontSize) ? Math.max(10, Math.min(84, patch.fontSize)) : current.fontSize,
+      rotation: Number.isFinite(patch.rotation) ? ((patch.rotation % 360) + 360) % 360 : (current.rotation || 0)
     };
     list[index] = updated;
     this.projectMeta.updatedAt = Date.now();

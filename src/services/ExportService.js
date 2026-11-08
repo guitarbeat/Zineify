@@ -1,5 +1,6 @@
 import DOMPurify from 'dompurify';
 import { ZINE_TEMPLATES, PAPER_SIZES, resolvePaperSize } from '../utils/config.js';
+import { getFontCssFamily } from '../utils/fonts.js';
 
 const MM_TO_PX_300DPI = 300 / 25.4;
 
@@ -345,15 +346,8 @@ export class ExportService {
       for (const sticker of stickers) {
         ctx.save();
         const baseFontSize = (sticker.fontSize || 20) * (cellW / 360);
-        const weight = sticker.isBold ? '700' : '500';
-        let fontFace = '"Plus Jakarta Sans", sans-serif';
-        if (sticker.fontFamily === 'serif') {
-          fontFace = '"Fraunces", Georgia, serif';
-        } else if (sticker.fontFamily === 'mono') {
-          fontFace = '"Space Mono", monospace';
-        } else if (sticker.fontFamily === 'handwriting') {
-          fontFace = '"Caveat", cursive, sans-serif';
-        }
+        const fontFace = getFontCssFamily(sticker.fontFamily || 'sans');
+        const weight = sticker.isBold ? 'bold' : 'normal';
         ctx.font = `${weight} ${baseFontSize}px ${fontFace}`;
 
         const rawText = sticker.text || 'Text';
@@ -383,6 +377,13 @@ export class ExportService {
           stickerY = cellY + cellH - (sticker.y / 100) * cellH - boxH;
           ctx.translate(stickerX + boxW / 2, stickerY + boxH / 2);
           ctx.rotate(Math.PI);
+          ctx.translate(-(stickerX + boxW / 2), -(stickerY + boxH / 2));
+        }
+
+        const rotDeg = sticker.rotation || 0;
+        if (rotDeg) {
+          ctx.translate(stickerX + boxW / 2, stickerY + boxH / 2);
+          ctx.rotate((rotDeg * Math.PI) / 180);
           ctx.translate(-(stickerX + boxW / 2), -(stickerY + boxH / 2));
         }
 
@@ -504,14 +505,7 @@ export class ExportService {
           const sY = stk.y ?? 35;
           const fSize = Math.max(8, Math.round((stk.fontSize || 20) * 0.45));
           const weight = stk.isBold ? '700' : '500';
-          let fontFam = '"Plus Jakarta Sans", sans-serif';
-          if (stk.fontFamily === 'serif') {
-            fontFam = '"Fraunces", Georgia, serif';
-          } else if (stk.fontFamily === 'mono') {
-            fontFam = '"Space Mono", monospace';
-          } else if (stk.fontFamily === 'handwriting') {
-            fontFam = '"Caveat", cursive, sans-serif';
-          }
+          const fontFam = getFontCssFamily(stk.fontFamily || 'sans');
           const hasBg = stk.bgEnabled !== false;
           const bgStyle = hasBg ? (stk.bg || 'rgba(255,255,255,0.92)') : 'transparent';
           const align = stk.align || 'left';

@@ -12,6 +12,7 @@ import { classifyFileKind, SUPPORTED_UPLOAD_MESSAGE, UNSUPPORTED_UPLOAD_TITLE } 
 import { BookletPreview } from '../components/BookletPreview.js';
 import { PrintPreviewModal } from '../components/PrintPreviewModal.js';
 import { SinglePageEditor } from '../components/SinglePageEditor.js';
+import { getFontCssFamily } from '../utils/fonts.js';
 
 export class AppController {
   constructor() {
@@ -1020,15 +1021,8 @@ export class AppController {
       for (const stk of stickers) {
         context.save();
         const baseFontSize = (stk.fontSize || 20) * (width / 360);
-        const weight = stk.isBold ? '700' : '500';
-        let fontFace = '"Plus Jakarta Sans", sans-serif';
-        if (stk.fontFamily === 'serif') {
-          fontFace = '"Fraunces", Georgia, serif';
-        } else if (stk.fontFamily === 'mono') {
-          fontFace = '"Space Mono", monospace';
-        } else if (stk.fontFamily === 'handwriting') {
-          fontFace = '"Caveat", cursive, sans-serif';
-        }
+        const fontFace = getFontCssFamily(stk.fontFamily || 'sans');
+        const weight = stk.isBold ? 'bold' : 'normal';
         context.font = `${weight} ${baseFontSize}px ${fontFace}`;
 
         const rawText = stk.text || 'Text';
@@ -1051,6 +1045,13 @@ export class AppController {
 
         const stickerX = (stk.x / 100) * width;
         const stickerY = (stk.y / 100) * height;
+
+        const rotDeg = stk.rotation || 0;
+        if (rotDeg) {
+          context.translate(stickerX + boxW / 2, stickerY + boxH / 2);
+          context.rotate((rotDeg * Math.PI) / 180);
+          context.translate(-(stickerX + boxW / 2), -(stickerY + boxH / 2));
+        }
 
         if (hasBg) {
           context.fillStyle = stk.bg || 'rgba(255,255,255,0.92)';

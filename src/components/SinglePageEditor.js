@@ -5,12 +5,7 @@
  * typography inspector drawer, and 1–8 page switcher buttons.
  */
 
-const FONT_FAMILY_CSS = {
-  sans: '"Plus Jakarta Sans", sans-serif',
-  serif: '"Fraunces", Georgia, serif',
-  mono: '"Space Mono", monospace',
-  handwriting: '"Caveat", cursive, sans-serif'
-};
+import { FONT_LIBRARY, FONT_CATEGORIES, getFontCssFamily } from '../utils/fonts.js';
 
 const PAGE_ROLE_NAMES = [
   '1 · Front Cover',
@@ -59,6 +54,7 @@ export class SinglePageEditor {
     this.toolMode = 'select'; // 'select' | 'text'
     this.snapEnabled = true;
     this.gridVisible = true;
+    this.selectedFontCategory = 'all';
     this.stateData = null;
 
     this._resizeObserver = null;
@@ -210,16 +206,41 @@ export class SinglePageEditor {
                   </div>
                 </div>
 
-                <div class="spe-field-row">
-                  <label class="spe-field flex-1">
-                    <span class="spe-field-label">Font Family</span>
-                    <select class="spe-select" data-spe-input="fontFamily" aria-label="Font family">
-                      <option value="sans">Sans (Plus Jakarta)</option>
-                      <option value="serif">Serif (Fraunces)</option>
-                      <option value="mono">Monospace (Space Mono)</option>
-                      <option value="handwriting">Handwritten (Caveat)</option>
-                    </select>
-                  </label>
+                <div class="spe-field">
+                  <div class="flex items-center justify-between">
+                    <span class="spe-field-label">Font Style & Library</span>
+                    <span class="spe-font-category-tag" data-spe-font-cat-tag>Standard</span>
+                  </div>
+                  <div class="spe-font-cat-bar" data-spe-font-cat-bar role="tablist" aria-label="Font categories">
+                    <button type="button" class="spe-font-cat-btn is-active" data-spe-font-cat="all" role="tab" aria-selected="true">All</button>
+                    <button type="button" class="spe-font-cat-btn" data-spe-font-cat="standard" role="tab">Standard</button>
+                    <button type="button" class="spe-font-cat-btn" data-spe-font-cat="handwritten" role="tab">Handwritten</button>
+                    <button type="button" class="spe-font-cat-btn" data-spe-font-cat="monospaced" role="tab">Monospaced</button>
+                  </div>
+                  <select class="spe-select mt-1" data-spe-input="fontFamily" aria-label="Font family">
+                    <optgroup label="Standard Sans & Serif">
+                      <option value="sans">Plus Jakarta Sans (Standard Sans)</option>
+                      <option value="fraunces">Fraunces (Display Serif)</option>
+                      <option value="bricolage">Bricolage Grotesque (Modern Sans)</option>
+                      <option value="oswald">Oswald (Condensed Sans)</option>
+                      <option value="playfair">Playfair Display (Editorial Serif)</option>
+                    </optgroup>
+                    <optgroup label="Handwritten & Script">
+                      <option value="handwriting">Caveat (Casual Script)</option>
+                      <option value="permanent-marker">Permanent Marker (Chalk / Marker)</option>
+                      <option value="patrick-hand">Patrick Hand (Clean Hand)</option>
+                      <option value="special-elite">Special Elite (Typewriter)</option>
+                    </optgroup>
+                    <optgroup label="Monospaced & Code">
+                      <option value="mono">Space Mono (Tech Mono)</option>
+                      <option value="courier-prime">Courier Prime (Classic Mono)</option>
+                      <option value="fira-code">Fira Code (Code Mono)</option>
+                    </optgroup>
+                  </select>
+                  <div class="spe-font-preview-card" data-spe-font-preview-card>
+                    <div class="spe-font-preview-sample" data-spe-font-preview-sample>Zine Typography</div>
+                    <div class="spe-font-preview-meta" data-spe-font-preview-meta>Plus Jakarta Sans · STANDARD</div>
+                  </div>
                 </div>
 
                 <div class="spe-field">
@@ -232,6 +253,27 @@ export class SinglePageEditor {
                     <button type="button" class="spe-style-btn" data-spe-action="toggle-bold" title="Bold text">
                       <strong>B</strong>
                     </button>
+                  </div>
+                </div>
+
+                <div class="spe-field">
+                  <div class="flex items-center justify-between">
+                    <span class="spe-field-label">Rotation Angle (0° to 360°)</span>
+                    <div class="flex items-center gap-1">
+                      <span class="spe-size-readout tabular-nums" data-spe-rotation-readout>0°</span>
+                      <button type="button" class="spe-rotation-reset-btn" data-spe-action="reset-rotation" title="Reset rotation to 0°">
+                        <span class="material-symbols-outlined icon-compact">restart_alt</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="spe-size-row gap-2">
+                    <input type="range" class="spe-range flex-1" data-spe-input="rotation" min="0" max="360" step="1" value="0" aria-label="Rotation angle" />
+                    <div class="spe-rotation-quick-pills">
+                      <button type="button" class="spe-quick-degree-btn" data-spe-degree="0" title="Set rotation to 0°">0°</button>
+                      <button type="button" class="spe-quick-degree-btn" data-spe-degree="90" title="Set rotation to 90°">90°</button>
+                      <button type="button" class="spe-quick-degree-btn" data-spe-degree="180" title="Set rotation to 180°">180°</button>
+                      <button type="button" class="spe-quick-degree-btn" data-spe-degree="270" title="Set rotation to 270°">270°</button>
+                    </div>
                   </div>
                 </div>
 
@@ -325,8 +367,14 @@ export class SinglePageEditor {
     this.textInput = this.container.querySelector('[data-spe-input="text"]');
     this.posReadout = this.container.querySelector('[data-spe-pos-readout]');
     this.fontSelect = this.container.querySelector('[data-spe-input="fontFamily"]');
+    this.fontCatBarEl = this.container.querySelector('[data-spe-font-cat-bar]');
+    this.fontCatTagEl = this.container.querySelector('[data-spe-font-cat-tag]');
+    this.fontPreviewSampleEl = this.container.querySelector('[data-spe-font-preview-sample]');
+    this.fontPreviewMetaEl = this.container.querySelector('[data-spe-font-preview-meta]');
     this.sizeInput = this.container.querySelector('[data-spe-input="fontSize"]');
     this.sizeReadout = this.container.querySelector('[data-spe-size-readout]');
+    this.rotationInput = this.container.querySelector('[data-spe-input="rotation"]');
+    this.rotationReadout = this.container.querySelector('[data-spe-rotation-readout]');
     this.boldBtn = this.container.querySelector('[data-spe-action="toggle-bold"]');
     this.colorInput = this.container.querySelector('[data-spe-input="color"]');
     this.bgCheck = this.container.querySelector('[data-spe-input="bgEnabled"]');
@@ -345,10 +393,53 @@ export class SinglePageEditor {
     }
   }
 
+  _updateFontSelectOptions() {
+    if (!this.fontSelect) { return; }
+    const cat = this.selectedFontCategory || 'all';
+    const currentVal = this.fontSelect.value;
+
+    const filtered = cat === 'all'
+      ? FONT_LIBRARY
+      : FONT_LIBRARY.filter((f) => f.category === cat);
+
+    const categoriesInFiltered = [...new Set(filtered.map((f) => f.category))];
+
+    let html = '';
+    categoriesInFiltered.forEach((cKey) => {
+      const catObj = FONT_CATEGORIES.find((c) => c.id === cKey);
+      const fontsInCat = filtered.filter((f) => f.category === cKey);
+      html += `<optgroup label="${catObj ? catObj.label : cKey}">`;
+      fontsInCat.forEach((f) => {
+        html += `<option value="${f.id}">${f.name}</option>`;
+      });
+      html += '</optgroup>';
+    });
+
+    this.fontSelect.innerHTML = html;
+
+    if (filtered.some((f) => f.id === currentVal)) {
+      this.fontSelect.value = currentVal;
+    } else if (filtered.length > 0) {
+      this.fontSelect.value = filtered[0].id;
+      const stk = this._getSelectedSticker();
+      if (stk) {
+        this.onUpdateText(this.pageIndex, stk.id, { fontFamily: filtered[0].id }, true);
+      }
+    }
+  }
+
   _attachEvents() {
     if (!this.container) { return; }
 
     this.container.addEventListener('click', (e) => {
+      const fontCatBtn = e.target.closest('[data-spe-font-cat]');
+      if (fontCatBtn) {
+        const cat = fontCatBtn.getAttribute('data-spe-font-cat');
+        this.selectedFontCategory = cat;
+        this._updateFontSelectOptions();
+        this._renderInspector();
+        return;
+      }
       const actionBtn = e.target.closest('[data-spe-action]');
       if (actionBtn) {
         const action = actionBtn.getAttribute('data-spe-action');
@@ -373,6 +464,12 @@ export class SinglePageEditor {
             this.onUpdateText(this.pageIndex, stk.id, { isBold: !stk.isBold }, true);
             this.refresh();
           }
+        } else if (action === 'reset-rotation') {
+          const stk = this._getSelectedSticker();
+          if (stk) {
+            this.onUpdateText(this.pageIndex, stk.id, { rotation: 0 }, true);
+            this.refresh();
+          }
         } else if (action === 'toggle-snap') {
           this.snapEnabled = !this.snapEnabled;
           this.snapToggleBtn?.classList.toggle('is-active', this.snapEnabled);
@@ -382,6 +479,17 @@ export class SinglePageEditor {
           this.gridToggleBtn?.classList.toggle('is-active', this.gridVisible);
           this.gridToggleBtn?.setAttribute('aria-pressed', String(this.gridVisible));
           this.gridOverlayEl?.classList.toggle('hidden', !this.gridVisible);
+        }
+        return;
+      }
+
+      const degreeBtn = e.target.closest('[data-spe-degree]');
+      if (degreeBtn) {
+        const degree = parseInt(degreeBtn.getAttribute('data-spe-degree'), 10) || 0;
+        const stk = this._getSelectedSticker();
+        if (stk) {
+          this.onUpdateText(this.pageIndex, stk.id, { rotation: degree }, true);
+          this.refresh();
         }
         return;
       }
@@ -552,6 +660,24 @@ export class SinglePageEditor {
       }
       this.onUpdateText(this.pageIndex, stk.id, { fontSize }, false);
       this._renderTextBoxes();
+    });
+
+    this.rotationInput?.addEventListener('input', (e) => {
+      const stk = this._getSelectedSticker();
+      if (!stk) { return; }
+      const rotation = parseInt(e.target.value, 10) || 0;
+      if (this.rotationReadout) {
+        this.rotationReadout.textContent = `${rotation}°`;
+      }
+      this.onUpdateText(this.pageIndex, stk.id, { rotation }, false);
+      this._renderTextBoxes();
+    });
+
+    this.rotationInput?.addEventListener('change', (e) => {
+      const stk = this._getSelectedSticker();
+      if (!stk) { return; }
+      const rotation = parseInt(e.target.value, 10) || 0;
+      this.onUpdateText(this.pageIndex, stk.id, { rotation }, true);
     });
 
     this.colorInput?.addEventListener('input', (e) => {
@@ -869,12 +995,15 @@ export class SinglePageEditor {
 
       const scaledFontPx = Math.max(10, Math.round((stk.fontSize || 22) * scaleRatio));
       box.style.fontSize = `${scaledFontPx}px`;
-      box.style.fontFamily = FONT_FAMILY_CSS[stk.fontFamily] || FONT_FAMILY_CSS.sans;
+      box.style.fontFamily = getFontCssFamily(stk.fontFamily || 'sans');
       box.style.fontWeight = stk.isBold ? '700' : '500';
       box.style.textAlign = stk.align || 'left';
       box.style.color = stk.color || '#111827';
       const showBg = stk.bgEnabled !== false && stk.bg !== 'transparent';
       box.style.backgroundColor = showBg ? (stk.bg || 'rgba(255,255,255,0.92)') : 'transparent';
+      const rot = stk.rotation || 0;
+      box.style.transform = rot ? `rotate(${rot}deg)` : 'none';
+      box.style.transformOrigin = 'center center';
 
       const contentEl = document.createElement('div');
       contentEl.className = 'spe-textbox-content';
@@ -1248,14 +1377,47 @@ export class SinglePageEditor {
     if (this.textInput && document.activeElement !== this.textInput) {
       this.textInput.value = stk.text || '';
     }
+
+    const fontKey = stk.fontFamily || 'sans';
+    const fontObj = FONT_LIBRARY.find((f) => f.id === fontKey) || FONT_LIBRARY[0];
+    const fontCss = getFontCssFamily(fontKey);
+
     if (this.fontSelect) {
-      this.fontSelect.value = stk.fontFamily || 'sans';
+      this.fontSelect.value = fontKey;
     }
+
+    if (this.fontPreviewSampleEl) {
+      this.fontPreviewSampleEl.style.fontFamily = fontCss;
+      this.fontPreviewSampleEl.textContent = (stk.text || 'Zine Typography').trim().slice(0, 24) || fontObj.name;
+    }
+    if (this.fontPreviewMetaEl) {
+      this.fontPreviewMetaEl.textContent = `${fontObj.name} · ${(fontObj.category || 'Standard').toUpperCase()}`;
+    }
+    if (this.fontCatTagEl) {
+      this.fontCatTagEl.textContent = fontObj.categoryLabel || 'Standard';
+    }
+    if (this.fontCatBarEl) {
+      this.fontCatBarEl.querySelectorAll('[data-spe-font-cat]').forEach((btn) => {
+        const cat = btn.getAttribute('data-spe-font-cat');
+        const isMatch = cat === 'all'
+          ? this.selectedFontCategory === 'all'
+          : cat === fontObj.category;
+        btn.classList.toggle('is-active', isMatch);
+        btn.setAttribute('aria-selected', String(isMatch));
+      });
+    }
+
     if (this.sizeInput) {
       this.sizeInput.value = String(stk.fontSize || 22);
     }
     if (this.sizeReadout) {
       this.sizeReadout.textContent = `${stk.fontSize || 22} px`;
+    }
+    if (this.rotationInput) {
+      this.rotationInput.value = String(stk.rotation || 0);
+    }
+    if (this.rotationReadout) {
+      this.rotationReadout.textContent = `${stk.rotation || 0}°`;
     }
     if (this.posReadout) {
       this.posReadout.textContent = `X: ${Math.round(stk.x)}% · Y: ${Math.round(stk.y)}%`;
@@ -1292,11 +1454,13 @@ export class SinglePageEditor {
     this.layerListEl.innerHTML = stickers.map((stk) => {
       const isSelected = stk.id === this.selectedStickerId;
       const preview = (stk.text || 'Text').replace(/\s+/g, ' ').slice(0, 28);
+      const fontObj = FONT_LIBRARY.find((f) => f.id === (stk.fontFamily || 'sans')) || FONT_LIBRARY[0];
+      const rotBadge = stk.rotation ? ` · ${stk.rotation}°` : '';
       return `
         <div class="spe-layer-item ${isSelected ? 'is-active' : ''}" data-spe-layer-id="${stk.id}">
           <span class="material-symbols-outlined icon-compact opacity-60">title</span>
           <span class="spe-layer-name">${preview}</span>
-          <span class="spe-layer-meta">${stk.fontFamily || 'sans'} · ${stk.fontSize || 22}px</span>
+          <span class="spe-layer-meta">${fontObj.name} · ${stk.fontSize || 22}px${rotBadge}</span>
           <button type="button" class="spe-layer-del" data-spe-layer-delete title="Remove text layer">
             <span class="material-symbols-outlined icon-compact">close</span>
           </button>

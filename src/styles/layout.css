@@ -2012,6 +2012,60 @@ body.is-peeking-bg #card-zine .snap-card-body--canvas {
   }
 }
 
+@media (max-width: 768px) {
+  .vsplit-bar {
+    gap: 0.35rem;
+    padding: 0.22rem 0.55rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    justify-content: space-between;
+  }
+
+  .vsplit-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .vsplit-leading-group,
+  .vsplit-trailing-group {
+    gap: 0.28rem;
+    flex-shrink: 0;
+  }
+
+  .vsplit-bar .header-action-label {
+    display: none !important;
+  }
+
+  .vsplit-export-btn,
+  .vsplit-fold-btn {
+    padding: 0.2rem 0.48rem !important;
+    min-height: 1.7rem;
+    font-size: 0.7rem;
+  }
+
+  .vsplit-detent-btn {
+    width: 1.7rem;
+    height: 1.7rem;
+  }
+
+  .vsplit-grabber-zone {
+    display: none; /* Hide drag center grabber on narrow mobile viewports so all controls fit */
+  }
+}
+
+@media (max-width: 520px) {
+  .vsplit-preset-chip {
+    padding: 0.1rem 0.38rem;
+    font-size: 0.65rem;
+  }
+
+  .vsplit-leading-group {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+}
+
 /* ── Mini-Overlay Pill Bars (When Canvas or Controls Pane is Collapsed) ── */
 .vsplit-mini-pill-bar {
   display: none;
@@ -2148,9 +2202,8 @@ body.is-peeking-bg #card-zine .snap-card-body--canvas {
 
 .vsplit-workspace[data-vsplit-axis="vertical"] #card-upload .upload-quick-actions,
 .vsplit-workspace[data-vsplit-axis="vertical"] .upload-quick-actions--three {
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+  display: flex !important;
+  flex-direction: column !important;
   gap: 0.36rem !important;
   width: 100% !important;
   height: 100% !important;
@@ -2159,6 +2212,7 @@ body.is-peeking-bg #card-zine .snap-card-body--canvas {
 
 .vsplit-workspace[data-vsplit-axis="vertical"] #card-upload .upload-quick-actions .quick-slot-action-btn,
 .vsplit-workspace[data-vsplit-axis="vertical"] .upload-quick-actions--three .quick-slot-action-btn {
+  flex: 1 1 0% !important;
   width: 100% !important;
   height: 100% !important;
   min-height: 1.85rem !important;
@@ -2229,10 +2283,15 @@ body.is-peeking-bg #card-zine .snap-card-body--canvas {
 .vsplit-workspace[data-vsplit-axis="vertical"] #card-settings .smart-sheet-config {
   flex: 1 1 auto;
   height: 100%;
-  display: grid;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 0.36rem;
   align-items: stretch;
+}
+
+.vsplit-workspace[data-vsplit-axis="vertical"] #card-settings .smart-sheet-config > * {
+  flex: 1 1 0%;
+  min-height: 0;
 }
 
 .vsplit-workspace[data-vsplit-axis="vertical"] #card-settings .smart-sheet-inline-row {
@@ -2275,21 +2334,21 @@ body.is-peeking-bg #card-zine .snap-card-body--canvas {
   box-sizing: border-box;
 }
 
-/* Column 3: Display Guides — 3 Tactile Toggle Rows Matching Column 1 & 2 Rows */
+/* Column 3: Display Guides — Flexible Tactile Toggle Rows Matching Column 1 & 2 Rows */
 .vsplit-workspace[data-vsplit-axis="vertical"] #card-display .display-card-body {
   height: 100%;
   padding: 0.05rem 0;
 }
 
 .vsplit-workspace[data-vsplit-axis="vertical"] .display-toggles-list {
-  display: grid;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 0.36rem;
   height: 100%;
 }
 
 .vsplit-workspace[data-vsplit-axis="vertical"] .display-toggles-list .workspace-config-toggle {
-  height: 100%;
+  flex: 1 1 0%;
   min-height: 1.85rem;
   background: var(--surface-muted);
   border: 1px solid var(--border-color);
